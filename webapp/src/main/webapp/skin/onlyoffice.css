@@ -1,0 +1,177 @@
+.onlyofficeEditorBody {
+  margin-top: 0px !important;
+  margin-bottom: 0px !important;
+  margin-left: 0px !important;
+  margin-right: 0px !important;
+}
+
+.onlyofficeEditorBody #RightBody, .onlyofficeEditorBody .onlyofficeContainer>.editor {
+  height: 100vh;
+}
+
+.onlyofficeEditorBody .RightBodyTDContainer {
+  padding-top: 0px;
+}
+
+.maskLayer .onlyofficeEditorClose .uiIconClose {
+  position: absolute;
+  top: 5px;
+  right: 10px;
+  cursor: pointer;
+}
+
+.maskLayer .onlyofficeEditorClose .uiIconClose:before {
+  color: #ffffff !important;
+}
+
+.maskLayer .onlyofficeEditorClose .uiIconClose:hover {
+  color: #ffffff !important;
+}
+
+#UIDocumentWorkspace .fileContent .content {
+  text-align: left;
+}
+
+.onlyofficeContainer>#editor, .onlyofficeContainer>.editor {
+  width: 100%;
+  height: 100%;
+  position: relative;
+  min-width: 665px;
+}
+
+.onlyofficeContainer>.loading {
+  width: 100%;
+  height: 100%;
+  position: relative;
+  border: 0px;
+  min-width: 665px;
+  min-height: 550px;
+  margin-bottom: 15px;
+}
+
+.ui-pnotify.onlyoffice-notification {
+  top: 70px !important;
+}
+
+.onlyofficeContainer>#editor>iframe, .onlyofficeContainer>.editor>iframe {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+}
+
+.waitThrobber {
+  display: inline-block;
+  width: 50%;
+  height: 320px;
+  margin-right: auto;
+  margin-left: auto;
+  pointer-events: none;
+  background: url('icons/oxygen/32/animations/throbber.gif') no-repeat left center !important; /* orientation=lt */
+  background: url('icons/oxygen/32/animations/throbber.gif') no-repeat right center !important; /* orientation=rt */
+}
+
+/***** Disabled styles *******/
+.editorDisabled {
+  opacity: .6
+}
+
+/******** Pnotify icons ********/
+.picon-32.picon-task-complete {
+  background-image: url("icons/oxygen/32/status/task-complete.png")
+}
+
+.picon-32.picon-throbber {
+  background-image: url("icons/oxygen/32/animations/throbber.gif")
+}
+
+.picon-32.picon-dialog-error {
+  background-image: url("icons/oxygen/32/status/dialog-error.png")
+}
+
+.picon-32.picon-dialog-information {
+  background-image: url("icons/oxygen/32/status/dialog-information.png")
+}
+
+.picon-32.picon-dialog-warning {
+  background-image: url("icons/oxygen/32/status/dialog-warning.png")
+}
+
+.picon-32.picon-process-stop {
+  background-image: url("icons/oxygen/32/actions/process-stop.png")
+}
+
+.picon.picon-task-complete {
+  background-image: url("icons/oxygen/16/status/task-complete.png")
+}
+
+.picon.picon-throbber {
+  background-image: url("icons/oxygen/16/animations/throbber.gif")
+}
+
+.picon.picon-dialog-error {
+  background-image: url("icons/oxygen/16/status/dialog-error.png")
+}
+
+.picon.picon-dialog-information {
+  background-image: url("icons/oxygen/16/status/dialog-information.png")
+}
+
+.picon.picon-dialog-warning {
+  background-image: url("icons/oxygen/16/status/dialog-warning.png")
+}
+
+.picon.picon-process-stop {
+  background-image: url("icons/oxygen/16/actions/process-stop.png")
+}
+
+.documentRefreshBanner {
+  position: absolute;
+  width: 100%;
+  opacity: 0.9;
+  background: #FFEB3B;
+}
+
+.fileShare .documentRefreshBanner {
+  position: relative;
+  z-index: 100;
+  height: 30px;
+  margin-bottom: -31px;
+  border-top: 1px solid #ccc;
+}
+
+.fileShare .documentRefreshBanner:before,
+.fileShare .documentRefreshBanner:after {
+  content: '';
+  width: 0;
+  height: 100%;
+  position: absolute;
+  border-left: 1px solid #ccc;
+  top: 0;
+}
+
+.fileShare .documentRefreshBanner:after {
+  right: 0;
+}
+
+.refreshBannerContent {
+  padding: 5px;
+}
+
+.refreshBannerLink {
+  text-decoration: underline;
+  cursor: pointer;
+  font-weight: bold;
+}
+
+.refreshBannerLink.disabled {
+  color: #A9A9A9;
+  cursor: default;
+  text-decoration: none;
+}
+
+.documentRefreshBanner .loading {
+  display: inline-block;
+  position: absolute;
+  top: 0;
+  margin-left: 10px;
+}
