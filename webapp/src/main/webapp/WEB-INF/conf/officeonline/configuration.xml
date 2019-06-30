@@ -24,8 +24,8 @@
   xmlns="http://www.exoplatform.org/xml/ns/kernel_1_2.xsd">
 
   <component>
-    <key>org.exoplatform.officeonline.OfficeonlineEditorService</key>
-    <type>org.exoplatform.officeonline.OfficeonlineEditorServiceImpl</type>
+    <key>org.exoplatform.officeonline.OfficeOnlineEditorService</key>
+    <type>org.exoplatform.officeonline.OfficeOnlineEditorServiceImpl</type>
     <init-params>
       <properties-param>
         <name>editor-configuration</name>
@@ -46,12 +46,24 @@
   </component>
 
   <component>
-    <type>org.exoplatform.officeonline.cometd.CometdOfficeonlineService</type>
+    <type>org.exoplatform.officeonline.cometd.CometdOfficeOnlineService</type>
   </component>
 
   <component>
     <type>org.exoplatform.officeonline.documents.NewDocumentService</type>
   </component>
+
+  <component>
+    <key>org.exoplatform.officeonline.OnlineOfficeService</key>
+    <type>org.exoplatform.officeonline.OnlineOfficeServiceImpl</type>
+    <init-params>
+      <value-param>
+        <name>discovery-url</name>
+        <value>https://ffc-onenote.officeapps.live.com/hosting/discovery</value>
+      </value-param>
+    </init-params>
+  </component>
+  
   
   <!-- NewDocumentTypePlugin for NewDocumentService-->
   <external-component-plugins>
@@ -116,7 +128,7 @@
 
   <!-- DocumentTypePlugin for OfficeOnlineEditorService -->
   <external-component-plugins>
-    <target-component>org.exoplatform.officeonline.OfficeonlineEditorService</target-component>
+    <target-component>org.exoplatform.officeonline.OfficeOnlineEditorService</target-component>
     <component-plugin>
       <name>documentTypePlugin</name>
       <set-method>addTypePlugin</set-method>
@@ -125,7 +137,7 @@
       <init-params>
         <object-param>
           <name>document-types-configuration</name>
-          <object type="org.exoplatform.officeonline.OfficeonlineEditorServiceImpl$DocumentTypesConfig">
+          <object type="org.exoplatform.officeonline.OfficeOnlineEditorServiceImpl$DocumentTypesConfig">
             <field name="mimeTypes">
               <collection type="java.util.ArrayList">
                 <value>
@@ -565,13 +577,13 @@
           <value>bottom-all-container</value>
         </value-param>
         <object-param>
-          <name>OfficeonlineStream</name>
+          <name>OfficeOnlineStream</name>
           <description>Officeonline Document State portlet</description>
           <object type="org.exoplatform.portal.config.serialize.PortletApplication">
             <field name="state">
               <object type="org.exoplatform.portal.config.model.TransientApplicationState">
                 <field name="contentId">
-                  <string>officeonline/OfficeonlineDocumentStatePortlet</string>
+                  <string>officeonline/OfficeOnlineDocumentStatePortlet</string>
                 </field>
               </object>
             </field>
@@ -592,7 +604,7 @@
           <name>Officeonline context integration filter</name>
           <object type="org.exoplatform.web.filter.FilterDefinition">
             <field name="filter">
-              <object type="org.exoplatform.officeonline.webui.OfficeonlinePortalFilter" />
+              <object type="org.exoplatform.officeonline.webui.OfficeOnlinePortalFilter" />
             </field>
             <field name="patterns">
               <collection type="java.util.ArrayList" item-type="java.lang.String">
@@ -614,7 +626,7 @@
           <name>Officeonline Editor integration filter</name>
           <object type="org.exoplatform.web.filter.FilterDefinition">
             <field name="filter">
-              <object type="org.exoplatform.officeonline.webui.OfficeonlineEditorFilter" />
+              <object type="org.exoplatform.officeonline.webui.OfficeOnlineEditorFilter" />
             </field>
             <field name="patterns">
               <collection type="java.util.ArrayList" item-type="java.lang.String">
@@ -633,10 +645,10 @@
       <type>org.exoplatform.web.filter.FilterDefinitionPlugin</type>
       <init-params>
         <object-param>
-          <name>Officeonline Documents integration filter</name>
+          <name>OfficeOnline Documents integration filter</name>
           <object type="org.exoplatform.web.filter.FilterDefinition">
             <field name="filter">
-              <object type="org.exoplatform.officeonline.webui.OfficeonlineDocumentsFilter" />
+              <object type="org.exoplatform.officeonline.webui.OfficeOnlineDocumentsFilter" />
             </field>
             <field name="patterns">
               <collection type="java.util.ArrayList" item-type="java.lang.String">
