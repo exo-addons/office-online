@@ -22,32 +22,32 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
   <modelVersion>4.0.0</modelVersion>
   <parent>
-    <groupId>org.exoplatform.addons.onlyoffice</groupId>
-    <artifactId>exo-onlyoffice-editor-parent</artifactId>
+    <groupId>org.exoplatform.addons.officeonline</groupId>
+    <artifactId>exo-officeonline-editor-parent</artifactId>
     <version>1.4.x-SNAPSHOT</version>
   </parent>
-  <artifactId>exo-onlyoffice-editor-packaging</artifactId>
+  <artifactId>exo-officeonline-editor-packaging</artifactId>
   <packaging>pom</packaging>
-  <name>eXo OnlyOffice Editor :: Extension Packaging</name>
-  <description>eXo OnlyOffice Editor packaging for installation</description>
+  <name>eXo OfficeOnline Editor :: Extension Packaging</name>
+  <description>eXo OfficeOnline Editor packaging for installation</description>
 
   <dependencies>
     <dependency>
-      <groupId>org.exoplatform.addons.onlyoffice</groupId>
-      <artifactId>exo-onlyoffice-editor-services</artifactId>
+      <groupId>org.exoplatform.addons.officeonline</groupId>
+      <artifactId>exo-officeonline-editor-services</artifactId>
       <scope>provided</scope>
       <type>jar</type>
     </dependency>
     <dependency>
-      <groupId>org.exoplatform.addons.onlyoffice</groupId>
-      <artifactId>exo-onlyoffice-editor-webapp</artifactId>
+      <groupId>org.exoplatform.addons.officeonline</groupId>
+      <artifactId>exo-officeonline-editor-webapp</artifactId>
       <scope>provided</scope>
       <type>war</type>
     </dependency>
   </dependencies>
 
   <build>
-    <finalName>exo-onlyoffice</finalName>
+    <finalName>exo-officeonline</finalName>
     <resources>
       <resource>
         <directory>src/main/resources</directory>

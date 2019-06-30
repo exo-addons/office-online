@@ -22,19 +22,19 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
   <modelVersion>4.0.0</modelVersion>
   <parent>
-    <groupId>org.exoplatform.addons.onlyoffice</groupId>
-    <artifactId>exo-onlyoffice-editor-parent</artifactId>
+    <groupId>org.exoplatform.addons.officeonline</groupId>
+    <artifactId>exo-officeonline-editor-parent</artifactId>
     <version>1.4.x-SNAPSHOT</version>
   </parent>
-  <artifactId>exo-onlyoffice-editor-webapp</artifactId>
+  <artifactId>exo-officeonline-editor-webapp</artifactId>
   <packaging>war</packaging>
-  <name>eXo OnlyOffice Editor :: Extension Webapp</name>
-  <description>eXo OnlyOffice Editor web application of portal extension</description>
+  <name>eXo OfficeOnline Editor :: Extension Webapp</name>
+  <description>eXo OfficeOnline Editor web application of portal extension</description>
 
   <dependencies>
     <dependency>
-      <groupId>org.exoplatform.addons.onlyoffice</groupId>
-      <artifactId>exo-onlyoffice-editor-services</artifactId>
+      <groupId>org.exoplatform.addons.officeonline</groupId>
+      <artifactId>exo-officeonline-editor-services</artifactId>
       <scope>provided</scope>
     </dependency>
     <!-- Application dependencies-->
@@ -97,7 +97,7 @@
   </dependencies>
 
   <build>
-    <finalName>onlyoffice</finalName>
+    <finalName>officeonline</finalName>
     <resources>
       <resource>
         <directory>src/main/resources</directory>

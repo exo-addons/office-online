@@ -23,10 +23,10 @@
 	xsi:schemaLocation="http://www.exoplatform.org/xml/ns/gatein_resources_1_4 http://www.exoplatform.org/xml/ns/gatein_resources_1_4"
 	xmlns="http://www.exoplatform.org/xml/ns/gatein_resources_1_4">
 
-  <!-- Javascript for Onlyoffice editor in WCM -->
+  <!-- Javascript for Officeonline editor in WCM -->
   <module>
-    <name>onlyofficeJqueryPnotify</name>
-    <load-group>onlyofficeGRP</load-group>
+    <name>officeonlineJqueryPnotify</name>
+    <load-group>officeonlineGRP</load-group>
     <script>
       <minify>false</minify>
       <path>/js/jquery.pnotify.min.js</path>
@@ -37,9 +37,9 @@
     </depends>
   </module>
   <module>
-    <name>onlyofficeJqueryUI</name>
+    <name>officeonlineJqueryUI</name>
     <as>jqueryUI</as>
-    <load-group>onlyofficeGRP</load-group>
+    <load-group>officeonlineGRP</load-group>
     <script>
       <path>/js/jquery-ui.js</path>
     </script>
@@ -49,8 +49,8 @@
     </depends>
   </module>
   <module>
-    <name>onlyofficeRedux</name>
-    <load-group>onlyofficeGRP</load-group>
+    <name>officeonlineRedux</name>
+    <load-group>officeonlineGRP</load-group>
     <script>
       <minify>false</minify>
       <path>/js/redux.min.js</path>
@@ -61,10 +61,10 @@
     </depends>
   </module>
   <module>
-    <name>onlyoffice</name>
-    <load-group>onlyofficeGRP</load-group>
+    <name>officeonline</name>
+    <load-group>officeonlineGRP</load-group>
     <script>
-      <path>/js/onlyoffice.js</path>
+      <path>/js/officeonline.js</path>
     </script>
     <depends>
       <module>jquery</module>
@@ -73,29 +73,29 @@
       <module>commons-cometd3</module>
     </depends>
     <depends>
-      <module>onlyofficeJqueryPnotify</module>
+      <module>officeonlineJqueryPnotify</module>
     </depends>
     <depends>
-      <module>onlyofficeJqueryUI</module>
+      <module>officeonlineJqueryUI</module>
     </depends>
         <depends>
-      <module>onlyofficeRedux</module>
+      <module>officeonlineRedux</module>
     </depends>
   </module>
   
   <portlet-skin>
-    <application-name>onlyoffice</application-name>
-    <portlet-name>OnlyofficeDocumentStatePortlet</portlet-name>
+    <application-name>officeonline</application-name>
+    <portlet-name>OfficeonlineDocumentStatePortlet</portlet-name>
     <skin-name>Enterprise</skin-name>
-    <css-path>/skin/onlyoffice-extras.css</css-path>
+    <css-path>/skin/officeonline-extras.css</css-path>
     <overwrite>true</overwrite>
   </portlet-skin>
 
   <portlet-skin>
-    <application-name>onlyoffice</application-name>
-    <portlet-name>OnlyofficeDocumentStatePortlet</portlet-name>
+    <application-name>officeonline</application-name>
+    <portlet-name>OfficeonlineDocumentStatePortlet</portlet-name>
     <skin-name>Default</skin-name>
-    <css-path>/skin/onlyoffice-extras.css</css-path>
+    <css-path>/skin/officeonline-extras.css</css-path>
     <overwrite>true</overwrite>
   </portlet-skin>
 </gatein-resources>

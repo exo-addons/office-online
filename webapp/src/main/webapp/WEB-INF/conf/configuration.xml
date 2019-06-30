@@ -23,9 +23,9 @@
   xsi:schemaLocation="http://www.exoplatform.org/xml/ns/kernel_1_2.xsd http://www.exoplatform.org/xml/ns/kernel_1_2.xsd"
   xmlns="http://www.exoplatform.org/xml/ns/kernel_1_2.xsd">
 
-  <!-- Onlyoffice extension configurations -->
+  <!-- Officeonline extension configurations -->
   
-  <import profiles="all">war:/conf/onlyoffice/configuration.xml</import>
-  <import profiles="all">war:/conf/onlyoffice/portal/portal-configuration.xml</import>
+  <import profiles="all">war:/conf/officeonline/configuration.xml</import>
+  <import profiles="all">war:/conf/officeonline/portal/portal-configuration.xml</import>
 
 </configuration>

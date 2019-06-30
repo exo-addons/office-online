@@ -54,7 +54,7 @@
 
   <component><!-- Overrides 'commons-component-common-x.x.x.jar!/conf/configuration.xml' -->
     <key>org.exoplatform.commons.api.persistence.DataInitializer</key>
-    <type>org.exoplatform.onlyoffice.test.StandaloneLiquibaseDataInitializer</type>
+    <type>org.exoplatform.officeonline.test.StandaloneLiquibaseDataInitializer</type>
     <init-params>
       <value-param>
         <name>liquibase.datasource</name>

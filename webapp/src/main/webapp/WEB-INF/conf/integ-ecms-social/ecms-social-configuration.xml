@@ -56,7 +56,7 @@
     <component-plugin profiles="all">
       <name>FileActivityNotify.event.PropertyUpdated</name>
       <set-method>addListener</set-method>
-      <type>org.exoplatform.onlyoffice.DocumentUpdateActivityListener</type>
+      <type>org.exoplatform.officeonline.DocumentUpdateActivityListener</type>
       <description>this listener will create a new comment when a property has been updated</description>
     </component-plugin>
 

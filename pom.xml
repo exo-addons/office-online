@@ -28,18 +28,18 @@
     <version>10</version>
   </parent>
 
-  <artifactId>exo-onlyoffice-editor-parent</artifactId>
-  <groupId>org.exoplatform.addons.onlyoffice</groupId>
+  <artifactId>exo-officeonline-editor-parent</artifactId>
+  <groupId>org.exoplatform.addons.officeonline</groupId>
   <version>1.4.x-SNAPSHOT</version>
   <packaging>pom</packaging>
-  <name>eXo OnlyOffice Editor :: Parent</name>
-  <description>eXo OnlyOffice Editor for Documents extension</description>
+  <name>eXo OfficeOnline Editor :: Parent</name>
+  <description>eXo OfficeOnline Editor for Documents extension</description>
 
   <scm>
-    <connection>scm:git:git://github.com/exo-addons/onlyoffice.git</connection>
-    <developerConnection>scm:git:git@github.com:exo-addons/onlyoffice.git</developerConnection>
+    <connection>scm:git:git://github.com/exo-addons/officeonline.git</connection>
+    <developerConnection>scm:git:git@github.com:exo-addons/officeonline.git</developerConnection>
     <tag>HEAD</tag>
-    <url>https://github.com/exo-addons/onlyoffice</url>
+    <url>https://github.com/exo-addons/officeonline</url>
   </scm>
 
   <properties>
@@ -68,16 +68,16 @@
         <scope>import</scope>
       </dependency>
       
-      <!-- Onlyoffice extension -->
+      <!-- OfficeOnline extension -->
       <dependency>
-        <groupId>org.exoplatform.addons.onlyoffice</groupId>
-        <artifactId>exo-onlyoffice-editor-services</artifactId>
+        <groupId>org.exoplatform.addons.officeonline</groupId>
+        <artifactId>exo-officeonline-editor-services</artifactId>
         <version>${project.version}</version>
         <type>jar</type>
       </dependency>
       <dependency>
-        <groupId>org.exoplatform.addons.onlyoffice</groupId>
-        <artifactId>exo-onlyoffice-editor-webapp</artifactId>
+        <groupId>org.exoplatform.addons.officeonline</groupId>
+        <artifactId>exo-officeonline-editor-webapp</artifactId>
         <version>${project.version}</version>
         <type>war</type>
       </dependency>

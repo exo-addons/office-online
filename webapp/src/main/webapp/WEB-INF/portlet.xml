@@ -24,28 +24,28 @@
   xsi:schemaLocation="http://java.sun.com/xml/ns/portlet/portlet-app_2_0.xsd
    http://java.sun.com/xml/ns/portlet/portlet-app_2_0.xsd">
   <portlet>
-    <portlet-name>OnlyofficeEditorPortlet</portlet-name>
-    <display-name xml:lang="EN">Onlyoffice Editor Portlet</display-name>
-    <portlet-class>org.exoplatform.onlyoffice.portlet.EditorPortlet</portlet-class>
+    <portlet-name>OfficeonlineEditorPortlet</portlet-name>
+    <display-name xml:lang="EN">Officeonline Editor Portlet</display-name>
+    <portlet-class>org.exoplatform.officeonline.portlet.EditorPortlet</portlet-class>
     <supports>
       <mime-type>text/html</mime-type>
     </supports>
     <portlet-info>
-      <title>Onlyoffice editor portlet</title>
-      <short-title>Onlyoffice editor</short-title>
+      <title>Officeonline editor portlet</title>
+      <short-title>Officeonline editor</short-title>
     </portlet-info>
   </portlet>
   
   <portlet>
-    <portlet-name>OnlyofficeDocumentStatePortlet</portlet-name>
-    <display-name xml:lang="EN">Onlyoffice Document State Portlet</display-name>
-    <portlet-class>org.exoplatform.onlyoffice.portlet.DocumentStatePortlet</portlet-class>
+    <portlet-name>OfficeonlineDocumentStatePortlet</portlet-name>
+    <display-name xml:lang="EN">Officeonline Document State Portlet</display-name>
+    <portlet-class>org.exoplatform.officeonline.portlet.DocumentStatePortlet</portlet-class>
     <supports>
       <mime-type>text/html</mime-type>
     </supports>
     <portlet-info>
-      <title>Onlyoffice document state portlet</title>
-      <short-title>Onlyoffice document</short-title>
+      <title>Officeonline document state portlet</title>
+      <short-title>Officeonline document</short-title>
     </portlet-info>
   </portlet>
 </portlet-app>

@@ -88,7 +88,7 @@
 
   <component><!-- Overrides 'commons-component-common-x.x.x.jar!/conf/portal/configuration.xml' -->
     <key>org.exoplatform.commons.api.persistence.DataInitializer</key>
-    <type>org.exoplatform.onlyoffice.test.StandaloneLiquibaseDataInitializer</type>
+    <type>org.exoplatform.officeonline.test.StandaloneLiquibaseDataInitializer</type>
     <init-params>
       <value-param>
         <name>liquibase.datasource</name>
@@ -367,7 +367,7 @@
   <import>jar:/conf/test/test-portal-configuration.xml</import>
   <import>jar:/conf/test/test-ecms-configuration.xml</import>
   <import>jar:/conf/test/exo.social.component.search.test.configuration.xml</import>
-  <import>jar:/conf/test/test-onlyoffice-configuration.xml</import>
+  <import>jar:/conf/test/test-officeonline-configuration.xml</import>
   
 
 <remove-configuration>org.exoplatform.wcm.ext.component.document.service.ContentViewerRESTService</remove-configuration>

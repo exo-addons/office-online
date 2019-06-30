@@ -7,6 +7,6 @@
     <a class="uiIconClose uiIconWhite" title="Close"></a>
   </div --%>
   <div class="editor" style="display: none;">
-    <div id="onlyoffice"></div>
+    <div id="officeonline"></div>
   </div>
 </div>
