@@ -27,7 +27,7 @@ public class ProofKeyHelper {
       // helper class
   }
 
-  public static PublicKey getPublicKey(String modulus, String exponent) throws OfficeOnlineEditorException {
+  public static PublicKey getPublicKey(String modulus, String exponent) {
       BigInteger mod = new BigInteger(1, DatatypeConverter.parseBase64Binary(modulus));
       BigInteger exp = new BigInteger(1, DatatypeConverter.parseBase64Binary(exponent));
       KeyFactory factory;
@@ -36,7 +36,7 @@ public class ProofKeyHelper {
           KeySpec ks = new RSAPublicKeySpec(mod, exp);
           return factory.generatePublic(ks);
       } catch (GeneralSecurityException e) {
-          throw new OfficeOnlineEditorException(e);
+          throw new RuntimeException(e);
       }
   }
 

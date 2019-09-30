@@ -1,12 +1,13 @@
 package org.exoplatform.officeonline;
 
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.util.List;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.dataformat.xml.XmlMapper;
 import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlElementWrapper;
-import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlProperty;
+import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlProperty;;
 
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class WOPIDiscovery {
@@ -36,7 +37,7 @@ public class WOPIDiscovery {
   protected static final XmlMapper XML_MAPPER = new XmlMapper();
 
   public static WOPIDiscovery read(byte[] discoveryBytes) throws IOException {
-    return XML_MAPPER.readValue(discoveryBytes, WOPIDiscovery.class);
+    return XML_MAPPER.readValue(new ByteArrayInputStream(discoveryBytes), WOPIDiscovery.class);
   }
 
   @JsonIgnoreProperties(ignoreUnknown = true)

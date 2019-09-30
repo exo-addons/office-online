@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.security.PublicKey;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -14,17 +15,25 @@ import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClientBuilder;
-import org.picocontainer.Startable;
+
+import com.sun.star.uno.RuntimeException;
 
 import org.exoplatform.container.xml.InitParams;
+import org.exoplatform.container.xml.PropertiesParam;
 import org.exoplatform.officeonline.WOPIDiscovery.NetZone;
 import org.exoplatform.services.log.ExoLogger;
 import org.exoplatform.services.log.Log;
 
 /**
- * The Class OnlineOfficeServiceImpl.
+ * The Class WOPIDiscoveryService.
  */
-public class OnlineOfficeServiceImpl implements OnlineOfficeService, Startable {
+public class WOPIDiscoveryService {
+
+  /** The Constant LOG. */
+  protected static final Log                 LOG                                = ExoLogger.getLogger(WOPIDiscoveryService.class);
+
+  /** The Constant DISCOVERY_URL_PARAM. */
+  public static final String                 DISCOVERY_URL_PARAM                = "discovery-url";
 
   /** The Constant PLACEHOLDER_IS_LICENSED_USER. */
   public static final String                 PLACEHOLDER_IS_LICENSED_USER       = "IsLicensedUser";
@@ -32,15 +41,14 @@ public class OnlineOfficeServiceImpl implements OnlineOfficeService, Startable {
   /** The Constant PLACEHOLDER_IS_LICENSED_USER_VALUE. */
   public static final String                 PLACEHOLDER_IS_LICENSED_USER_VALUE = "1";
 
-  /** The Constant DISCOVERY_URL_PROPERTY. */
-  private static final String                DISCOVERY_URL_PROPERTY             = "discovery-url";
+  /** The proof key. */
+  protected PublicKey                        proofKey;
 
-  /** The Constant LOG. */
-  protected static final Log                 LOG                                =
-                                                 ExoLogger.getLogger(OfficeOnlineEditorServiceImpl.class);
+  /** The old proof key. */
+  protected PublicKey                        oldProofKey;
 
-  /** The discovery URL. */
-  private final String                       discoveryURL;
+  /** The discovery url. */
+  protected String                           discoveryUrl;
 
   /** The supported app names. */
   protected final List<String>               supportedAppNames                  = Arrays.asList("Word", "Excel", "PowerPoint");
@@ -49,47 +57,49 @@ public class OnlineOfficeServiceImpl implements OnlineOfficeService, Startable {
   // extension => wopi action => wopi action url
   protected Map<String, Map<String, String>> extensionActionURLs                = new HashMap<>();
 
-  /** The proof key. */
-  protected PublicKey                        proofKey;
-
-  /** The old proof key. */
-  protected PublicKey                        oldProofKey;
+  /** The config. */
+  protected final Map<String, String>        config;
 
   /**
-   * Instantiates a new online office service impl.
+   * Instantiates a new WOPI discovery service.
    *
    * @param params the params
    */
-  public OnlineOfficeServiceImpl(InitParams params) {
-    discoveryURL = params.getValueParam(DISCOVERY_URL_PROPERTY).getValue();
-  }
-
-  /**
-   * Start.
-   */
-  @Override
-  public void start() {
-    try {
-      loadDiscovery();
-    } catch (OfficeOnlineEditorException e) {
-      LOG.error("Error while loading WOPI discovery {}", e.getMessage());
+  public WOPIDiscoveryService(InitParams params) {
+    // configuration
+    PropertiesParam param = params.getPropertiesParam("wopi-configuration");
+    if (param != null) {
+      config = Collections.unmodifiableMap(param.getProperties());
+    } else {
+      throw new RuntimeException("Property parameters wopi-configuration required.");
     }
+    this.discoveryUrl = config.get(DISCOVERY_URL_PARAM);
   }
 
   /**
-   * Stop.
+   * Gets the action url.
+   *
+   * @param extension the extension
+   * @param action the action
+   * @return the action url
    */
-  @Override
-  public void stop() {
-    // TODO Auto-generated method stub
+  public String getActionUrl(String extension, String action) {
+    if (extensionActionURLs.isEmpty()) {
+      loadDiscovery();
+    }
 
+    Map<String, String> map = extensionActionURLs.get(extension);
+    if (map != null && !map.isEmpty()) {
+      return map.get(action);
+    }
+    LOG.warn("Cannot find action url for {} extension and {} action", extension, action);
+    return null;
   }
 
   /**
    * Load discovery.
-   * @throws OfficeOnlineEditorException 
    */
-  protected void loadDiscovery() throws OfficeOnlineEditorException {
+  protected void loadDiscovery() {
     byte[] discoveryBytes = fetchDiscovery();
     WOPIDiscovery discovery;
     try {
@@ -104,7 +114,6 @@ public class OnlineOfficeServiceImpl implements OnlineOfficeService, Startable {
       LOG.error("Invalid WOPI discovery, no net-zone element");
       return;
     }
-
     netZone.getApps().stream().filter(app -> supportedAppNames.contains(app.getName())).forEach(this::registerApp);
     LOG.debug("Successfully loaded WOPI discovery: WOPI enabled");
 
@@ -121,15 +130,13 @@ public class OnlineOfficeServiceImpl implements OnlineOfficeService, Startable {
    * @return the byte[]
    */
   protected byte[] fetchDiscovery() {
-    if (discoveryURL == null) {
-      LOG.warn("No WOPI discovery URL configured, cannot fetch discovery. Please configure the '{}' property.",
-               DISCOVERY_URL_PROPERTY);
-      return ArrayUtils.EMPTY_BYTE_ARRAY;
+    if (discoveryUrl == null || discoveryUrl.isEmpty()) {
+      throw new RuntimeException("DiscoveryUrl is not specified");
     }
 
-    LOG.debug("Fetching WOPI dicovery from discovery URL {}", discoveryURL);
+    LOG.debug("Fetching WOPI dicovery from discovery URL {}", discoveryUrl);
     HttpClientBuilder httpClientBuilder = HttpClientBuilder.create();
-    HttpGet request = new HttpGet(discoveryURL);
+    HttpGet request = new HttpGet(discoveryUrl);
     try (CloseableHttpClient httpClient = httpClientBuilder.build();
         CloseableHttpResponse response = httpClient.execute(request);
         InputStream is = response.getEntity().getContent()) {
@@ -138,6 +145,7 @@ public class OnlineOfficeServiceImpl implements OnlineOfficeService, Startable {
       LOG.error("Error while fetching WOPI discovery: {}", e.getMessage());
       return ArrayUtils.EMPTY_BYTE_ARRAY;
     }
+
   }
 
   /**

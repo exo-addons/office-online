@@ -26,6 +26,5 @@
   <!-- Officeonline extension configurations -->
   
   <import profiles="all">war:/conf/officeonline/configuration.xml</import>
-  <import profiles="all">war:/conf/officeonline/portal/portal-configuration.xml</import>
 
 </configuration>
