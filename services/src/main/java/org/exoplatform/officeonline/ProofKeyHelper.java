@@ -14,19 +14,34 @@ import java.time.Instant;
 
 import javax.xml.bind.DatatypeConverter;
 
-
+/**
+ * The Class ProofKeyHelper.
+ */
 public class ProofKeyHelper {
 
+  /** The Constant KEY_FACTORY_ALGORITHM. */
   public static final String KEY_FACTORY_ALGORITHM = "RSA";
 
+  /** The Constant SIGNATURE_ALGORITHM. */
   public static final String SIGNATURE_ALGORITHM = "SHA256withRSA";
 
+  /** The Constant EPOCH_IN_TICKS. */
   public static final long EPOCH_IN_TICKS = 621355968000000000L; // January 1, 1970 (start of Unix epoch) in "ticks"
 
+  /**
+   * Instantiates a new proof key helper.
+   */
   private ProofKeyHelper() {
       // helper class
   }
 
+  /**
+   * Gets the public key.
+   *
+   * @param modulus the modulus
+   * @param exponent the exponent
+   * @return the public key
+   */
   public static PublicKey getPublicKey(String modulus, String exponent) {
       BigInteger mod = new BigInteger(1, DatatypeConverter.parseBase64Binary(modulus));
       BigInteger exp = new BigInteger(1, DatatypeConverter.parseBase64Binary(exponent));
@@ -40,6 +55,14 @@ public class ProofKeyHelper {
       }
   }
 
+  /**
+   * Gets the expected proof bytes.
+   *
+   * @param url the url
+   * @param accessToken the access token
+   * @param timestamp the timestamp
+   * @return the expected proof bytes
+   */
   public static byte[] getExpectedProofBytes(String url, String accessToken, long timestamp) {
       byte[] accessTokenBytes = accessToken.getBytes(StandardCharsets.UTF_8);
       byte[] hostUrlBytes = url.toUpperCase().getBytes(StandardCharsets.UTF_8);
@@ -53,6 +76,14 @@ public class ProofKeyHelper {
       return byteBuffer.array();
   }
 
+  /**
+   * Verify proof key.
+   *
+   * @param key the key
+   * @param proofKeyHeader the proof key header
+   * @param expectedProofBytes the expected proof bytes
+   * @return true, if successful
+   */
   public static boolean verifyProofKey(PublicKey key, String proofKeyHeader, byte[] expectedProofBytes) {
       try {
           Signature verifier = Signature.getInstance(SIGNATURE_ALGORITHM);
@@ -68,7 +99,8 @@ public class ProofKeyHelper {
   /**
    * Checks that the given {@code timestamp} is no more than 20 minutes old.
    *
-   * @throws NuxeoException if the timestamp is older than 20 minutes
+   * @param timestamp the timestamp
+   * @return true, if successful
    */
   public static boolean verifyTimestamp(long timestamp) {
       long ticks = timestamp - EPOCH_IN_TICKS; // ticks
