@@ -95,6 +95,20 @@ public class WOPIDiscoveryService {
     LOG.warn("Cannot find action url for {} extension and {} action", extension, action);
     return null;
   }
+  
+
+  public PublicKey getProofKey() {
+    return proofKey;
+  }
+
+  /**
+   * Gets the old proof key.
+   *
+   * @return the old proof key
+   */
+  public PublicKey getOldProofKey() {
+    return oldProofKey;
+  }
 
   /**
    * Load discovery.
@@ -114,6 +128,8 @@ public class WOPIDiscoveryService {
       LOG.error("Invalid WOPI discovery, no net-zone element");
       return;
     }
+    // Clear old discovery
+    extensionActionURLs.clear();
     netZone.getApps().stream().filter(app -> supportedAppNames.contains(app.getName())).forEach(this::registerApp);
     LOG.debug("Successfully loaded WOPI discovery: WOPI enabled");
 
