@@ -8,6 +8,9 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.ArrayUtils;
@@ -15,6 +18,7 @@ import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClientBuilder;
+import org.picocontainer.Startable;
 
 import com.sun.star.uno.RuntimeException;
 
@@ -27,7 +31,7 @@ import org.exoplatform.services.log.Log;
 /**
  * The Class WOPIDiscoveryService.
  */
-public class WOPIDiscoveryService {
+public class WOPIDiscoveryService implements Startable {
 
   /** The Constant LOG. */
   protected static final Log                 LOG                                = ExoLogger.getLogger(WOPIDiscoveryService.class);
@@ -56,6 +60,9 @@ public class WOPIDiscoveryService {
   /** The extension action UR ls. */
   // extension => wopi action => wopi action url
   protected Map<String, Map<String, String>> extensionActionURLs                = new HashMap<>();
+
+  /** The executor for refreshing. */
+  protected ScheduledExecutorService         executor                           = Executors.newScheduledThreadPool(1);
 
   /** The config. */
   protected final Map<String, String>        config;
@@ -95,7 +102,6 @@ public class WOPIDiscoveryService {
     LOG.warn("Cannot find action url for {} extension and {} action", extension, action);
     return null;
   }
-  
 
   public PublicKey getProofKey() {
     return proofKey;
@@ -128,9 +134,9 @@ public class WOPIDiscoveryService {
       LOG.error("Invalid WOPI discovery, no net-zone element");
       return;
     }
-    // Clear old discovery
-    extensionActionURLs.clear();
-    netZone.getApps().stream().filter(app -> supportedAppNames.contains(app.getName())).forEach(this::registerApp);
+
+    registerApps(netZone.getApps());
+
     LOG.debug("Successfully loaded WOPI discovery: WOPI enabled");
 
     WOPIDiscovery.ProofKey pk = discovery.getProofKey();
@@ -165,19 +171,35 @@ public class WOPIDiscoveryService {
   }
 
   /**
-   * Register app.
+   * Register apps.
    *
-   * @param app the app
+   * @param apps the apps
    */
-  protected void registerApp(WOPIDiscovery.App app) {
-    app.getActions().forEach(action -> {
-      extensionActionURLs.computeIfAbsent(action.getExt(), k -> new HashMap<>())
-                         .put(action.getName(),
-                              String.format("%s%s=%s&",
-                                            action.getUrl().replaceFirst("<.*$", ""),
-                                            PLACEHOLDER_IS_LICENSED_USER,
-                                            PLACEHOLDER_IS_LICENSED_USER_VALUE));
+  protected void registerApps(List<WOPIDiscovery.App> apps) {
+    Map<String, Map<String, String>> actionURLs = new HashMap<>();
+    apps.stream().filter(app -> supportedAppNames.contains(app.getName())).forEach(app -> {
+      app.getActions().forEach(action -> {
+        actionURLs.computeIfAbsent(action.getExt(), k -> new HashMap<>())
+                  .put(action.getName(),
+                       String.format("%s%s=%s&",
+                                     action.getUrl().replaceFirst("<.*$", ""),
+                                     PLACEHOLDER_IS_LICENSED_USER,
+                                     PLACEHOLDER_IS_LICENSED_USER_VALUE));
+      });
     });
+    extensionActionURLs = actionURLs;
+  }
+
+  @Override
+  public void start() {
+    loadDiscovery();
+    // Refresh discovery every 2 minutes (for testing only)
+    executor.scheduleAtFixedRate(() -> loadDiscovery(), 2, 2, TimeUnit.MINUTES);
+  }
+
+  @Override
+  public void stop() {
+
   }
 
 }

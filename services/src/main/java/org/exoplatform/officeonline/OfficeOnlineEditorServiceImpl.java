@@ -1,9 +1,5 @@
 package org.exoplatform.officeonline;
 
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.TimeUnit;
-
 import org.apache.commons.lang.StringUtils;
 import org.picocontainer.Startable;
 
@@ -21,6 +17,7 @@ public class OfficeOnlineEditorServiceImpl implements OfficeOnlineEditorService,
   /** The discovery service. */
   protected WOPIDiscoveryService discoveryService;
 
+
   /**
    * Instantiates a new office online editor service impl.
    *
@@ -37,7 +34,6 @@ public class OfficeOnlineEditorServiceImpl implements OfficeOnlineEditorService,
   public void start() {
 
     LOG.info("OFFICE ONLINE EDITOR SERVICE STARTED");
-    discoveryService.loadDiscovery();
     // Testing
     String excelEdit = discoveryService.getActionUrl("xlsx", "edit");
     String excelView = discoveryService.getActionUrl("xlsx", "view");
@@ -46,16 +42,13 @@ public class OfficeOnlineEditorServiceImpl implements OfficeOnlineEditorService,
     String powerPointEdit = discoveryService.getActionUrl("pptx", "edit");
     String powerPointView = discoveryService.getActionUrl("pptx", "view");
 
-    // Refresh Discovery
-    ScheduledExecutorService executor = Executors.newScheduledThreadPool(1);
-    executor.scheduleAtFixedRate(() -> discoveryService.loadDiscovery(), 2, 2, TimeUnit.MINUTES);
     
-    LOG.info("EXCEL EDIT: " + excelEdit);
-    LOG.info("EXCEL VIEW: " + excelView);
-    LOG.info("WORD EDIT: " + wordEdit);
-    LOG.info("WORD VIEW: " + wordView);
-    LOG.info("PP EDIT: " + powerPointEdit);
-    LOG.info("PP VIEW: " + powerPointView);
+    LOG.debug("EXCEL EDIT: " + excelEdit);
+    LOG.debug("EXCEL VIEW: " + excelView);
+    LOG.debug("WORD EDIT: " + wordEdit);
+    LOG.debug("WORD VIEW: " + wordView);
+    LOG.debug("PP EDIT: " + powerPointEdit);
+    LOG.debug("PP VIEW: " + powerPointView);
   }
 
   public boolean verifyProofKey(String proofKeyHeader,

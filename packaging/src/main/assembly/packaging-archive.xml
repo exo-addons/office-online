@@ -1,32 +1,33 @@
-<assembly xmlns="http://maven.apache.org/plugins/maven-assembly-plugin/assembly/1.1.1" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-   xsi:schemaLocation="http://maven.apache.org/plugins/maven-assembly-plugin/assembly/1.1.1 http://maven.apache.org/xsd/assembly-1.1.1.xsd">
-   <id>packaging</id>
-   <includeBaseDirectory>false</includeBaseDirectory>
-   <formats>
-     <format>zip</format>
-   </formats>
-   <dependencySets>
-     <dependencySet>
-       <outputDirectory>webapps</outputDirectory>
-       <includes>
-         <include>org.exoplatform.addons.officeonline:exo-officeonline-editor-webapp:war</include>
-       </includes>
-       <outputFileNameMapping>officeonline.war</outputFileNameMapping>
-       <scope>provided</scope>
-       <fileMode>0644</fileMode>
-     </dependencySet>
-     <dependencySet>
+<assembly xmlns="http://maven.apache.org/plugins/maven-assembly-plugin/assembly/1.1.1"
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:schemaLocation="http://maven.apache.org/plugins/maven-assembly-plugin/assembly/1.1.1 http://maven.apache.org/xsd/assembly-1.1.1.xsd">
+  <id>packaging</id>
+  <includeBaseDirectory>false</includeBaseDirectory>
+  <formats>
+    <format>zip</format>
+  </formats>
+  <dependencySets>
+    <dependencySet>
+      <outputDirectory>webapps</outputDirectory>
+      <includes>
+        <include>org.exoplatform.addons.officeonline:exo-officeonline-editor-webapp:war</include>
+      </includes>
+      <outputFileNameMapping>officeonline.war</outputFileNameMapping>
+      <scope>provided</scope>
+      <fileMode>0644</fileMode>
+    </dependencySet>
+    <dependencySet>
        <!-- Dependencies for deployment to Platform 4 instance -->
-       <outputDirectory>lib</outputDirectory>
-       <useTransitiveDependencies>true</useTransitiveDependencies>
-       <includes>
-         <include>org.exoplatform.addons.officeonline:exo-officeonline-editor-*:jar</include>
-         <include>io.jsonwebtoken:jjwt-api:jar</include>
-         <include>io.jsonwebtoken:jjwt-impl:jar</include>
-         <include>io.jsonwebtoken:jjwt-jackson:jar</include>
-       </includes>
-       <scope>provided</scope>
-       <fileMode>0644</fileMode>
-     </dependencySet>
-   </dependencySets>
+      <outputDirectory>lib</outputDirectory>
+      <useTransitiveDependencies>true</useTransitiveDependencies>
+      <includes>
+        <include>org.exoplatform.addons.officeonline:exo-officeonline-editor-*:jar</include>
+        <include>com.fasterxml.jackson.dataformat:jackson-dataformat-xml:jar</include>
+        <include>com.fasterxml.jackson.module:jackson-module-jaxb-annotations:jar</include>
+        <include>org.codehaus.woodstox:stax2-api:jar</include>
+      </includes>
+      <scope>provided</scope>
+      <fileMode>0644</fileMode>
+    </dependencySet>
+  </dependencySets>
 </assembly>
