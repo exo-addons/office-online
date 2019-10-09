@@ -54,7 +54,10 @@
     <!-- for tests -->
     <junit.version>4.12</junit.version>
 
-    <io.jsonwebtoken.version>0.10.5</io.jsonwebtoken.version>
+    <com.fasterxml.jackson.dataformat.version>2.9.8</com.fasterxml.jackson.dataformat.version>
+    <com.fasterxml.jackson.module.version>2.9.8</com.fasterxml.jackson.module.version>
+    <org.codehaus.woodstox.version>3.1.4</org.codehaus.woodstox.version>
+
   </properties>
 
   <dependencyManagement>
@@ -96,22 +99,22 @@
         <version>${junit.version}</version>
         <scope>test</scope>
       </dependency>
-      
-      
+
       <dependency>
-        <groupId>io.jsonwebtoken</groupId>
-        <artifactId>jjwt-api</artifactId>
-        <version>${io.jsonwebtoken.version}</version>
+        <groupId>com.fasterxml.jackson.dataformat</groupId>
+        <artifactId>jackson-dataformat-xml</artifactId>
+        <version>${com.fasterxml.jackson.dataformat.version}</version>
       </dependency>
       <dependency>
-        <groupId>io.jsonwebtoken</groupId>
-        <artifactId>jjwt-impl</artifactId>
-        <version>${io.jsonwebtoken.version}</version>
+        <groupId>com.fasterxml.jackson.module</groupId>
+        <artifactId>jackson-module-jaxb-annotations</artifactId>
+        <version>${com.fasterxml.jackson.module.version}</version>
       </dependency>
+
       <dependency>
-        <groupId>io.jsonwebtoken</groupId>
-        <artifactId>jjwt-jackson</artifactId>
-        <version>${io.jsonwebtoken.version}</version>
+        <groupId>org.codehaus.woodstox</groupId>
+        <artifactId>stax2-api</artifactId>
+        <version>${org.codehaus.woodstox.version}</version>
       </dependency>
     </dependencies>
   </dependencyManagement>

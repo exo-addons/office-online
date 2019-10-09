@@ -36,14 +36,20 @@ public class WOPIDiscoveryService implements Startable {
   /** The Constant LOG. */
   protected static final Log                 LOG                                = ExoLogger.getLogger(WOPIDiscoveryService.class);
 
+  /** The Constant WOPI_CONFIGURATION. */
+  protected static final String              WOPI_CONFIGURATION                 = "wopi-configuration";
+
   /** The Constant DISCOVERY_URL_PARAM. */
-  public static final String                 DISCOVERY_URL_PARAM                = "discovery-url";
+  protected static final String              DISCOVERY_URL_PARAM                = "discovery-url";
 
   /** The Constant PLACEHOLDER_IS_LICENSED_USER. */
-  public static final String                 PLACEHOLDER_IS_LICENSED_USER       = "IsLicensedUser";
+  protected static final String              PLACEHOLDER_IS_LICENSED_USER       = "IsLicensedUser";
 
   /** The Constant PLACEHOLDER_IS_LICENSED_USER_VALUE. */
-  public static final String                 PLACEHOLDER_IS_LICENSED_USER_VALUE = "1";
+  protected static final String              PLACEHOLDER_IS_LICENSED_USER_VALUE = "1";
+
+  /** The supported app names. */
+  protected final List<String>               supportedAppNames                  = Arrays.asList("Word", "Excel", "PowerPoint");
 
   /** The proof key. */
   protected PublicKey                        proofKey;
@@ -54,15 +60,13 @@ public class WOPIDiscoveryService implements Startable {
   /** The discovery url. */
   protected String                           discoveryUrl;
 
-  /** The supported app names. */
-  protected final List<String>               supportedAppNames                  = Arrays.asList("Word", "Excel", "PowerPoint");
-
   /** The extension action UR ls. */
   // extension => wopi action => wopi action url
+  // Should it be ExoCache?
   protected Map<String, Map<String, String>> extensionActionURLs                = new HashMap<>();
 
   /** The executor for refreshing. */
-  protected ScheduledExecutorService         executor                           = Executors.newScheduledThreadPool(1);
+  protected ScheduledExecutorService         refreshExecutor                    = Executors.newScheduledThreadPool(1);
 
   /** The config. */
   protected final Map<String, String>        config;
@@ -74,7 +78,7 @@ public class WOPIDiscoveryService implements Startable {
    */
   public WOPIDiscoveryService(InitParams params) {
     // configuration
-    PropertiesParam param = params.getPropertiesParam("wopi-configuration");
+    PropertiesParam param = params.getPropertiesParam(WOPI_CONFIGURATION);
     if (param != null) {
       config = Collections.unmodifiableMap(param.getProperties());
     } else {
@@ -192,9 +196,10 @@ public class WOPIDiscoveryService implements Startable {
 
   @Override
   public void start() {
+    LOG.debug("WOPI Discovery service started");
     loadDiscovery();
-    // Refresh discovery every 2 minutes (for testing only)
-    executor.scheduleAtFixedRate(() -> loadDiscovery(), 2, 2, TimeUnit.MINUTES);
+    // Refresh discovery every 5 minutes (for testing only). 12-24 hours is recommended
+    refreshExecutor.scheduleAtFixedRate(() -> loadDiscovery(), 5, 5, TimeUnit.MINUTES);
   }
 
   @Override

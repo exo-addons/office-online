@@ -17,7 +17,6 @@ public class OfficeOnlineEditorServiceImpl implements OfficeOnlineEditorService,
   /** The discovery service. */
   protected WOPIDiscoveryService discoveryService;
 
-
   /**
    * Instantiates a new office online editor service impl.
    *
@@ -32,9 +31,8 @@ public class OfficeOnlineEditorServiceImpl implements OfficeOnlineEditorService,
    */
   @Override
   public void start() {
-
-    LOG.info("OFFICE ONLINE EDITOR SERVICE STARTED");
-    // Testing
+    LOG.debug("Office Online Editor Service started");
+    // Only for testing purposes
     String excelEdit = discoveryService.getActionUrl("xlsx", "edit");
     String excelView = discoveryService.getActionUrl("xlsx", "view");
     String wordEdit = discoveryService.getActionUrl("docx", "edit");
@@ -42,15 +40,18 @@ public class OfficeOnlineEditorServiceImpl implements OfficeOnlineEditorService,
     String powerPointEdit = discoveryService.getActionUrl("pptx", "edit");
     String powerPointView = discoveryService.getActionUrl("pptx", "view");
 
-    
-    LOG.debug("EXCEL EDIT: " + excelEdit);
-    LOG.debug("EXCEL VIEW: " + excelView);
-    LOG.debug("WORD EDIT: " + wordEdit);
-    LOG.debug("WORD VIEW: " + wordView);
-    LOG.debug("PP EDIT: " + powerPointEdit);
-    LOG.debug("PP VIEW: " + powerPointView);
+    LOG.debug("Excel edit URL: " + excelEdit);
+    LOG.debug("Excel view URL: " + excelView);
+    LOG.debug("Word edit URL: " + wordEdit);
+    LOG.debug("Excel view URL: " + wordView);
+    LOG.debug("PowerPoint edit URL: " + powerPointEdit);
+    LOG.debug("PowerPoint view URL: " + powerPointView);
   }
 
+  /**
+   * {@inheritDoc}
+   */
+  @Override
   public boolean verifyProofKey(String proofKeyHeader,
                                 String oldProofKeyHeader,
                                 String url,
