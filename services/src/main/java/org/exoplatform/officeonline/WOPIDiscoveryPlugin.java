@@ -4,7 +4,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.security.PublicKey;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -18,29 +17,26 @@ import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClientBuilder;
-import org.picocontainer.Startable;
 
 import com.sun.star.uno.RuntimeException;
 
+import org.exoplatform.container.component.BaseComponentPlugin;
 import org.exoplatform.container.xml.InitParams;
-import org.exoplatform.container.xml.PropertiesParam;
+import org.exoplatform.container.xml.ValueParam;
 import org.exoplatform.officeonline.WOPIDiscovery.NetZone;
 import org.exoplatform.services.log.ExoLogger;
 import org.exoplatform.services.log.Log;
 
 /**
- * The Class WOPIDiscoveryService.
+ * The Class WOPIDiscoveryPlugin.
  */
-public class WOPIDiscoveryService implements Startable {
+public class WOPIDiscoveryPlugin extends BaseComponentPlugin {
 
   /** The Constant LOG. */
-  protected static final Log                 LOG                                = ExoLogger.getLogger(WOPIDiscoveryService.class);
+  protected static final Log                 LOG                                = ExoLogger.getLogger(WOPIDiscoveryPlugin.class);
 
-  /** The Constant WOPI_CONFIGURATION. */
-  protected static final String              WOPI_CONFIGURATION                 = "wopi-configuration";
-
-  /** The Constant DISCOVERY_URL_PARAM. */
-  protected static final String              DISCOVERY_URL_PARAM                = "discovery-url";
+  /** The Constant DISCOVERY_URL. */
+  protected static final String              DISCOVERY_URL                      = "discovery-url";
 
   /** The Constant PLACEHOLDER_IS_LICENSED_USER. */
   protected static final String              PLACEHOLDER_IS_LICENSED_USER       = "IsLicensedUser";
@@ -68,23 +64,19 @@ public class WOPIDiscoveryService implements Startable {
   /** The executor for refreshing. */
   protected ScheduledExecutorService         refreshExecutor                    = Executors.newScheduledThreadPool(1);
 
-  /** The config. */
-  protected final Map<String, String>        config;
-
   /**
    * Instantiates a new WOPI discovery service.
    *
    * @param params the params
    */
-  public WOPIDiscoveryService(InitParams params) {
-    // configuration
-    PropertiesParam param = params.getPropertiesParam(WOPI_CONFIGURATION);
-    if (param != null) {
-      config = Collections.unmodifiableMap(param.getProperties());
+  public WOPIDiscoveryPlugin(InitParams params) {
+    ValueParam discoveryURLParam = params.getValueParam(DISCOVERY_URL);
+    String val = discoveryURLParam != null ? discoveryURLParam.getValue() : null;
+    if (val == null || (val = val.trim()).isEmpty()) {
+      throw new RuntimeException(DISCOVERY_URL + " parameter is required.");
     } else {
-      throw new RuntimeException("Property parameters wopi-configuration required.");
+      this.discoveryUrl = val;
     }
-    this.discoveryUrl = config.get(DISCOVERY_URL_PARAM);
   }
 
   /**
@@ -118,6 +110,16 @@ public class WOPIDiscoveryService implements Startable {
    */
   public PublicKey getOldProofKey() {
     return oldProofKey;
+  }
+
+  public void start() {
+    loadDiscovery();
+    // Refresh discovery every 5 minutes (for testing only). 12-24 hours is recommended
+    refreshExecutor.scheduleAtFixedRate(() -> loadDiscovery(), 5, 5, TimeUnit.MINUTES);
+  }
+
+  public void stop() {
+    refreshExecutor.shutdown();
   }
 
   /**
@@ -192,19 +194,6 @@ public class WOPIDiscoveryService implements Startable {
       });
     });
     extensionActionURLs = actionURLs;
-  }
-
-  @Override
-  public void start() {
-    LOG.debug("WOPI Discovery service started");
-    loadDiscovery();
-    // Refresh discovery every 5 minutes (for testing only). 12-24 hours is recommended
-    refreshExecutor.scheduleAtFixedRate(() -> loadDiscovery(), 5, 5, TimeUnit.MINUTES);
-  }
-
-  @Override
-  public void stop() {
-
   }
 
 }

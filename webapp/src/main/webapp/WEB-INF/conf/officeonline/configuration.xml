@@ -27,16 +27,22 @@
     <key>org.exoplatform.officeonline.OfficeOnlineEditorService</key>
     <type>org.exoplatform.officeonline.OfficeOnlineEditorServiceImpl</type>
   </component>
-
-  <component>
-    <key>org.exoplatform.officeonline.WOPIDiscoveryService</key>
-    <type>org.exoplatform.officeonline.WOPIDiscoveryService</type>
-    <init-params>
-      <properties-param>
-        <name>wopi-configuration</name>
-        <property name="discovery-url" value="${officeonline.discrovery.url:https://ffc-onenote.officeapps.live.com/hosting/discovery}" />
-      </properties-param>
-    </init-params>
-  </component>
+  
+  <!-- WOPIDiscoveryPlugin -->
+  <external-component-plugins>
+    <target-component>org.exoplatform.officeonline.OfficeOnlineEditorService</target-component>
+    <component-plugin>
+      <name>set.wopidiscovery</name>
+      <set-method>addPlugin</set-method>
+      <type>org.exoplatform.officeonline.WOPIDiscoveryPlugin</type>
+      <description>WOPIDiscoveryService performs WOPI Discovery for Office Online</description>
+      <init-params>
+        <value-param>
+          <name>discovery-url</name>
+          <value>${officeonline.discrovery.url:https://ffc-onenote.officeapps.live.com/hosting/discovery}</value>
+        </value-param>
+      </init-params>
+    </component-plugin>
+  </external-component-plugins>
 
 </configuration>

@@ -3,6 +3,7 @@ package org.exoplatform.officeonline;
 import org.apache.commons.lang.StringUtils;
 import org.picocontainer.Startable;
 
+import org.exoplatform.container.component.ComponentPlugin;
 import org.exoplatform.services.log.ExoLogger;
 import org.exoplatform.services.log.Log;
 
@@ -12,33 +13,29 @@ import org.exoplatform.services.log.Log;
 public class OfficeOnlineEditorServiceImpl implements OfficeOnlineEditorService, Startable {
 
   /** The Constant LOG. */
-  protected static final Log     LOG = ExoLogger.getLogger(OfficeOnlineEditorServiceImpl.class);
+  protected static final Log    LOG = ExoLogger.getLogger(OfficeOnlineEditorServiceImpl.class);
 
-  /** The discovery service. */
-  protected WOPIDiscoveryService discoveryService;
-
-  /**
-   * Instantiates a new office online editor service impl.
-   *
-   * @param discoveryService the discovery service
-   */
-  public OfficeOnlineEditorServiceImpl(WOPIDiscoveryService discoveryService) {
-    this.discoveryService = discoveryService;
-  }
+  /** The discovery plugin. */
+  protected WOPIDiscoveryPlugin discoveryPlugin;
 
   /**
    * Start.
    */
   @Override
   public void start() {
+    if (discoveryPlugin == null) {
+      throw new RuntimeException("WopiDiscoveryPlugin is not configured");
+    }
+    discoveryPlugin.start();
+
     LOG.debug("Office Online Editor Service started");
     // Only for testing purposes
-    String excelEdit = discoveryService.getActionUrl("xlsx", "edit");
-    String excelView = discoveryService.getActionUrl("xlsx", "view");
-    String wordEdit = discoveryService.getActionUrl("docx", "edit");
-    String wordView = discoveryService.getActionUrl("docx", "view");
-    String powerPointEdit = discoveryService.getActionUrl("pptx", "edit");
-    String powerPointView = discoveryService.getActionUrl("pptx", "view");
+    String excelEdit = discoveryPlugin.getActionUrl("xlsx", "edit");
+    String excelView = discoveryPlugin.getActionUrl("xlsx", "view");
+    String wordEdit = discoveryPlugin.getActionUrl("docx", "edit");
+    String wordView = discoveryPlugin.getActionUrl("docx", "view");
+    String powerPointEdit = discoveryPlugin.getActionUrl("pptx", "edit");
+    String powerPointView = discoveryPlugin.getActionUrl("pptx", "view");
 
     LOG.debug("Excel edit URL: " + excelEdit);
     LOG.debug("Excel view URL: " + excelView);
@@ -68,11 +65,11 @@ public class OfficeOnlineEditorServiceImpl implements OfficeOnlineEditorService,
 
     byte[] expectedProofBytes = ProofKeyHelper.getExpectedProofBytes(url, accessToken, timestamp);
     // follow flow from https://wopi.readthedocs.io/en/latest/scenarios/proofkeys.html#verifying-the-proof-keys
-    boolean res = ProofKeyHelper.verifyProofKey(discoveryService.getProofKey(), proofKeyHeader, expectedProofBytes);
+    boolean res = ProofKeyHelper.verifyProofKey(discoveryPlugin.getProofKey(), proofKeyHeader, expectedProofBytes);
     if (!res && StringUtils.isNotBlank(oldProofKeyHeader)) {
-      res = ProofKeyHelper.verifyProofKey(discoveryService.getProofKey(), oldProofKeyHeader, expectedProofBytes);
+      res = ProofKeyHelper.verifyProofKey(discoveryPlugin.getProofKey(), oldProofKeyHeader, expectedProofBytes);
       if (!res) {
-        res = ProofKeyHelper.verifyProofKey(discoveryService.getOldProofKey(), proofKeyHeader, expectedProofBytes);
+        res = ProofKeyHelper.verifyProofKey(discoveryPlugin.getOldProofKey(), proofKeyHeader, expectedProofBytes);
       }
     }
     return res;
@@ -83,8 +80,23 @@ public class OfficeOnlineEditorServiceImpl implements OfficeOnlineEditorService,
    */
   @Override
   public void stop() {
-    // TODO Auto-generated method stub
+    discoveryPlugin.stop();
 
+  }
+
+  /**
+   * Adds the plugin.
+   *
+   * @param plugin the plugin
+   */
+  public void addPlugin(ComponentPlugin plugin) {
+    Class<WOPIDiscoveryPlugin> pclass = WOPIDiscoveryPlugin.class;
+    if (pclass.isAssignableFrom(plugin.getClass())) {
+      discoveryPlugin = pclass.cast(plugin);
+      LOG.info("Set WopiDiscoveryPlugin instance of " + plugin.getClass().getName());
+    } else {
+      throw new RuntimeException("WopiDiscoveryPlugin is not an instance of " + pclass.getName());
+    }
   }
 
 }
