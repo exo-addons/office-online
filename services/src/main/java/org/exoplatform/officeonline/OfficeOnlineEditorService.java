@@ -1,11 +1,30 @@
 package org.exoplatform.officeonline;
 
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+
+import javax.jcr.Node;
+import javax.jcr.RepositoryException;
+import javax.jcr.Session;
+
+import static org.exoplatform.officeonline.Constants.READ_ONLY;
+import static org.exoplatform.officeonline.Constants.USER_CAN_WRITE;
+import static org.exoplatform.officeonline.Constants.USER_CAN_RENAME;
+
 import org.apache.commons.lang.StringUtils;
 import org.picocontainer.Startable;
 
 import org.exoplatform.container.component.ComponentPlugin;
+import org.exoplatform.ecm.webui.utils.PermissionUtil;
+import org.exoplatform.services.idgenerator.IDGeneratorService;
+import org.exoplatform.services.jcr.RepositoryService;
+import org.exoplatform.services.jcr.ext.app.SessionProviderService;
+import org.exoplatform.services.jcr.ext.common.SessionProvider;
 import org.exoplatform.services.log.ExoLogger;
 import org.exoplatform.services.log.Log;
+import org.exoplatform.services.wcm.utils.WCMCoreUtils;
 
 /**
  * The Class OfficeOnlineEditorServiceImpl.
@@ -13,10 +32,37 @@ import org.exoplatform.services.log.Log;
 public class OfficeOnlineEditorService implements Startable {
 
   /** The Constant LOG. */
-  protected static final Log    LOG = ExoLogger.getLogger(OfficeOnlineEditorService.class);
+  protected static final Log             LOG     = ExoLogger.getLogger(OfficeOnlineEditorService.class);
+
+  /** The generator. */
+  protected final IDGeneratorService     idGenerator;
+
+  /** The session providers. */
+  protected final SessionProviderService sessionProviders;
+
+  /** The jcr service. */
+  protected final RepositoryService      jcrService;
 
   /** The discovery plugin. */
-  protected WOPIDiscoveryPlugin discoveryPlugin;
+  protected WOPIDiscoveryPlugin          discoveryPlugin;
+
+  /** The configs. */
+  protected Map<String, EditorConfig>    configs = new ConcurrentHashMap<String, EditorConfig>();
+
+  /**
+   * Instantiates a new office online editor service.
+   *
+   * @param sessionProviders the session providers
+   * @param idGenerator the id generator
+   * @param jcrService the jcr service
+   */
+  public OfficeOnlineEditorService(SessionProviderService sessionProviders,
+                                   IDGeneratorService idGenerator,
+                                   RepositoryService jcrService) {
+    this.sessionProviders = sessionProviders;
+    this.idGenerator = idGenerator;
+    this.jcrService = jcrService;
+  }
 
   /**
    * Start.
@@ -44,7 +90,6 @@ public class OfficeOnlineEditorService implements Startable {
     LOG.debug("PowerPoint edit URL: " + powerPointEdit);
     LOG.debug("PowerPoint view URL: " + powerPointView);
   }
-
 
   /**
    * Verify proof key.
@@ -82,6 +127,44 @@ public class OfficeOnlineEditorService implements Startable {
     return res;
   }
 
+
+  /**
+   * Creates the editor config.
+   *
+   * @param userSchema the user schema
+   * @param userHost the user host
+   * @param userPort the user port
+   * @param userId the user id
+   * @param workspace the workspace
+   * @param fileId the file id
+   * @return the editor config
+   * @throws RepositoryException the repository exception
+   */
+  public EditorConfig createEditorConfig(String userSchema,
+                                         String userHost,
+                                         int userPort,
+                                         String userId,
+                                         String workspace,
+                                         String fileId) throws RepositoryException {
+    Node document = nodeByUUID(workspace, fileId);
+    List<String> permissions = new ArrayList<>();
+
+    if (document != null) {
+      if (canEditDocument(document)) {
+        permissions.add(USER_CAN_WRITE);
+        permissions.add(USER_CAN_RENAME);
+      } else {
+        permissions.add(READ_ONLY);
+      }
+    }
+
+    EditorConfig config = new EditorConfig(userId, fileId, permissions);
+    String accessToken = idGenerator.generateStringID(config);
+    config.setAccessToken(accessToken);
+    configs.put(accessToken, config);
+    return config;
+  }
+
   /**
    * Stop.
    */
@@ -92,11 +175,49 @@ public class OfficeOnlineEditorService implements Startable {
   }
 
   /**
-   * Adds the plugin.
+   * Node by UUID.
+   *
+   * @param workspace the workspace
+   * @param uuid the UUID
+   * @return the node
+   * @throws RepositoryException the repository exception
+   */
+  protected Node nodeByUUID(String workspace, String uuid) throws RepositoryException {
+    SessionProvider sp = sessionProviders.getSessionProvider(null);
+    Session userSession = sp.getSession(workspace, jcrService.getCurrentRepository());
+    return userSession.getNodeByUUID(uuid);
+  }
+
+  /**
+   * Can edit document.
+   *
+   * @param node the node
+   * @return true, if successful
+   * @throws RepositoryException the repository exception
+   */
+  public boolean canEditDocument(Node node) throws RepositoryException {
+    boolean res = false;
+    if (node != null) {
+      String remoteUser = WCMCoreUtils.getRemoteUser();
+      String superUser = WCMCoreUtils.getSuperUser();
+      boolean locked = node.isLocked();
+      if (locked && (remoteUser.equalsIgnoreCase(superUser) || node.getLock().getLockOwner().equals(remoteUser))) {
+        locked = false;
+      }
+      res = !locked && PermissionUtil.canSetProperty(node);
+    }
+    if (!res && LOG.isDebugEnabled()) {
+      LOG.debug("Cannot edit: {}", node != null ? node.getPath() : null);
+    }
+    return res;
+  }
+
+  /**
+   * Sets the plugin.
    *
    * @param plugin the plugin
    */
-  public void addPlugin(ComponentPlugin plugin) {
+  public void setPlugin(ComponentPlugin plugin) {
     Class<WOPIDiscoveryPlugin> pclass = WOPIDiscoveryPlugin.class;
     if (pclass.isAssignableFrom(plugin.getClass())) {
       discoveryPlugin = pclass.cast(plugin);

@@ -33,7 +33,7 @@
     <target-component>org.exoplatform.officeonline.OfficeOnlineEditorService</target-component>
     <component-plugin>
       <name>set.wopidiscovery</name>
-      <set-method>addPlugin</set-method>
+      <set-method>setPlugin</set-method>
       <type>org.exoplatform.officeonline.WOPIDiscoveryPlugin</type>
       <description>WOPIDiscoveryService performs WOPI Discovery for Office Online</description>
       <init-params>
