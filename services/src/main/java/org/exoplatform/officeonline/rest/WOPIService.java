@@ -38,10 +38,11 @@ import org.exoplatform.services.log.ExoLogger;
 import org.exoplatform.services.log.Log;
 import org.exoplatform.services.rest.resource.ResourceContainer;
 
+// TODO: Auto-generated Javadoc
 /**
  * The Class WOPIService.
  */
-@Path("/officeonline/wopi")
+@Path("/officeonline")
 public class WOPIService implements ResourceContainer {
 
   /** The Constant LOG. */
@@ -75,7 +76,7 @@ public class WOPIService implements ResourceContainer {
    * @return the response
    */
   @POST
-  @Path("/files/{fileId}")
+  @Path("/wopi/files/{fileId}")
   @Produces(MediaType.APPLICATION_JSON)
   public Response files(@Context UriInfo uriInfo,
                         @Context HttpServletRequest request,
@@ -111,11 +112,26 @@ public class WOPIService implements ResourceContainer {
    * @return the response
    */
   @GET
-  @Path("/files/{fileId}")
+  @Path("/wopi/files/{fileId}")
   @Produces(MediaType.APPLICATION_JSON)
   public Response checkFileInfo(@Context UriInfo uriInfo, @Context HttpServletRequest request) {
     verifyProofKey(request);
     // TODO: return file info
+    return null;
+  }
+
+  /**
+   * Content.
+   *
+   * @param uriInfo the uri info
+   * @param request the request
+   * @return the response
+   */
+  @GET
+  @Path("/editor/content/{fileId}/{accessToken}")
+  @Produces(MediaType.APPLICATION_JSON)
+  public Response content(@Context UriInfo uriInfo, @Context HttpServletRequest request) {
+    
     return null;
   }
 
