@@ -30,6 +30,7 @@ import static org.exoplatform.officeonline.Constants.USER_FRIENDLY_NAME;
 import static org.exoplatform.officeonline.Constants.USER_ID;
 import static org.exoplatform.officeonline.Constants.VERSION;
 
+import java.io.InputStream;
 import java.io.Serializable;
 import java.net.URI;
 import java.net.URLDecoder;
@@ -46,6 +47,7 @@ import javax.jcr.RepositoryException;
 import javax.jcr.Session;
 import javax.jcr.UnsupportedRepositoryOperationException;
 
+import org.apache.commons.io.input.AutoCloseInputStream;
 import org.apache.commons.lang.StringUtils;
 import org.picocontainer.Startable;
 
@@ -53,6 +55,7 @@ import org.exoplatform.container.PortalContainer;
 import org.exoplatform.container.component.ComponentPlugin;
 import org.exoplatform.ecm.webui.utils.PermissionUtil;
 import org.exoplatform.ecm.webui.utils.Utils;
+import org.exoplatform.officeonline.exception.OfficeOnlineException;
 import org.exoplatform.officeonline.exception.WopiDiscoveryNotFoundException;
 import org.exoplatform.services.cms.documents.DocumentService;
 import org.exoplatform.services.idgenerator.IDGeneratorService;
@@ -63,6 +66,10 @@ import org.exoplatform.services.log.ExoLogger;
 import org.exoplatform.services.log.Log;
 import org.exoplatform.services.organization.OrganizationService;
 import org.exoplatform.services.organization.User;
+import org.exoplatform.services.security.Authenticator;
+import org.exoplatform.services.security.ConversationState;
+import org.exoplatform.services.security.Identity;
+import org.exoplatform.services.security.IdentityRegistry;
 import org.exoplatform.services.wcm.core.NodetypeConstant;
 import org.exoplatform.services.wcm.utils.WCMCoreUtils;
 
@@ -79,6 +86,12 @@ public class OfficeOnlineEditorService implements Startable {
 
   /** The session providers. */
   protected final SessionProviderService sessionProviders;
+
+  /** The authenticator. */
+  protected final Authenticator          authenticator;
+
+  /** The identity registry. */
+  protected final IdentityRegistry       identityRegistry;
 
   /** The jcr service. */
   protected final RepositoryService      jcrService;
@@ -108,12 +121,16 @@ public class OfficeOnlineEditorService implements Startable {
                                    IDGeneratorService idGenerator,
                                    RepositoryService jcrService,
                                    OrganizationService organization,
-                                   DocumentService documentService) {
+                                   DocumentService documentService,
+                                   Authenticator authenticator,
+                                   IdentityRegistry identityRegistry) {
     this.sessionProviders = sessionProviders;
     this.idGenerator = idGenerator;
     this.jcrService = jcrService;
     this.organization = organization;
     this.documentService = documentService;
+    this.authenticator = authenticator;
+    this.identityRegistry = identityRegistry;
   }
 
   /**
@@ -150,7 +167,8 @@ public class OfficeOnlineEditorService implements Startable {
    * @param userHost the user host
    * @param userPort the user port
    * @param workspace the workspace
-   * @param fileId the file id
+   * @param fileId the fileId
+   * @param userId the userId
    * @param accessToken the access token
    * @return the map
    * @throws RepositoryException the repository exception
@@ -158,21 +176,35 @@ public class OfficeOnlineEditorService implements Startable {
   public Map<String, Serializable> checkFileInfo(String userSchema,
                                                  String userHost,
                                                  int userPort,
-                                                 String workspace,
                                                  String fileId,
-                                                 String accessToken) throws RepositoryException {
-    Node node = nodeByUUID(fileId, workspace);
+                                                 String userId,
+                                                 String accessToken) throws RepositoryException, OfficeOnlineException {
     Map<String, Serializable> map = new HashMap<>();
-    addRequiredProperties(map, node);
-    addHostCapabilitiesProperties(map);
-    addUserMetadataProperties(map);
-    addUserPermissionsProperties(map, node);
-    addFileURLProperties(map, node, accessToken, userSchema, userHost, userPort);
-    addBreadcrumbProperties(map, node, userSchema, userHost, userPort);
+    // remember real context state and session provider to restore them at the end
+    ConversationState contextState = ConversationState.getCurrent();
+    SessionProvider contextProvider = sessionProviders.getSessionProvider(null);
+    try {
+      if (!setUserConvoState(userId)) {
+        LOG.error("Couldn't set user conversation state. UserId: {}", userId);
+        throw new OfficeOnlineException("Cannot set conversation state " + userId);
+      }
+      EditorConfig config = configs.get(accessToken);
+      if(config != null) {
+        if(config.getUserId().equals(userId) && config.getFileId().equals(fileId)) {
+          Node node = nodeByUUID(fileId, config.getWorkspace());
+          addRequiredProperties(map, node);
+          addHostCapabilitiesProperties(map);
+          addUserMetadataProperties(map);
+          addUserPermissionsProperties(map, node);
+          addFileURLProperties(map, node, accessToken, userSchema, userHost, userPort);
+          addBreadcrumbProperties(map, node, userSchema, userHost, userPort);
+        }
+      }
+    } finally {
+      restoreConvoState(contextState, contextProvider);
+    }
     return map;
   }
-  
-  
 
   /**
    * Adds the required properties.
@@ -297,11 +329,9 @@ public class OfficeOnlineEditorService implements Startable {
       String url = explorerUri(schema, host, port, explorerLink(parent.getPath())).toString();
       map.put(BREADCRUMB_FOLDER_NAME, parent.getProperty("exo:title").getString());
       map.put(BREADCRUMB_FOLDER_URL, url);
-    }
-    catch (Exception e) {
+    } catch (Exception e) {
       LOG.error("Couldn't add breadcrump properties:", e);
     }
-  
 
   }
 
@@ -453,30 +483,91 @@ public class OfficeOnlineEditorService implements Startable {
    * @param fileId the file id
    * @return the editor config
    * @throws RepositoryException the repository exception
+   * @throws OfficeOnlineException the office online exception
    */
   public EditorConfig createEditorConfig(String userSchema,
                                          String userHost,
                                          int userPort,
                                          String userId,
                                          String workspace,
-                                         String fileId) throws RepositoryException {
-    Node document = nodeByUUID(workspace, fileId);
-    List<String> permissions = new ArrayList<>();
-
-    if (document != null) {
-      if (canEditDocument(document)) {
-        permissions.add(USER_CAN_WRITE);
-        permissions.add(USER_CAN_RENAME);
-      } else {
-        permissions.add(READ_ONLY);
+                                         String fileId) throws RepositoryException, OfficeOnlineException {
+    EditorConfig config = null;
+    // remember real context state and session provider to restore them at the end
+    ConversationState contextState = ConversationState.getCurrent();
+    SessionProvider contextProvider = sessionProviders.getSessionProvider(null);
+    try {
+      if (!setUserConvoState(userId)) {
+        LOG.error("Couldn't set user conversation state. UserId: {}", userId);
+        throw new OfficeOnlineException("Cannot set conversation state " + userId);
       }
-    }
+      
+      Node document = nodeByUUID(workspace, fileId);
+      List<String> permissions = new ArrayList<>();
 
-    EditorConfig config = new EditorConfig(userId, fileId, permissions);
-    String accessToken = idGenerator.generateStringID(config);
-    config.setAccessToken(accessToken);
-    configs.put(accessToken, config);
+      if (document != null) {
+        if (canEditDocument(document)) {
+          permissions.add(USER_CAN_WRITE);
+          permissions.add(USER_CAN_RENAME);
+        } else {
+          permissions.add(READ_ONLY);
+        }
+      }
+
+      config = new EditorConfig(userId, fileId, workspace, permissions);
+      String accessToken = idGenerator.generateStringID(config);
+      config.setAccessToken(accessToken);
+      configs.put(accessToken, config);
+    } finally {
+      restoreConvoState(contextState, contextProvider);
+    }
     return config;
+  }
+
+
+  public DocumentContent getContent(String userId, String fileId, String accessToken) throws OfficeOnlineException, RepositoryException {
+    EditorConfig config = configs.get(accessToken);
+    if(config != null) {
+      if(config.getUserId().equals(userId) && config.getFileId().equals(fileId)) {
+        ConversationState contextState = ConversationState.getCurrent();
+        SessionProvider contextProvider = sessionProviders.getSessionProvider(null);
+        try {
+          // We all the job under actual (requester) user here
+          if (!setUserConvoState(userId)) {
+            LOG.error("Couldn't set user conversation state. UserId: {}", userId);
+            throw new OfficeOnlineException("Cannot set conversation state " + userId);
+          }
+          // work in user session
+          Node node = nodeByUUID(fileId, config.getWorkspace());
+          if(node == null) {
+            throw new OfficeOnlineException("File not found. fileId: " + fileId);
+          }
+          Node content = nodeContent(node);
+
+          final String mimeType = content.getProperty("jcr:mimeType").getString();
+          // data stream will be closed when EoF will be reached
+          final InputStream data = new AutoCloseInputStream(content.getProperty("jcr:data").getStream());
+          return new DocumentContent() {
+            @Override
+            public String getType() {
+              return mimeType;
+            }
+
+            @Override
+            public InputStream getData() {
+              return data;
+            }
+          };
+        } finally {
+          restoreConvoState(contextState, contextProvider);
+        }
+        
+      }
+      else {
+        throw new OfficeOnlineException("Access token doesn't match user or file. UserId: " + userId + ", fileId: " + fileId + ", token: " + accessToken);
+      }
+    } else {
+      throw new OfficeOnlineException("Access token not found: " + accessToken);
+    }
   }
 
   /**
@@ -512,6 +603,17 @@ public class OfficeOnlineEditorService implements Startable {
     SessionProvider sp = sessionProviders.getSessionProvider(null);
     Session userSession = sp.getSession(workspace, jcrService.getCurrentRepository());
     return userSession.getNodeByUUID(uuid);
+  }
+
+  /**
+   * Node content.
+   *
+   * @param node the node
+   * @return the node
+   * @throws RepositoryException the repository exception
+   */
+  protected Node nodeContent(Node node) throws RepositoryException {
+    return node.getNode("jcr:content");
   }
 
   /**
@@ -554,11 +656,68 @@ public class OfficeOnlineEditorService implements Startable {
   }
 
   /**
+   * Sets ConversationState by userId.
+   *
+   * @param userId the userId
+   * @return true if successful, false when the user is not found
+   */
+  @SuppressWarnings("deprecation")
+  protected boolean setUserConvoState(String userId) {
+    Identity userIdentity = userIdentity(userId);
+    if (userIdentity != null) {
+      ConversationState state = new ConversationState(userIdentity);
+      // Keep subject as attribute in ConversationState.
+      state.setAttribute(ConversationState.SUBJECT, userIdentity.getSubject());
+      ConversationState.setCurrent(state);
+      SessionProvider userProvider = new SessionProvider(state);
+      sessionProviders.setSessionProvider(null, userProvider);
+      return true;
+    }
+    LOG.warn("User identity not found " + userId + " for setting conversation state");
+    return false;
+  }
+
+  /**
+   * Restores the conversation state.
+   * 
+   * @param contextState the contextState
+   * @param contextProvider the contextProvider
+   */
+  protected void restoreConvoState(ConversationState contextState, SessionProvider contextProvider) {
+    ConversationState.setCurrent(contextState);
+    sessionProviders.setSessionProvider(null, contextProvider);
+  }
+
+  /**
+   * Find or create user identity.
+   *
+   * @param userId the user id
+   * @return the identity can be null if not found and cannot be created via
+   *         current authenticator
+   */
+  protected Identity userIdentity(String userId) {
+    Identity userIdentity = identityRegistry.getIdentity(userId);
+    if (userIdentity == null) {
+      // We create user identity by authenticator, but not register it in the
+      // registry
+      try {
+        if (LOG.isDebugEnabled()) {
+          LOG.debug("User identity not registered, trying to create it for: " + userId);
+        }
+        userIdentity = authenticator.createIdentity(userId);
+      } catch (Exception e) {
+        LOG.warn("Failed to create user identity: " + userId, e);
+      }
+    }
+    return userIdentity;
+  }
+
+  /**
    * Sets the plugin.
    *
    * @param plugin the plugin
    */
-  public void setPlugin(ComponentPlugin plugin){
+  public void setPlugin(ComponentPlugin plugin) {
     Class<WOPIDiscoveryPlugin> pclass = WOPIDiscoveryPlugin.class;
     if (pclass.isAssignableFrom(plugin.getClass())) {
       discoveryPlugin = pclass.cast(plugin);

@@ -3,6 +3,7 @@ package org.exoplatform.officeonline;
 import java.util.ArrayList;
 import java.util.List;
 
+
 /**
  * EditorConfig represents single user-permissions-file combination.
  */
@@ -16,6 +17,9 @@ public class EditorConfig {
 
   /** The file id. */
   protected String       fileId;
+  
+  /** The workspace. */
+  protected String workspace;
 
   /** The permissions. */
   protected List<String> permissions = new ArrayList<>();
@@ -25,11 +29,13 @@ public class EditorConfig {
    *
    * @param userId the user id
    * @param fileId the file id
+   * @param workspace the workspace
    * @param permissions the permissions
    */
-  public EditorConfig(String userId, String fileId, List<String> permissions) {
+  public EditorConfig(String userId, String fileId, String workspace, List<String> permissions) {
     this.userId = userId;
     this.fileId = fileId;
+    this.workspace = workspace;
     this.permissions = permissions;
   }
 
@@ -42,15 +48,7 @@ public class EditorConfig {
     return userId;
   }
 
-  /**
-   * Sets the user id.
-   *
-   * @param userId the new user id
-   */
-  public void setUserId(String userId) {
-    this.userId = userId;
-  }
-
+ 
   /**
    * Gets the file id.
    *
@@ -58,15 +56,6 @@ public class EditorConfig {
    */
   public String getFileId() {
     return fileId;
-  }
-
-  /**
-   * Sets the file id.
-   *
-   * @param fileId the new file id
-   */
-  public void setFileId(String fileId) {
-    this.fileId = fileId;
   }
 
   /**
@@ -104,6 +93,14 @@ public class EditorConfig {
   public void setAccessToken(String accessToken) {
     this.accessToken = accessToken;
   }
-  
+
+  /**
+   * Gets the workspace.
+   *
+   * @return the workspace
+   */
+  public String getWorkspace() {
+    return workspace;
+  }
 
 }
