@@ -53,6 +53,7 @@ import org.exoplatform.container.PortalContainer;
 import org.exoplatform.container.component.ComponentPlugin;
 import org.exoplatform.ecm.webui.utils.PermissionUtil;
 import org.exoplatform.ecm.webui.utils.Utils;
+import org.exoplatform.officeonline.exception.WopiDiscoveryNotFoundException;
 import org.exoplatform.services.cms.documents.DocumentService;
 import org.exoplatform.services.idgenerator.IDGeneratorService;
 import org.exoplatform.services.jcr.RepositoryService;
@@ -121,7 +122,7 @@ public class OfficeOnlineEditorService implements Startable {
   @Override
   public void start() {
     if (discoveryPlugin == null) {
-      throw new RuntimeException("WopiDiscoveryPlugin is not configured");
+      throw new WopiDiscoveryNotFoundException("WopiDiscoveryPlugin is not configured");
     }
     discoveryPlugin.start();
 
@@ -233,6 +234,7 @@ public class OfficeOnlineEditorService implements Startable {
     map.put(READ_ONLY, !hasWritePermission);
     map.put(USER_CAN_RENAME, hasWritePermission);
     map.put(USER_CAN_WRITE, hasWritePermission);
+    // TODO: Check permissions to parent folder
     map.put(USER_CAN_NOT_WRITE_RELATIVE, !hasWritePermission);
   }
 
@@ -556,13 +558,13 @@ public class OfficeOnlineEditorService implements Startable {
    *
    * @param plugin the plugin
    */
-  public void setPlugin(ComponentPlugin plugin) {
+  public void setPlugin(ComponentPlugin plugin){
     Class<WOPIDiscoveryPlugin> pclass = WOPIDiscoveryPlugin.class;
     if (pclass.isAssignableFrom(plugin.getClass())) {
       discoveryPlugin = pclass.cast(plugin);
       LOG.info("Set WopiDiscoveryPlugin instance of " + plugin.getClass().getName());
     } else {
-      throw new RuntimeException("WopiDiscoveryPlugin is not an instance of " + pclass.getName());
+      throw new WopiDiscoveryNotFoundException("WopiDiscoveryPlugin is not an instance of " + pclass.getName());
     }
   }
 

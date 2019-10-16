@@ -1,4 +1,4 @@
-package org.exoplatform.officeonline;
+package org.exoplatform.officeonline.exception;
 
 /**
  * The Class OfficeOnlineException.
