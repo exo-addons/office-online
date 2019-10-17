@@ -38,24 +38,66 @@ import org.exoplatform.services.log.ExoLogger;
 import org.exoplatform.services.log.Log;
 import org.exoplatform.services.rest.resource.ResourceContainer;
 
-// TODO: Auto-generated Javadoc
 /**
  * The Class WOPIService.
  */
-@Path("/officeonline")
+@Path("/officeonline/wopi")
 public class WOPIService implements ResourceContainer {
 
-  /** The Constant LOG. */
-  protected static final Log          LOG          = ExoLogger.getLogger(WOPIService.class);
+  protected enum Operation {
+    GET_LOCK, GET_SHARE_URL, LOCK, PUT, PUT_RELATIVE, REFRESH_LOCK, RENAME_FILE, UNLOCK
+  }
+
+  /** The Constant FILE_CONVERSION. */
+  protected static final String                         FILE_CONVERSION   = "X-WOPI-FileConversion";
+
+  /** The Constant ITEM_VERSION. */
+  protected static final String                         ITEM_VERSION      = "X-WOPI-ItemVersion";
+
+  /** The Constant LOCK. */
+  protected static final String                         LOCK              = "X-WOPI-Lock";
+
+  /** The Constant MAX_EXPECTED_SIZE. */
+  protected static final String                         MAX_EXPECTED_SIZE = "X-WOPI-MaxExpectedSize";
+
+  /** The Constant OLD_LOCK. */
+  protected static final String                         OLD_LOCK          = "X-WOPI-OldLock";
+
+  /** The Constant OVERRIDE. */
+  protected static final String                         OVERRIDE          = "X-WOPI-Override";
+
+  /** The Constant PROOF. */
+  protected static final String                         PROOF             = "X-WOPI-Proof";
+
+  /** The Constant PROOF_OLD. */
+  protected static final String                         PROOF_OLD         = "X-WOPI-ProofOld";
+
+  /** The Constant RELATIVE_TARGET. */
+  protected static final String                         RELATIVE_TARGET   = "X-WOPI-RelativeTarget";
+
+  /** The Constant REQUESTED_NAME. */
+  protected static final String                         REQUESTED_NAME    = "X-WOPI-RequestedName";
+
+  /** The Constant SUGGESTED_TARGET. */
+  protected static final String                         SUGGESTED_TARGET  = "X-WOPI-SuggestedTarget";
+
+  /** The Constant URL_TYPE. */
+  protected static final String                         URL_TYPE          = "X-WOPI-UrlType";
+
+  /** The Constant TIMESTAMP. */
+  protected static final String                         TIMESTAMP         = "X-WOPI-TimeStamp";
 
   /** The Constant ACCESS_TOKEN. */
-  protected static final String       ACCESS_TOKEN = "access_token";
+  protected static final String                         ACCESS_TOKEN      = "access_token";
 
   /** The Constant API_VERSION. */
-  protected static final String       API_VERSION  = "1.1";
+  protected static final String                         API_VERSION       = "1.1";
+
+  /** The Constant LOG. */
+  protected static final Log                            LOG               = ExoLogger.getLogger(WOPIService.class);
 
   /** The editor service. */
-  protected OfficeOnlineEditorService editorService;
+  protected final OfficeOnlineEditorService.WOPIService wopiSPI;
 
   /**
    * Instantiates a new WOPI service.
@@ -63,7 +105,7 @@ public class WOPIService implements ResourceContainer {
    * @param editorService the editor service
    */
   public WOPIService(OfficeOnlineEditorService editorService) {
-    this.editorService = editorService;
+    this.wopiSPI = editorService.getWOPIService();
   }
 
   /**
@@ -76,11 +118,11 @@ public class WOPIService implements ResourceContainer {
    * @return the response
    */
   @POST
-  @Path("/wopi/files/{fileId}")
+  @Path("/files/{fileId}")
   @Produces(MediaType.APPLICATION_JSON)
   public Response files(@Context UriInfo uriInfo,
                         @Context HttpServletRequest request,
-                        @HeaderParam(Headers.OVERRIDE) Operation operation,
+                        @HeaderParam(OVERRIDE) Operation operation,
                         @PathParam("fileId") String fileId) {
 
     verifyProofKey(request);
@@ -112,26 +154,11 @@ public class WOPIService implements ResourceContainer {
    * @return the response
    */
   @GET
-  @Path("/wopi/files/{fileId}")
+  @Path("/files/{fileId}")
   @Produces(MediaType.APPLICATION_JSON)
   public Response checkFileInfo(@Context UriInfo uriInfo, @Context HttpServletRequest request) {
     verifyProofKey(request);
     // TODO: return file info
-    return null;
-  }
-
-  /**
-   * Content.
-   *
-   * @param uriInfo the uri info
-   * @param request the request
-   * @return the response
-   */
-  @GET
-  @Path("/editor/content/{fileId}/{accessToken}")
-  @Produces(MediaType.APPLICATION_JSON)
-  public Response content(@Context UriInfo uriInfo, @Context HttpServletRequest request) {
-    
     return null;
   }
 
@@ -211,13 +238,13 @@ public class WOPIService implements ResourceContainer {
    * @param request the request
    */
   protected void verifyProofKey(HttpServletRequest request) {
-    String proofKeyHeader = request.getHeader(Headers.PROOF);
-    String oldProofKeyHeader = request.getHeader(Headers.PROOF_OLD);
-    String timestampHeader = request.getHeader(Headers.TIMESTAMP);
+    String proofKeyHeader = request.getHeader(PROOF);
+    String oldProofKeyHeader = request.getHeader(PROOF_OLD);
+    String timestampHeader = request.getHeader(TIMESTAMP);
     String accessToken = request.getParameter(ACCESS_TOKEN);
     // TODO: get url
     String url = null;
-    if (!editorService.verifyProofKey(proofKeyHeader, oldProofKeyHeader, url, accessToken, timestampHeader)) {
+    if (!wopiSPI.verifyProofKey(proofKeyHeader, oldProofKeyHeader, url, accessToken, timestampHeader)) {
       throw new RuntimeException("Proof key verification failed");
     }
   }

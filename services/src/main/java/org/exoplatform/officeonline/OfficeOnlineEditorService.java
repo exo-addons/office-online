@@ -52,6 +52,7 @@ import org.apache.commons.lang.StringUtils;
 import org.picocontainer.Startable;
 
 import org.exoplatform.container.PortalContainer;
+import org.exoplatform.container.component.BaseComponentPlugin;
 import org.exoplatform.container.component.ComponentPlugin;
 import org.exoplatform.ecm.webui.utils.PermissionUtil;
 import org.exoplatform.ecm.webui.utils.Utils;
@@ -104,6 +105,9 @@ public class OfficeOnlineEditorService implements Startable {
 
   /** The discovery plugin. */
   protected WOPIDiscoveryPlugin          discoveryPlugin;
+
+  /** The WOPI service. */
+  protected WOPIService                  wopiService;
 
   /** The configs. */
   protected Map<String, EditorConfig>    configs = new ConcurrentHashMap<String, EditorConfig>();
@@ -158,181 +162,6 @@ public class OfficeOnlineEditorService implements Startable {
     LOG.debug("Excel view URL: " + wordView);
     LOG.debug("PowerPoint edit URL: " + powerPointEdit);
     LOG.debug("PowerPoint view URL: " + powerPointView);
-  }
-
-  /**
-   * Check file info.
-   *
-   * @param userSchema the user schema
-   * @param userHost the user host
-   * @param userPort the user port
-   * @param workspace the workspace
-   * @param fileId the fileId
-   * @param userId the userId
-   * @param accessToken the access token
-   * @return the map
-   * @throws RepositoryException the repository exception
-   */
-  public Map<String, Serializable> checkFileInfo(String userSchema,
-                                                 String userHost,
-                                                 int userPort,
-                                                 String fileId,
-                                                 String userId,
-                                                 String accessToken) throws RepositoryException, OfficeOnlineException {
-    Map<String, Serializable> map = new HashMap<>();
-    // remember real context state and session provider to restore them at the end
-    ConversationState contextState = ConversationState.getCurrent();
-    SessionProvider contextProvider = sessionProviders.getSessionProvider(null);
-    try {
-      if (!setUserConvoState(userId)) {
-        LOG.error("Couldn't set user conversation state. UserId: {}", userId);
-        throw new OfficeOnlineException("Cannot set conversation state " + userId);
-      }
-      EditorConfig config = configs.get(accessToken);
-      if(config != null) {
-        if(config.getUserId().equals(userId) && config.getFileId().equals(fileId)) {
-          Node node = nodeByUUID(fileId, config.getWorkspace());
-          addRequiredProperties(map, node);
-          addHostCapabilitiesProperties(map);
-          addUserMetadataProperties(map);
-          addUserPermissionsProperties(map, node);
-          addFileURLProperties(map, node, accessToken, userSchema, userHost, userPort);
-          addBreadcrumbProperties(map, node, userSchema, userHost, userPort);
-        }
-      }
-    } finally {
-      restoreConvoState(contextState, contextProvider);
-    }
-    return map;
-  }
-
-  /**
-   * Adds the required properties.
-   *
-   * @param map the map
-   * @param node the node
-   * @throws UnsupportedRepositoryOperationException the unsupported repository operation exception
-   * @throws RepositoryException the repository exception
-   */
-  protected void addRequiredProperties(Map<String, Serializable> map, Node node) throws UnsupportedRepositoryOperationException,
-                                                                                 RepositoryException {
-    map.put(BASE_FILE_NAME, node.getProperty("exo:title").getString());
-    map.put(OWNER_ID, node.getProperty("exo:owner").getString());
-    map.put(SIZE, getSize(node));
-    map.put(USER_ID, WCMCoreUtils.getRemoteUser());
-    String version = node.isNodeType("mix:versionable") ? node.getBaseVersion().getName() : "1";
-    map.put(VERSION, version);
-  }
-
-  /**
-   * Adds the host capabilities properties.
-   *
-   * @param map the map
-   */
-  protected void addHostCapabilitiesProperties(Map<String, Serializable> map) {
-    map.put(SUPPORTS_EXTENDED_LOCK_LENGTH, true);
-    map.put(SUPPORTS_GET_LOCK, true);
-    map.put(SUPPORTS_LOCKS, true);
-    map.put(SUPPORTS_RENAME, true);
-    map.put(SUPPORTS_UPDATE, true);
-    map.put(SUPPORTED_SHARE_URL_TYPES, (Serializable) Arrays.asList(SHARE_URL_READ_ONLY, SHARE_URL_READ_WRITE));
-  }
-
-  /**
-   * Adds the user metadata properties.
-   *
-   * @param map the map
-   */
-  protected void addUserMetadataProperties(Map<String, Serializable> map) {
-    String user = WCMCoreUtils.getRemoteUser();
-    User exoUser = getUser(user);
-    if (user != null) {
-      user = exoUser.getDisplayName();
-    }
-    map.put(IS_ANONYMOUS_USER, false);
-    map.put(LICENSE_CHECK_FOR_EDIT_IS_ENABLED, true);
-    map.put(USER_FRIENDLY_NAME, user);
-  }
-
-  /**
-   * Adds the user permissions properties.
-   *
-   * @param map the map
-   * @param node the node
-   * @throws RepositoryException the repository exception
-   */
-  protected void addUserPermissionsProperties(Map<String, Serializable> map, Node node) throws RepositoryException {
-    boolean hasWritePermission = canEditDocument(node);
-    map.put(READ_ONLY, !hasWritePermission);
-    map.put(USER_CAN_RENAME, hasWritePermission);
-    map.put(USER_CAN_WRITE, hasWritePermission);
-    // TODO: Check permissions to parent folder
-    map.put(USER_CAN_NOT_WRITE_RELATIVE, !hasWritePermission);
-  }
-
-  /**
-   * Adds the file URL properties.
-   *
-   * @param map the map
-   * @param node the node
-   * @param accessToken the access token
-   * @param schema the schema
-   * @param host the host
-   * @param port the port
-   * @throws RepositoryException the repository exception
-   */
-  protected void addFileURLProperties(Map<String, Serializable> map,
-                                      Node node,
-                                      String accessToken,
-                                      String schema,
-                                      String host,
-                                      int port) throws RepositoryException {
-    String explorerLink = explorerLink(node.getPath());
-    URI explorerUri = explorerUri(schema, host, port, explorerLink);
-    if (explorerUri != null) {
-      map.put(CLOSE_URL, explorerUri.toString());
-      map.put(FILE_VERSION_URL, explorerUri.toString());
-    }
-    StringBuilder platformUrl = platformUrl(schema, host, port);
-    String platformRestURL = new StringBuilder(platformUrl).append('/')
-                                                           .append(PortalContainer.getCurrentRestContextName())
-                                                           .toString();
-
-    // TODO: implement REST endpoint
-    String downloadURL = new StringBuilder(platformRestURL).append("/officeonline/editor/content/")
-                                                           .append(WCMCoreUtils.getRemoteUser())
-                                                           .append("/")
-                                                           .append(accessToken)
-                                                           .toString();
-    map.put(DOWNLOAD_URL, downloadURL);
-    // TODO: set url to the portlet
-    map.put(HOST_EDIT_URL, null);
-    map.put(HOST_VIEW_URL, null);
-
-  }
-
-  /**
-   * Adds the breadcrumb properties.
-   *
-   * @param map the map
-   * @param node the node
-   * @param schema the schema
-   * @param host the host
-   * @param port the port
-   */
-  protected void addBreadcrumbProperties(Map<String, Serializable> map, Node node, String schema, String host, int port) {
-    // TODO: replace by real values
-    map.put(BREADCRUMB_BRAND_NAME, "ExoPlatform");
-    map.put(BREADCRUMB_BRAND_URL, "exoplatform.com");
-    try {
-      Node parent = node.getParent();
-      String url = explorerUri(schema, host, port, explorerLink(parent.getPath())).toString();
-      map.put(BREADCRUMB_FOLDER_NAME, parent.getProperty("exo:title").getString());
-      map.put(BREADCRUMB_FOLDER_URL, url);
-    } catch (Exception e) {
-      LOG.error("Couldn't add breadcrump properties:", e);
-    }
-
   }
 
   /**
@@ -437,42 +266,6 @@ public class OfficeOnlineEditorService implements Startable {
   }
 
   /**
-   * Verify proof key.
-   *
-   * @param proofKeyHeader the proof key header
-   * @param oldProofKeyHeader the old proof key header
-   * @param url the url
-   * @param accessToken the access token
-   * @param timestampHeader the timestamp header
-   * @return true, if successful
-   */
-  public boolean verifyProofKey(String proofKeyHeader,
-                                String oldProofKeyHeader,
-                                String url,
-                                String accessToken,
-                                String timestampHeader) {
-    if (StringUtils.isBlank(proofKeyHeader)) {
-      return true; // assume valid
-    }
-
-    long timestamp = Long.parseLong(timestampHeader);
-    if (!ProofKeyHelper.verifyTimestamp(timestamp)) {
-      return false;
-    }
-
-    byte[] expectedProofBytes = ProofKeyHelper.getExpectedProofBytes(url, accessToken, timestamp);
-    // follow flow from https://wopi.readthedocs.io/en/latest/scenarios/proofkeys.html#verifying-the-proof-keys
-    boolean res = ProofKeyHelper.verifyProofKey(discoveryPlugin.getProofKey(), proofKeyHeader, expectedProofBytes);
-    if (!res && StringUtils.isNotBlank(oldProofKeyHeader)) {
-      res = ProofKeyHelper.verifyProofKey(discoveryPlugin.getProofKey(), oldProofKeyHeader, expectedProofBytes);
-      if (!res) {
-        res = ProofKeyHelper.verifyProofKey(discoveryPlugin.getOldProofKey(), proofKeyHeader, expectedProofBytes);
-      }
-    }
-    return res;
-  }
-
-  /**
    * Creates the editor config.
    *
    * @param userSchema the user schema
@@ -500,7 +293,7 @@ public class OfficeOnlineEditorService implements Startable {
         LOG.error("Couldn't set user conversation state. UserId: {}", userId);
         throw new OfficeOnlineException("Cannot set conversation state " + userId);
       }
-      
+
       Node document = nodeByUUID(workspace, fileId);
       List<String> permissions = new ArrayList<>();
 
@@ -523,11 +316,11 @@ public class OfficeOnlineEditorService implements Startable {
     return config;
   }
 
-
-  public DocumentContent getContent(String userId, String fileId, String accessToken) throws OfficeOnlineException, RepositoryException {
+  public DocumentContent getContent(String userId, String fileId, String accessToken) throws OfficeOnlineException,
+                                                                                      RepositoryException {
     EditorConfig config = configs.get(accessToken);
-    if(config != null) {
-      if(config.getUserId().equals(userId) && config.getFileId().equals(fileId)) {
+    if (config != null) {
+      if (config.getUserId().equals(userId) && config.getFileId().equals(fileId)) {
         ConversationState contextState = ConversationState.getCurrent();
         SessionProvider contextProvider = sessionProviders.getSessionProvider(null);
         try {
@@ -538,7 +331,7 @@ public class OfficeOnlineEditorService implements Startable {
           }
           // work in user session
           Node node = nodeByUUID(fileId, config.getWorkspace());
-          if(node == null) {
+          if (node == null) {
             throw new OfficeOnlineException("File not found. fileId: " + fileId);
           }
           Node content = nodeContent(node);
@@ -560,10 +353,10 @@ public class OfficeOnlineEditorService implements Startable {
         } finally {
           restoreConvoState(contextState, contextProvider);
         }
-        
-      }
-      else {
-        throw new OfficeOnlineException("Access token doesn't match user or file. UserId: " + userId + ", fileId: " + fileId + ", token: " + accessToken);
+
+      } else {
+        throw new OfficeOnlineException("Access token doesn't match user or file. UserId: " + userId + ", fileId: " + fileId
+            + ", token: " + accessToken);
       }
     } else {
       throw new OfficeOnlineException("Access token not found: " + accessToken);
@@ -717,7 +510,7 @@ public class OfficeOnlineEditorService implements Startable {
    *
    * @param plugin the plugin
    */
-  public void setPlugin(ComponentPlugin plugin) {
+  public void setWOPIDiscoveryPlugin(ComponentPlugin plugin) {
     Class<WOPIDiscoveryPlugin> pclass = WOPIDiscoveryPlugin.class;
     if (pclass.isAssignableFrom(plugin.getClass())) {
       discoveryPlugin = pclass.cast(plugin);
@@ -725,6 +518,242 @@ public class OfficeOnlineEditorService implements Startable {
     } else {
       throw new WopiDiscoveryNotFoundException("WopiDiscoveryPlugin is not an instance of " + pclass.getName());
     }
+  }
+
+  /**
+   * Sets the plugin.
+   *
+   * @param plugin the plugin
+   * @return 
+   */
+  public void setWOPIServicePlugin(ComponentPlugin plugin) {
+    Class<WOPIService> pclass = WOPIService.class;
+    if (pclass.isAssignableFrom(plugin.getClass())) {
+      wopiService = pclass.cast(plugin);
+      LOG.info("Set WOPIService instance of " + plugin.getClass().getName());
+    } else {
+      throw new WopiDiscoveryNotFoundException("WopiDiscoveryPlugin is not an instance of " + pclass.getName());
+    }
+  }
+
+  public WOPIService getWOPIService() {
+    return wopiService;
+  }
+
+  public class WOPIService extends BaseComponentPlugin {
+    // The implementation of WOPI operations should be moved here
+
+    /**
+     * Check file info.
+     *
+     * @param userSchema the user schema
+     * @param userHost the user host
+     * @param userPort the user port
+     * @param workspace the workspace
+     * @param fileId the fileId
+     * @param userId the userId
+     * @param accessToken the access token
+     * @return the map
+     * @throws RepositoryException the repository exception
+     */
+    public Map<String, Serializable> checkFileInfo(String userSchema,
+                                                   String userHost,
+                                                   int userPort,
+                                                   String fileId,
+                                                   String userId,
+                                                   String accessToken) throws RepositoryException, OfficeOnlineException {
+      Map<String, Serializable> map = new HashMap<>();
+      // remember real context state and session provider to restore them at the end
+      ConversationState contextState = ConversationState.getCurrent();
+      SessionProvider contextProvider = sessionProviders.getSessionProvider(null);
+      try {
+        if (!setUserConvoState(userId)) {
+          LOG.error("Couldn't set user conversation state. UserId: {}", userId);
+          throw new OfficeOnlineException("Cannot set conversation state " + userId);
+        }
+        EditorConfig config = configs.get(accessToken);
+        if (config != null) {
+          if (config.getUserId().equals(userId) && config.getFileId().equals(fileId)) {
+            Node node = nodeByUUID(fileId, config.getWorkspace());
+            addRequiredProperties(map, node);
+            addHostCapabilitiesProperties(map);
+            addUserMetadataProperties(map);
+            addUserPermissionsProperties(map, node);
+            addFileURLProperties(map, node, accessToken, userSchema, userHost, userPort);
+            addBreadcrumbProperties(map, node, userSchema, userHost, userPort);
+          }
+        }
+      } finally {
+        restoreConvoState(contextState, contextProvider);
+      }
+      return map;
+    }
+
+    /**
+     * Adds the required properties.
+     *
+     * @param map the map
+     * @param node the node
+     * @throws UnsupportedRepositoryOperationException the unsupported repository operation exception
+     * @throws RepositoryException the repository exception
+     */
+    protected void addRequiredProperties(Map<String, Serializable> map, Node node) throws UnsupportedRepositoryOperationException,
+                                                                                   RepositoryException {
+      map.put(BASE_FILE_NAME, node.getProperty("exo:title").getString());
+      map.put(OWNER_ID, node.getProperty("exo:owner").getString());
+      map.put(SIZE, getSize(node));
+      map.put(USER_ID, WCMCoreUtils.getRemoteUser());
+      String version = node.isNodeType("mix:versionable") ? node.getBaseVersion().getName() : "1";
+      map.put(VERSION, version);
+    }
+
+    /**
+     * Adds the host capabilities properties.
+     *
+     * @param map the map
+     */
+    protected void addHostCapabilitiesProperties(Map<String, Serializable> map) {
+      map.put(SUPPORTS_EXTENDED_LOCK_LENGTH, true);
+      map.put(SUPPORTS_GET_LOCK, true);
+      map.put(SUPPORTS_LOCKS, true);
+      map.put(SUPPORTS_RENAME, true);
+      map.put(SUPPORTS_UPDATE, true);
+      map.put(SUPPORTED_SHARE_URL_TYPES, (Serializable) Arrays.asList(SHARE_URL_READ_ONLY, SHARE_URL_READ_WRITE));
+    }
+
+    /**
+     * Adds the user metadata properties.
+     *
+     * @param map the map
+     */
+    protected void addUserMetadataProperties(Map<String, Serializable> map) {
+      String user = WCMCoreUtils.getRemoteUser();
+      User exoUser = getUser(user);
+      if (user != null) {
+        user = exoUser.getDisplayName();
+      }
+      map.put(IS_ANONYMOUS_USER, false);
+      map.put(LICENSE_CHECK_FOR_EDIT_IS_ENABLED, true);
+      map.put(USER_FRIENDLY_NAME, user);
+    }
+
+    /**
+     * Adds the user permissions properties.
+     *
+     * @param map the map
+     * @param node the node
+     * @throws RepositoryException the repository exception
+     */
+    protected void addUserPermissionsProperties(Map<String, Serializable> map, Node node) throws RepositoryException {
+      boolean hasWritePermission = canEditDocument(node);
+      map.put(READ_ONLY, !hasWritePermission);
+      map.put(USER_CAN_RENAME, hasWritePermission);
+      map.put(USER_CAN_WRITE, hasWritePermission);
+      // TODO: Check permissions to parent folder
+      map.put(USER_CAN_NOT_WRITE_RELATIVE, !hasWritePermission);
+    }
+
+    /**
+     * Adds the file URL properties.
+     *
+     * @param map the map
+     * @param node the node
+     * @param accessToken the access token
+     * @param schema the schema
+     * @param host the host
+     * @param port the port
+     * @throws RepositoryException the repository exception
+     */
+    protected void addFileURLProperties(Map<String, Serializable> map,
+                                        Node node,
+                                        String accessToken,
+                                        String schema,
+                                        String host,
+                                        int port) throws RepositoryException {
+      String explorerLink = explorerLink(node.getPath());
+      URI explorerUri = explorerUri(schema, host, port, explorerLink);
+      if (explorerUri != null) {
+        map.put(CLOSE_URL, explorerUri.toString());
+        map.put(FILE_VERSION_URL, explorerUri.toString());
+      }
+      StringBuilder platformUrl = platformUrl(schema, host, port);
+      String platformRestURL = new StringBuilder(platformUrl).append('/')
+                                                             .append(PortalContainer.getCurrentRestContextName())
+                                                             .toString();
+
+      // TODO: implement REST endpoint
+      String downloadURL = new StringBuilder(platformRestURL).append("/officeonline/editor/content/")
+                                                             .append(WCMCoreUtils.getRemoteUser())
+                                                             .append("/")
+                                                             .append(accessToken)
+                                                             .toString();
+      map.put(DOWNLOAD_URL, downloadURL);
+      // TODO: set url to the portlet
+      map.put(HOST_EDIT_URL, null);
+      map.put(HOST_VIEW_URL, null);
+
+    }
+
+    /**
+     * Adds the breadcrumb properties.
+     *
+     * @param map the map
+     * @param node the node
+     * @param schema the schema
+     * @param host the host
+     * @param port the port
+     */
+    protected void addBreadcrumbProperties(Map<String, Serializable> map, Node node, String schema, String host, int port) {
+      // TODO: replace by real values
+      map.put(BREADCRUMB_BRAND_NAME, "ExoPlatform");
+      map.put(BREADCRUMB_BRAND_URL, "exoplatform.com");
+      try {
+        Node parent = node.getParent();
+        String url = explorerUri(schema, host, port, explorerLink(parent.getPath())).toString();
+        map.put(BREADCRUMB_FOLDER_NAME, parent.getProperty("exo:title").getString());
+        map.put(BREADCRUMB_FOLDER_URL, url);
+      } catch (Exception e) {
+        LOG.error("Couldn't add breadcrump properties:", e);
+      }
+
+    }
+
+    /**
+     * Verify proof key.
+     *
+     * @param proofKeyHeader the proof key header
+     * @param oldProofKeyHeader the old proof key header
+     * @param url the url
+     * @param accessToken the access token
+     * @param timestampHeader the timestamp header
+     * @return true, if successful
+     */
+    public boolean verifyProofKey(String proofKeyHeader,
+                                  String oldProofKeyHeader,
+                                  String url,
+                                  String accessToken,
+                                  String timestampHeader) {
+      if (StringUtils.isBlank(proofKeyHeader)) {
+        return true; // assume valid
+      }
+
+      long timestamp = Long.parseLong(timestampHeader);
+      if (!ProofKeyHelper.verifyTimestamp(timestamp)) {
+        return false;
+      }
+
+      byte[] expectedProofBytes = ProofKeyHelper.getExpectedProofBytes(url, accessToken, timestamp);
+      // follow flow from https://wopi.readthedocs.io/en/latest/scenarios/proofkeys.html#verifying-the-proof-keys
+      boolean res = ProofKeyHelper.verifyProofKey(discoveryPlugin.getProofKey(), proofKeyHeader, expectedProofBytes);
+      if (!res && StringUtils.isNotBlank(oldProofKeyHeader)) {
+        res = ProofKeyHelper.verifyProofKey(discoveryPlugin.getProofKey(), oldProofKeyHeader, expectedProofBytes);
+        if (!res) {
+          res = ProofKeyHelper.verifyProofKey(discoveryPlugin.getOldProofKey(), proofKeyHeader, expectedProofBytes);
+        }
+      }
+      return res;
+    }
+
   }
 
 }
