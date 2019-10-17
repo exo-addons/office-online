@@ -195,5 +195,6 @@ public class WOPIDiscoveryPlugin extends BaseComponentPlugin {
     });
     extensionActionURLs = actionURLs;
   }
+ 
 
 }
