@@ -74,6 +74,7 @@ import org.exoplatform.services.security.IdentityRegistry;
 import org.exoplatform.services.wcm.core.NodetypeConstant;
 import org.exoplatform.services.wcm.utils.WCMCoreUtils;
 
+// TODO: Auto-generated Javadoc
 /**
  * The Class OfficeOnlineEditorServiceImpl.
  */
@@ -120,6 +121,8 @@ public class OfficeOnlineEditorService implements Startable {
    * @param jcrService the jcr service
    * @param organization the organization
    * @param documentService the document service
+   * @param authenticator the authenticator
+   * @param identityRegistry the identity registry
    */
   public OfficeOnlineEditorService(SessionProviderService sessionProviders,
                                    IDGeneratorService idGenerator,
@@ -316,8 +319,16 @@ public class OfficeOnlineEditorService implements Startable {
     return config;
   }
 
-  public DocumentContent getContent(String userId, String fileId, String accessToken) throws OfficeOnlineException,
-                                                                                      RepositoryException {
+  /**
+   * Gets the content.
+   *
+   * @param userId the user id
+   * @param fileId the file id
+   * @param accessToken the access token
+   * @return the content
+   * @throws OfficeOnlineException the office online exception
+   */
+  public DocumentContent getContent(String userId, String fileId, String accessToken) throws OfficeOnlineException {
     EditorConfig config = configs.get(accessToken);
     if (config != null) {
       if (config.getUserId().equals(userId) && config.getFileId().equals(fileId)) {
@@ -350,10 +361,12 @@ public class OfficeOnlineEditorService implements Startable {
               return data;
             }
           };
+        } catch (RepositoryException e) {
+          LOG.error("Cannot get content of node. FileId: " + fileId, e.getMessage());
+          throw new OfficeOnlineException("Cannot get file content");
         } finally {
           restoreConvoState(contextState, contextProvider);
         }
-
       } else {
         throw new OfficeOnlineException("Access token doesn't match user or file. UserId: " + userId + ", fileId: " + fileId
             + ", token: " + accessToken);
@@ -524,7 +537,6 @@ public class OfficeOnlineEditorService implements Startable {
    * Sets the plugin.
    *
    * @param plugin the plugin
-   * @return 
    */
   public void setWOPIServicePlugin(ComponentPlugin plugin) {
     Class<WOPIService> pclass = WOPIService.class;
@@ -536,10 +548,18 @@ public class OfficeOnlineEditorService implements Startable {
     }
   }
 
+  /**
+   * Gets the WOPI service.
+   *
+   * @return the WOPI service
+   */
   public WOPIService getWOPIService() {
     return wopiService;
   }
 
+  /**
+   * The Class WOPIService.
+   */
   public class WOPIService extends BaseComponentPlugin {
     // The implementation of WOPI operations should be moved here
 
@@ -549,12 +569,12 @@ public class OfficeOnlineEditorService implements Startable {
      * @param userSchema the user schema
      * @param userHost the user host
      * @param userPort the user port
-     * @param workspace the workspace
      * @param fileId the fileId
      * @param userId the userId
      * @param accessToken the access token
      * @return the map
      * @throws RepositoryException the repository exception
+     * @throws OfficeOnlineException the office online exception
      */
     public Map<String, Serializable> checkFileInfo(String userSchema,
                                                    String userHost,
@@ -681,10 +701,11 @@ public class OfficeOnlineEditorService implements Startable {
                                                              .append(PortalContainer.getCurrentRestContextName())
                                                              .toString();
 
-      // TODO: implement REST endpoint
       String downloadURL = new StringBuilder(platformRestURL).append("/officeonline/editor/content/")
-                                                             .append(WCMCoreUtils.getRemoteUser())
+                                                             .append(node.getUUID())
                                                              .append("/")
+                                                             .append(WCMCoreUtils.getRemoteUser())
+                                                             .append("?access_token=")
                                                              .append(accessToken)
                                                              .toString();
       map.put(DOWNLOAD_URL, downloadURL);

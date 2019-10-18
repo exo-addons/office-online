@@ -97,7 +97,7 @@ public class WOPIService implements ResourceContainer {
   protected static final Log                            LOG               = ExoLogger.getLogger(WOPIService.class);
 
   /** The editor service. */
-  protected final OfficeOnlineEditorService.WOPIService wopiSPI;
+  protected final OfficeOnlineEditorService.WOPIService wopiService;
 
   /**
    * Instantiates a new WOPI service.
@@ -105,7 +105,7 @@ public class WOPIService implements ResourceContainer {
    * @param editorService the editor service
    */
   public WOPIService(OfficeOnlineEditorService editorService) {
-    this.wopiSPI = editorService.getWOPIService();
+    this.wopiService = editorService.getWOPIService();
   }
 
   /**
@@ -244,7 +244,7 @@ public class WOPIService implements ResourceContainer {
     String accessToken = request.getParameter(ACCESS_TOKEN);
     // TODO: get url
     String url = null;
-    if (!wopiSPI.verifyProofKey(proofKeyHeader, oldProofKeyHeader, url, accessToken, timestampHeader)) {
+    if (!wopiService.verifyProofKey(proofKeyHeader, oldProofKeyHeader, url, accessToken, timestampHeader)) {
       throw new RuntimeException("Proof key verification failed");
     }
   }
