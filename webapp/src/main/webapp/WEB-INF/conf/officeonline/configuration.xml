@@ -24,13 +24,30 @@
   xmlns="http://www.exoplatform.org/xml/ns/kernel_1_2.xsd">
 
   <component>
-    <key>org.exoplatform.officeonline.OfficeOnlineEditorService</key>
-    <type>org.exoplatform.officeonline.OfficeOnlineEditorService</type>
+    <key>org.exoplatform.officeonline.rest.WOPIResource</key>
+    <type>org.exoplatform.officeonline.rest.WOPIResource</type>
   </component>
+
+  <component>
+    <key>org.exoplatform.officeonline.rest.EditorResource</key>
+    <type>org.exoplatform.officeonline.rest.EditorResource</type>
+  </component>
+
+
+  <component>
+    <key>org.exoplatform.officeonline.WOPIService</key>
+    <type>org.exoplatform.officeonline.WOPIService</type>
+  </component>
+  <component>
+    <key>org.exoplatform.officeonline.EditorService</key>
+    <type>org.exoplatform.officeonline.EditorService</type>
+  </component>
+
+
   
   <!-- WOPIDiscoveryPlugin -->
   <external-component-plugins>
-    <target-component>org.exoplatform.officeonline.OfficeOnlineEditorService</target-component>
+    <target-component>org.exoplatform.officeonline.WOPIService</target-component>
     <component-plugin>
       <name>set.wopidiscovery</name>
       <set-method>setWOPIDiscoveryPlugin</set-method>
@@ -42,18 +59,6 @@
           <value>${officeonline.discrovery.url:https://ffc-onenote.officeapps.live.com/hosting/discovery}</value>
         </value-param>
       </init-params>
-    </component-plugin>
-  </external-component-plugins>
-  
-  
-  <!-- WOPIServicePlugin -->
-  <external-component-plugins>
-    <target-component>org.exoplatform.officeonline.OfficeOnlineEditorService</target-component>
-    <component-plugin>
-      <name>set.wopiservice</name>
-      <set-method>setWOPIServicePlugin</set-method>
-      <type>org.exoplatform.officeonline.OfficeOnlineEditorService$WOPIService</type>
-      <description>WOPI Service is a SPI for Office Online Editor</description>
     </component-plugin>
   </external-component-plugins>
 

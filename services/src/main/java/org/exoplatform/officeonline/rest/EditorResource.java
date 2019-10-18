@@ -3,7 +3,6 @@
  */
 package org.exoplatform.officeonline.rest;
 
-import javax.jcr.RepositoryException;
 import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
@@ -16,23 +15,23 @@ import javax.ws.rs.core.Response.Status;
 import javax.ws.rs.core.UriInfo;
 
 import org.exoplatform.officeonline.DocumentContent;
-import org.exoplatform.officeonline.OfficeOnlineEditorService;
+import org.exoplatform.officeonline.EditorService;
 import org.exoplatform.officeonline.exception.OfficeOnlineException;
 import org.exoplatform.services.rest.resource.ResourceContainer;
 
 @Path("/officeonline/editor")
-public class EditorService implements ResourceContainer {
+public class EditorResource implements ResourceContainer {
 
   /** The editor service. */
-  protected OfficeOnlineEditorService officeService;
+  protected EditorService editorService;
 
   /**
    * Instantiates a new editor service.
    *
    * @param editorService the editor service
    */
-  public EditorService(OfficeOnlineEditorService officeService) {
-    this.officeService = officeService;
+  public EditorResource(EditorService editorService) {
+    this.editorService = editorService;
   }
 
   /**
@@ -49,10 +48,10 @@ public class EditorService implements ResourceContainer {
                           @Context HttpServletRequest request,
                           @PathParam("fileId") String fileId,
                           @PathParam("userId") String userId) {
-    String accessToken = request.getParameter(WOPIService.ACCESS_TOKEN);
+    String accessToken = request.getParameter(WOPIResource.ACCESS_TOKEN);
     if (accessToken != null) {
       try {
-        DocumentContent content = officeService.getContent(userId, fileId, accessToken);
+        DocumentContent content = editorService.getContent(userId, fileId, accessToken);
         return Response.ok().entity(content.getData()).type(content.getType()).build();
       } catch (OfficeOnlineException e) {
         return Response.status(Status.BAD_REQUEST)
