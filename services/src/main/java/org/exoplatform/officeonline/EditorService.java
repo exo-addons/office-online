@@ -1,9 +1,5 @@
 package org.exoplatform.officeonline;
 
-import static org.exoplatform.officeonline.Constants.READ_ONLY;
-import static org.exoplatform.officeonline.Constants.USER_CAN_RENAME;
-import static org.exoplatform.officeonline.Constants.USER_CAN_WRITE;
-
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.List;
@@ -12,7 +8,6 @@ import javax.jcr.Node;
 import javax.jcr.RepositoryException;
 
 import org.apache.commons.io.input.AutoCloseInputStream;
-import org.picocontainer.Startable;
 
 import org.exoplatform.officeonline.exception.OfficeOnlineException;
 import org.exoplatform.services.cms.documents.DocumentService;
@@ -27,7 +22,7 @@ import org.exoplatform.services.security.Authenticator;
 import org.exoplatform.services.security.ConversationState;
 import org.exoplatform.services.security.IdentityRegistry;
 
-public class EditorService extends AbstractOfficeOnlineService implements Startable {
+public class EditorService extends AbstractOfficeOnlineService {
 
   /** The Constant LOG. */
   protected static final Log LOG = ExoLogger.getLogger(EditorService.class);
@@ -73,24 +68,29 @@ public class EditorService extends AbstractOfficeOnlineService implements Starta
       }
 
       Node document = nodeByUUID(workspace, fileId);
-      List<String> permissions = new ArrayList<>();
+      List<Permissions> permissions = new ArrayList<>();
 
       if (document != null) {
         if (canEditDocument(document)) {
-          permissions.add(USER_CAN_WRITE);
-          permissions.add(USER_CAN_RENAME);
+          permissions.add(Permissions.USER_CAN_WRITE);
+          permissions.add(Permissions.USER_CAN_RENAME);
         } else {
-          permissions.add(READ_ONLY);
+          permissions.add(Permissions.READ_ONLY);
         }
       }
 
       config = new EditorConfig(userId, fileId, workspace, permissions);
-      String accessToken = idGenerator.generateStringID(config);
+      String accessToken = generateAccessToken(config);
       config.setAccessToken(accessToken);
     } finally {
       restoreConvoState(contextState, contextProvider);
     }
     return config;
+  }
+
+  protected String generateAccessToken(EditorConfig config) {
+    
+    return null;
   }
 
   /**

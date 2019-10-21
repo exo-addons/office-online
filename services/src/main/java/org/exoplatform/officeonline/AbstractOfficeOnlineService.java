@@ -8,6 +8,8 @@ import javax.jcr.Node;
 import javax.jcr.RepositoryException;
 import javax.jcr.Session;
 
+import org.picocontainer.Startable;
+
 import org.exoplatform.container.PortalContainer;
 import org.exoplatform.ecm.webui.utils.PermissionUtil;
 import org.exoplatform.ecm.webui.utils.Utils;
@@ -27,7 +29,7 @@ import org.exoplatform.services.security.IdentityRegistry;
 import org.exoplatform.services.wcm.core.NodetypeConstant;
 import org.exoplatform.services.wcm.utils.WCMCoreUtils;
 
-public abstract class AbstractOfficeOnlineService {
+public abstract class AbstractOfficeOnlineService implements Startable {
 
   /** The Constant LOG. */
   protected static final Log             LOG = ExoLogger.getLogger(AbstractOfficeOnlineService.class);

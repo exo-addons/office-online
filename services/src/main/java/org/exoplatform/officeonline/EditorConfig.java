@@ -22,7 +22,7 @@ public class EditorConfig {
   protected String workspace;
 
   /** The permissions. */
-  protected List<String> permissions = new ArrayList<>();
+  protected List<Permissions> permissions = new ArrayList<>();
 
   /**
    * Instantiates a new editor config.
@@ -32,7 +32,7 @@ public class EditorConfig {
    * @param workspace the workspace
    * @param permissions the permissions
    */
-  public EditorConfig(String userId, String fileId, String workspace, List<String> permissions) {
+  public EditorConfig(String userId, String fileId, String workspace, List<Permissions> permissions) {
     this.userId = userId;
     this.fileId = fileId;
     this.workspace = workspace;
