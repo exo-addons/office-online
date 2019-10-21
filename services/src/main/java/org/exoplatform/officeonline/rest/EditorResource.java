@@ -42,16 +42,14 @@ public class EditorResource implements ResourceContainer {
    * @return the response
    */
   @GET
-  @Path("/content/{fileId}/{userId}")
+  @Path("/content/{accessToken}")
   @Produces(MediaType.APPLICATION_JSON)
   public Response content(@Context UriInfo uriInfo,
                           @Context HttpServletRequest request,
-                          @PathParam("fileId") String fileId,
-                          @PathParam("userId") String userId) {
-    String accessToken = request.getParameter(WOPIResource.ACCESS_TOKEN);
+                          @PathParam("accessToken") String accessToken) {
     if (accessToken != null) {
       try {
-        DocumentContent content = editorService.getContent(userId, fileId, accessToken);
+        DocumentContent content = editorService.getContent(accessToken);
         return Response.ok().entity(content.getData()).type(content.getType()).build();
       } catch (OfficeOnlineException e) {
         return Response.status(Status.BAD_REQUEST)

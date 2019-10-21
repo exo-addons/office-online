@@ -32,19 +32,23 @@
     <key>org.exoplatform.officeonline.rest.EditorResource</key>
     <type>org.exoplatform.officeonline.rest.EditorResource</type>
   </component>
-
-
+  
   <component>
     <key>org.exoplatform.officeonline.WOPIService</key>
     <type>org.exoplatform.officeonline.WOPIService</type>
+     <init-params>
+      <properties-param>
+        <name>token-configuration</name>
+        <property name="secret-key" value="${officeonline.token.secret:}" />
+      </properties-param>
+    </init-params>
   </component>
+  
   <component>
     <key>org.exoplatform.officeonline.EditorService</key>
     <type>org.exoplatform.officeonline.EditorService</type>
   </component>
 
-
-  
   <!-- WOPIDiscoveryPlugin -->
   <external-component-plugins>
     <target-component>org.exoplatform.officeonline.WOPIService</target-component>
@@ -58,6 +62,98 @@
           <name>discovery-url</name>
           <value>${officeonline.discrovery.url:https://ffc-onenote.officeapps.live.com/hosting/discovery}</value>
         </value-param>
+      </init-params>
+    </component-plugin>
+  </external-component-plugins>
+  
+  
+  <!-- Cache configuration -->
+  <external-component-plugins>
+    <target-component>org.exoplatform.services.cache.CacheService</target-component>
+    <component-plugin>
+      <name>addExoCacheConfig</name>
+      <set-method>addExoCacheConfig</set-method>
+      <type>org.exoplatform.services.cache.ExoCacheConfigPlugin</type>
+      <description>Cache configuration for Onlyoffice service</description>
+      <init-params>
+        <object-param>
+          <name>officeonline.Cache</name>
+          <description></description>
+          <object type="org.exoplatform.services.cache.ExoCacheConfig">
+            <field name="name">
+              <string>officeonline.Cache</string>
+            </field>
+            <field name="maxSize">
+              <int>${officeonline.Cache.Capacity:5000}</int>
+            </field>
+            <field name="liveTime">
+              <long>${officeonline.Cache.TimeToLive:259200}</long>
+            </field>
+            <field name="implementation">
+              <string>org.exoplatform.services.cache.concurrent.ConcurrentFIFOExoCache</string>
+            </field>
+          </object>
+        </object-param>
+        <object-param profiles="cluster">
+          <name>officeonline.Cache</name>
+          <description></description>
+          <object type="org.exoplatform.services.cache.impl.infinispan.generic.GenericExoCacheConfig">
+            <field name="name">
+              <string>officeonline.Cache</string>
+            </field>
+            <field name="strategy">
+              <string>${officeonline.Cache.strategy:LIRS}</string>
+            </field>
+            <field name="maxEntries">
+              <int>${officeonline.Cache.Capacity:5000}</int>
+            </field>
+            <field name="lifespan">
+              <long>${officeonline.Cache.TimeToLive:259200000}</long>
+            </field>
+            <field name="cacheMode">
+              <string>${officeonline.Cache.cacheMode:replication}</string>
+            </field>
+          </object>
+        </object-param>
+        <object-param>
+          <name>onlyoffice.EditorStateCache</name>
+          <description></description>
+          <object type="org.exoplatform.services.cache.ExoCacheConfig">
+            <field name="name">
+              <string>onlyoffice.EditorStateCache</string>
+            </field>
+            <field name="maxSize">
+              <int>${officeonline.Cache.Capacity:5000}</int>
+            </field>
+            <field name="liveTime">
+              <long>${officeonline.Cache.TimeToLive:259200}</long>
+            </field>
+            <field name="implementation">
+              <string>org.exoplatform.services.cache.concurrent.ConcurrentFIFOExoCache</string>
+            </field>
+          </object>
+        </object-param>
+        <object-param profiles="cluster">
+          <name>onlyoffice.EditorStateCache</name>
+          <description></description>
+          <object type="org.exoplatform.services.cache.impl.infinispan.generic.GenericExoCacheConfig">
+            <field name="name">
+              <string>onlyoffice.EditorStateCache</string>
+            </field>
+            <field name="strategy">
+              <string>${officeonline.Cache.strategy:LIRS}</string>
+            </field>
+            <field name="maxEntries">
+              <int>${officeonline.Cache.Capacity:5000}</int>
+            </field>
+            <field name="lifespan">
+              <long>${officeonline.Cache.TimeToLive:259200000}</long>
+            </field>
+            <field name="cacheMode">
+              <string>${officeonline.Cache.cacheMode:replication}</string>
+            </field>
+          </object>
+        </object-param>
       </init-params>
     </component-plugin>
   </external-component-plugins>

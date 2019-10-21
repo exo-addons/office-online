@@ -13,6 +13,8 @@ import org.picocontainer.Startable;
 import org.exoplatform.container.PortalContainer;
 import org.exoplatform.ecm.webui.utils.PermissionUtil;
 import org.exoplatform.ecm.webui.utils.Utils;
+import org.exoplatform.services.cache.CacheService;
+import org.exoplatform.services.cache.ExoCache;
 import org.exoplatform.services.cms.documents.DocumentService;
 import org.exoplatform.services.idgenerator.IDGeneratorService;
 import org.exoplatform.services.jcr.RepositoryService;
@@ -29,31 +31,46 @@ import org.exoplatform.services.security.IdentityRegistry;
 import org.exoplatform.services.wcm.core.NodetypeConstant;
 import org.exoplatform.services.wcm.utils.WCMCoreUtils;
 
+/**
+ * The Class AbstractOfficeOnlineService.
+ */
 public abstract class AbstractOfficeOnlineService implements Startable {
 
   /** The Constant LOG. */
-  protected static final Log             LOG = ExoLogger.getLogger(AbstractOfficeOnlineService.class);
+  protected static final Log               LOG        = ExoLogger.getLogger(AbstractOfficeOnlineService.class);
+
+  /** The Constant CACHE_NAME. */
+  public static final String               CACHE_NAME = "officeonline.Cache".intern();
+
+  /** The Constant SECRET_KEY. */
+  protected static final String            SECRET_KEY = "secret-key";
+
+  /** The Constant ALGORITHM. */
+  protected static final String            ALGORITHM  = "AES";
+
+  /** Cache of Editing documents. */
+  protected final ExoCache<String, String> activeCache;
 
   /** The generator. */
-  protected final IDGeneratorService     idGenerator;
+  protected final IDGeneratorService       idGenerator;
 
   /** The session providers. */
-  protected final SessionProviderService sessionProviders;
+  protected final SessionProviderService   sessionProviders;
 
   /** The authenticator. */
-  protected final Authenticator          authenticator;
+  protected final Authenticator            authenticator;
 
   /** The identity registry. */
-  protected final IdentityRegistry       identityRegistry;
+  protected final IdentityRegistry         identityRegistry;
 
   /** The jcr service. */
-  protected final RepositoryService      jcrService;
+  protected final RepositoryService        jcrService;
 
   /** The organization. */
-  protected final OrganizationService    organization;
+  protected final OrganizationService      organization;
 
   /** The document service. */
-  protected final DocumentService        documentService;
+  protected final DocumentService          documentService;
 
   /**
    * Instantiates a new office online editor service.
@@ -65,6 +82,7 @@ public abstract class AbstractOfficeOnlineService implements Startable {
    * @param documentService the document service
    * @param authenticator the authenticator
    * @param identityRegistry the identity registry
+   * @param cacheService the cache service
    */
   public AbstractOfficeOnlineService(SessionProviderService sessionProviders,
                                      IDGeneratorService idGenerator,
@@ -72,7 +90,8 @@ public abstract class AbstractOfficeOnlineService implements Startable {
                                      OrganizationService organization,
                                      DocumentService documentService,
                                      Authenticator authenticator,
-                                     IdentityRegistry identityRegistry) {
+                                     IdentityRegistry identityRegistry,
+                                     CacheService cacheService) {
     this.sessionProviders = sessionProviders;
     this.idGenerator = idGenerator;
     this.jcrService = jcrService;
@@ -80,6 +99,7 @@ public abstract class AbstractOfficeOnlineService implements Startable {
     this.documentService = documentService;
     this.authenticator = authenticator;
     this.identityRegistry = identityRegistry;
+    this.activeCache = cacheService.getCacheInstance(CACHE_NAME);
   }
 
   /**

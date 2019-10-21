@@ -2,10 +2,14 @@ package org.exoplatform.officeonline;
 
 import java.io.Serializable;
 import java.net.URI;
+import java.security.NoSuchAlgorithmException;
 import java.util.Arrays;
+import java.util.Base64;
 import java.util.HashMap;
 import java.util.Map;
 
+import javax.crypto.KeyGenerator;
+import javax.crypto.SecretKey;
 import javax.jcr.Node;
 import javax.jcr.RepositoryException;
 import javax.jcr.UnsupportedRepositoryOperationException;
@@ -14,8 +18,11 @@ import org.apache.commons.lang.StringUtils;
 
 import org.exoplatform.container.PortalContainer;
 import org.exoplatform.container.component.ComponentPlugin;
+import org.exoplatform.container.xml.InitParams;
+import org.exoplatform.container.xml.PropertiesParam;
 import org.exoplatform.officeonline.exception.OfficeOnlineException;
 import org.exoplatform.officeonline.exception.WopiDiscoveryNotFoundException;
+import org.exoplatform.services.cache.CacheService;
 import org.exoplatform.services.cms.documents.DocumentService;
 import org.exoplatform.services.idgenerator.IDGeneratorService;
 import org.exoplatform.services.jcr.RepositoryService;
@@ -116,6 +123,9 @@ public class WOPIService extends AbstractOfficeOnlineService {
   /** The Constant SHARE_URL_READ_WRITE. */
   protected static final String SHARE_URL_READ_WRITE              = "ReadWrite";
 
+  protected static final String TOKEN_CONFIGURATION_PROPERTIES    = "token-configuration";
+
+
   /** The discovery plugin. */
   protected WOPIDiscoveryPlugin discoveryPlugin;
 
@@ -125,8 +135,23 @@ public class WOPIService extends AbstractOfficeOnlineService {
                      OrganizationService organization,
                      DocumentService documentService,
                      Authenticator authenticator,
-                     IdentityRegistry identityRegistry) {
-    super(sessionProviders, idGenerator, jcrService, organization, documentService, authenticator, identityRegistry);
+                     IdentityRegistry identityRegistry,
+                     CacheService cacheService,
+                     InitParams initParams) {
+    super(sessionProviders,
+          idGenerator,
+          jcrService,
+          organization,
+          documentService,
+          authenticator,
+          identityRegistry,
+          cacheService);
+    PropertiesParam param = initParams.getPropertiesParam(TOKEN_CONFIGURATION_PROPERTIES);
+    String secretKey = param.getProperty(SECRET_KEY);
+    if (secretKey != null && !secretKey.trim().isEmpty()) {
+      activeCache.put(SECRET_KEY, secretKey);
+    }
+
   }
 
   /**
@@ -265,13 +290,8 @@ public class WOPIService extends AbstractOfficeOnlineService {
                                                            .append(PortalContainer.getCurrentRestContextName())
                                                            .toString();
 
-    String downloadURL = new StringBuilder(platformRestURL).append("/officeonline/editor/content/")
-                                                           .append(node.getUUID())
-                                                           .append("/")
-                                                           .append(WCMCoreUtils.getRemoteUser())
-                                                           .append("?access_token=")
-                                                           .append(accessToken)
-                                                           .toString();
+    String downloadURL =
+                       new StringBuilder(platformRestURL).append("/officeonline/editor/content/").append(accessToken).toString();
     map.put(DOWNLOAD_URL, downloadURL);
     // TODO: set url to the portlet
     map.put(HOST_EDIT_URL, null);
@@ -361,6 +381,12 @@ public class WOPIService extends AbstractOfficeOnlineService {
     }
     discoveryPlugin.start();
 
+    if (activeCache.get(SECRET_KEY) == null) {
+      String secretKey = generateSecretKey();
+      LOG.debug("Generated secret key: " + secretKey);
+      activeCache.put(SECRET_KEY, secretKey);
+    }
+
     LOG.debug("WOPI Service started");
     // Only for testing purposes
     String excelEdit = discoveryPlugin.getActionUrl("xlsx", "edit");
@@ -376,6 +402,19 @@ public class WOPIService extends AbstractOfficeOnlineService {
     LOG.debug("Excel view URL: " + wordView);
     LOG.debug("PowerPoint edit URL: " + powerPointEdit);
     LOG.debug("PowerPoint view URL: " + powerPointView);
+  }
+
+  protected String generateSecretKey() {
+    try {
+      KeyGenerator keyGen = KeyGenerator.getInstance("AES");
+      keyGen.init(128); // for example
+      SecretKey key = keyGen.generateKey();
+      return Base64.getEncoder().encodeToString(key.getEncoded());
+    } catch (NoSuchAlgorithmException e) {
+      LOG.error("Cannot generate secret key {}", e.getMessage());
+      return null;
+    }
+
   }
 
   /**
