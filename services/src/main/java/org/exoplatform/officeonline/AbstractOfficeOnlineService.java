@@ -3,7 +3,13 @@ package org.exoplatform.officeonline;
 import java.net.URI;
 import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
+import java.security.Key;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Base64;
+import java.util.List;
 
+import javax.crypto.Cipher;
 import javax.jcr.Node;
 import javax.jcr.RepositoryException;
 import javax.jcr.Session;
@@ -13,6 +19,7 @@ import org.picocontainer.Startable;
 import org.exoplatform.container.PortalContainer;
 import org.exoplatform.ecm.webui.utils.PermissionUtil;
 import org.exoplatform.ecm.webui.utils.Utils;
+import org.exoplatform.officeonline.exception.OfficeOnlineException;
 import org.exoplatform.services.cache.CacheService;
 import org.exoplatform.services.cache.ExoCache;
 import org.exoplatform.services.cms.documents.DocumentService;
@@ -37,40 +44,46 @@ import org.exoplatform.services.wcm.utils.WCMCoreUtils;
 public abstract class AbstractOfficeOnlineService implements Startable {
 
   /** The Constant LOG. */
-  protected static final Log               LOG        = ExoLogger.getLogger(AbstractOfficeOnlineService.class);
+  protected static final Log             LOG                  = ExoLogger.getLogger(AbstractOfficeOnlineService.class);
 
   /** The Constant CACHE_NAME. */
-  public static final String               CACHE_NAME = "officeonline.Cache".intern();
+  public static final String             CACHE_NAME           = "officeonline.Cache".intern();
 
   /** The Constant SECRET_KEY. */
-  protected static final String            SECRET_KEY = "secret-key";
+  protected static final String          SECRET_KEY           = "secret-key";
 
   /** The Constant ALGORITHM. */
-  protected static final String            ALGORITHM  = "AES";
+  protected static final String          ALGORITHM            = "AES";
+
+  /** The Constant TOKEN_DELIMITER. */
+  protected static final String          TOKEN_DELIMITER      = "+";
+
+  /** The Constant TOKEN_DELIMITER_SPLIT. */
+  protected static final String          TOKEN_DELIMITE_SPLIT = "\\+";
 
   /** Cache of Editing documents. */
-  protected final ExoCache<String, String> activeCache;
+  protected final ExoCache<String, Key>  activeCache;
 
   /** The generator. */
-  protected final IDGeneratorService       idGenerator;
+  protected final IDGeneratorService     idGenerator;
 
   /** The session providers. */
-  protected final SessionProviderService   sessionProviders;
+  protected final SessionProviderService sessionProviders;
 
   /** The authenticator. */
-  protected final Authenticator            authenticator;
+  protected final Authenticator          authenticator;
 
   /** The identity registry. */
-  protected final IdentityRegistry         identityRegistry;
+  protected final IdentityRegistry       identityRegistry;
 
   /** The jcr service. */
-  protected final RepositoryService        jcrService;
+  protected final RepositoryService      jcrService;
 
   /** The organization. */
-  protected final OrganizationService      organization;
+  protected final OrganizationService    organization;
 
   /** The document service. */
-  protected final DocumentService          documentService;
+  protected final DocumentService        documentService;
 
   /**
    * Instantiates a new office online editor service.
@@ -335,4 +348,65 @@ public abstract class AbstractOfficeOnlineService implements Startable {
     }
     return size;
   }
+
+  /**
+   * Generate access token.
+   *
+   * @param config the config
+   * @return the string
+   */
+  protected String generateAccessToken(EditorConfig config) {
+    try {
+      Key key = activeCache.get(SECRET_KEY);
+      Cipher chiper = Cipher.getInstance(ALGORITHM);
+      chiper.init(Cipher.ENCRYPT_MODE, key);
+      StringBuilder builder = new StringBuilder().append(config.getWorkspace())
+                                                 .append(TOKEN_DELIMITER)
+                                                 .append(config.getUserId())
+                                                 .append(TOKEN_DELIMITER)
+                                                 .append(config.getFileId());
+      config.getPermissions().forEach(permission -> {
+        builder.append(TOKEN_DELIMITER).append(permission.getShortName());
+      });
+      byte[] encrypted = chiper.doFinal(builder.toString().getBytes());
+      return new String(Base64.getUrlEncoder().encode(encrypted));
+    } catch (Exception e) {
+      LOG.error("Cannot generate access token. {}", e.getMessage());
+    }
+    return null;
+  }
+
+  /**
+   * Builds the editor config.
+   *
+   * @param accessToken the access token
+   * @return the editor config
+   * @throws OfficeOnlineException the office online exception
+   */
+  protected EditorConfig buildEditorConfig(String accessToken) throws OfficeOnlineException {
+    String decryptedToken = "";
+    try {
+      Key key = activeCache.get(SECRET_KEY);
+      Cipher chiper = Cipher.getInstance(ALGORITHM);
+      chiper.init(Cipher.DECRYPT_MODE, key);
+      byte[] decoded = Base64.getUrlDecoder().decode(accessToken.getBytes());
+      decryptedToken = new String(chiper.doFinal(decoded));
+    } catch (Exception e) {
+      LOG.error("Error occured while decoding/decrypting accessToken. {}", e.getMessage());
+      throw new OfficeOnlineException("Cannot decode/decrypt accessToken");
+    }
+
+    List<Permissions> permissions = new ArrayList<>();
+    List<String> values = Arrays.asList(decryptedToken.split(TOKEN_DELIMITE_SPLIT));
+    if (values.size() > 2) {
+      String workspace = values.get(0);
+      String userId = values.get(1);
+      String fileId = values.get(2);
+      values.stream().skip(3).forEach(value -> permissions.add(Permissions.fromShortName(value)));
+      return new EditorConfig(userId, fileId, workspace, permissions, accessToken);
+    } else {
+      throw new OfficeOnlineException("Decrypted token doesn't contain all required parameters");
+    }
+  }
+
 }

@@ -2,6 +2,7 @@ package org.exoplatform.officeonline;
 
 import java.io.Serializable;
 import java.net.URI;
+import java.security.Key;
 import java.security.NoSuchAlgorithmException;
 import java.util.Arrays;
 import java.util.Base64;
@@ -10,6 +11,7 @@ import java.util.Map;
 
 import javax.crypto.KeyGenerator;
 import javax.crypto.SecretKey;
+import javax.crypto.spec.SecretKeySpec;
 import javax.jcr.Node;
 import javax.jcr.RepositoryException;
 import javax.jcr.UnsupportedRepositoryOperationException;
@@ -125,10 +127,22 @@ public class WOPIService extends AbstractOfficeOnlineService {
 
   protected static final String TOKEN_CONFIGURATION_PROPERTIES    = "token-configuration";
 
-
   /** The discovery plugin. */
   protected WOPIDiscoveryPlugin discoveryPlugin;
 
+  /**
+   * Instantiates a new WOPI service.
+   *
+   * @param sessionProviders the session providers
+   * @param idGenerator the id generator
+   * @param jcrService the jcr service
+   * @param organization the organization
+   * @param documentService the document service
+   * @param authenticator the authenticator
+   * @param identityRegistry the identity registry
+   * @param cacheService the cache service
+   * @param initParams the init params
+   */
   public WOPIService(SessionProviderService sessionProviders,
                      IDGeneratorService idGenerator,
                      RepositoryService jcrService,
@@ -149,7 +163,9 @@ public class WOPIService extends AbstractOfficeOnlineService {
     PropertiesParam param = initParams.getPropertiesParam(TOKEN_CONFIGURATION_PROPERTIES);
     String secretKey = param.getProperty(SECRET_KEY);
     if (secretKey != null && !secretKey.trim().isEmpty()) {
-      activeCache.put(SECRET_KEY, secretKey);
+      byte[] decodedKey = Base64.getDecoder().decode(secretKey);
+      SecretKey key = new SecretKeySpec(decodedKey, 0, decodedKey.length, ALGORITHM);
+      activeCache.put(SECRET_KEY, key);
     }
 
   }
@@ -160,8 +176,6 @@ public class WOPIService extends AbstractOfficeOnlineService {
    * @param userSchema the user schema
    * @param userHost the user host
    * @param userPort the user port
-   * @param fileId the fileId
-   * @param userId the userId
    * @param accessToken the access token
    * @return the map
    * @throws RepositoryException the repository exception
@@ -170,21 +184,18 @@ public class WOPIService extends AbstractOfficeOnlineService {
   public Map<String, Serializable> checkFileInfo(String userSchema,
                                                  String userHost,
                                                  int userPort,
-                                                 String fileId,
-                                                 String userId,
                                                  String accessToken) throws RepositoryException, OfficeOnlineException {
+    EditorConfig config = buildEditorConfig(accessToken);
     Map<String, Serializable> map = new HashMap<>();
     // remember real context state and session provider to restore them at the end
     ConversationState contextState = ConversationState.getCurrent();
     SessionProvider contextProvider = sessionProviders.getSessionProvider(null);
     try {
-      if (!setUserConvoState(userId)) {
-        LOG.error("Couldn't set user conversation state. UserId: {}", userId);
-        throw new OfficeOnlineException("Cannot set conversation state " + userId);
+      if (!setUserConvoState(config.getUserId())) {
+        LOG.error("Couldn't set user conversation state. UserId: {}", config.getUserId());
+        throw new OfficeOnlineException("Cannot set conversation state " + config.getUserId());
       }
-      // TODO: verify access token
-      String workspace = ""; // TODO: get from token
-      Node node = nodeByUUID(fileId, workspace);
+      Node node = nodeByUUID(config.getFileId(), config.getWorkspace());
       addRequiredProperties(map, node);
       addHostCapabilitiesProperties(map);
       addUserMetadataProperties(map);
@@ -196,6 +207,93 @@ public class WOPIService extends AbstractOfficeOnlineService {
       restoreConvoState(contextState, contextProvider);
     }
     return map;
+  }
+
+  /**
+   * Verify proof key.
+   *
+   * @param proofKeyHeader the proof key header
+   * @param oldProofKeyHeader the old proof key header
+   * @param url the url
+   * @param accessToken the access token
+   * @param timestampHeader the timestamp header
+   * @return true, if successful
+   */
+  public boolean verifyProofKey(String proofKeyHeader,
+                                String oldProofKeyHeader,
+                                String url,
+                                String accessToken,
+                                String timestampHeader) {
+    if (StringUtils.isBlank(proofKeyHeader)) {
+      return true; // assume valid
+    }
+
+    long timestamp = Long.parseLong(timestampHeader);
+    if (!ProofKeyHelper.verifyTimestamp(timestamp)) {
+      return false;
+    }
+
+    byte[] expectedProofBytes = ProofKeyHelper.getExpectedProofBytes(url, accessToken, timestamp);
+    // follow flow from https://wopi.readthedocs.io/en/latest/scenarios/proofkeys.html#verifying-the-proof-keys
+    boolean res = ProofKeyHelper.verifyProofKey(discoveryPlugin.getProofKey(), proofKeyHeader, expectedProofBytes);
+    if (!res && StringUtils.isNotBlank(oldProofKeyHeader)) {
+      res = ProofKeyHelper.verifyProofKey(discoveryPlugin.getProofKey(), oldProofKeyHeader, expectedProofBytes);
+      if (!res) {
+        res = ProofKeyHelper.verifyProofKey(discoveryPlugin.getOldProofKey(), proofKeyHeader, expectedProofBytes);
+      }
+    }
+    return res;
+  }
+
+  /**
+   * Sets the plugin.
+   *
+   * @param plugin the plugin
+   */
+  public void setWOPIDiscoveryPlugin(ComponentPlugin plugin) {
+    Class<WOPIDiscoveryPlugin> pclass = WOPIDiscoveryPlugin.class;
+    if (pclass.isAssignableFrom(plugin.getClass())) {
+      discoveryPlugin = pclass.cast(plugin);
+      LOG.info("Set WopiDiscoveryPlugin instance of " + plugin.getClass().getName());
+    } else {
+      throw new WopiDiscoveryNotFoundException("WopiDiscoveryPlugin is not an instance of " + pclass.getName());
+    }
+  }
+
+  @Override
+  public void start() {
+    if (discoveryPlugin == null) {
+      throw new WopiDiscoveryNotFoundException("WopiDiscoveryPlugin is not configured");
+    }
+    discoveryPlugin.start();
+
+    if (activeCache.get(SECRET_KEY) == null) {
+      activeCache.put(SECRET_KEY, generateSecretKey());
+    }
+
+    LOG.debug("WOPI Service started");
+    // Only for testing purposes
+    String excelEdit = discoveryPlugin.getActionUrl("xlsx", "edit");
+    String excelView = discoveryPlugin.getActionUrl("xlsx", "view");
+    String wordEdit = discoveryPlugin.getActionUrl("docx", "edit");
+    String wordView = discoveryPlugin.getActionUrl("docx", "view");
+    String powerPointEdit = discoveryPlugin.getActionUrl("pptx", "edit");
+    String powerPointView = discoveryPlugin.getActionUrl("pptx", "view");
+
+    LOG.debug("Excel edit URL: " + excelEdit);
+    LOG.debug("Excel view URL: " + excelView);
+    LOG.debug("Word edit URL: " + wordEdit);
+    LOG.debug("Excel view URL: " + wordView);
+    LOG.debug("PowerPoint edit URL: " + powerPointEdit);
+    LOG.debug("PowerPoint view URL: " + powerPointView);
+  }
+
+  /**
+   * Stop.
+   */
+  @Override
+  public void stop() {
+    discoveryPlugin.stop();
   }
 
   /**
@@ -323,106 +421,15 @@ public class WOPIService extends AbstractOfficeOnlineService {
 
   }
 
-  /**
-   * Verify proof key.
-   *
-   * @param proofKeyHeader the proof key header
-   * @param oldProofKeyHeader the old proof key header
-   * @param url the url
-   * @param accessToken the access token
-   * @param timestampHeader the timestamp header
-   * @return true, if successful
-   */
-  public boolean verifyProofKey(String proofKeyHeader,
-                                String oldProofKeyHeader,
-                                String url,
-                                String accessToken,
-                                String timestampHeader) {
-    if (StringUtils.isBlank(proofKeyHeader)) {
-      return true; // assume valid
-    }
-
-    long timestamp = Long.parseLong(timestampHeader);
-    if (!ProofKeyHelper.verifyTimestamp(timestamp)) {
-      return false;
-    }
-
-    byte[] expectedProofBytes = ProofKeyHelper.getExpectedProofBytes(url, accessToken, timestamp);
-    // follow flow from https://wopi.readthedocs.io/en/latest/scenarios/proofkeys.html#verifying-the-proof-keys
-    boolean res = ProofKeyHelper.verifyProofKey(discoveryPlugin.getProofKey(), proofKeyHeader, expectedProofBytes);
-    if (!res && StringUtils.isNotBlank(oldProofKeyHeader)) {
-      res = ProofKeyHelper.verifyProofKey(discoveryPlugin.getProofKey(), oldProofKeyHeader, expectedProofBytes);
-      if (!res) {
-        res = ProofKeyHelper.verifyProofKey(discoveryPlugin.getOldProofKey(), proofKeyHeader, expectedProofBytes);
-      }
-    }
-    return res;
-  }
-
-  /**
-   * Sets the plugin.
-   *
-   * @param plugin the plugin
-   */
-  public void setWOPIDiscoveryPlugin(ComponentPlugin plugin) {
-    Class<WOPIDiscoveryPlugin> pclass = WOPIDiscoveryPlugin.class;
-    if (pclass.isAssignableFrom(plugin.getClass())) {
-      discoveryPlugin = pclass.cast(plugin);
-      LOG.info("Set WopiDiscoveryPlugin instance of " + plugin.getClass().getName());
-    } else {
-      throw new WopiDiscoveryNotFoundException("WopiDiscoveryPlugin is not an instance of " + pclass.getName());
-    }
-  }
-
-  @Override
-  public void start() {
-    if (discoveryPlugin == null) {
-      throw new WopiDiscoveryNotFoundException("WopiDiscoveryPlugin is not configured");
-    }
-    discoveryPlugin.start();
-
-    if (activeCache.get(SECRET_KEY) == null) {
-      String secretKey = generateSecretKey();
-      LOG.debug("Generated secret key: " + secretKey);
-      activeCache.put(SECRET_KEY, secretKey);
-    }
-
-    LOG.debug("WOPI Service started");
-    // Only for testing purposes
-    String excelEdit = discoveryPlugin.getActionUrl("xlsx", "edit");
-    String excelView = discoveryPlugin.getActionUrl("xlsx", "view");
-    String wordEdit = discoveryPlugin.getActionUrl("docx", "edit");
-    String wordView = discoveryPlugin.getActionUrl("docx", "view");
-    String powerPointEdit = discoveryPlugin.getActionUrl("pptx", "edit");
-    String powerPointView = discoveryPlugin.getActionUrl("pptx", "view");
-
-    LOG.debug("Excel edit URL: " + excelEdit);
-    LOG.debug("Excel view URL: " + excelView);
-    LOG.debug("Word edit URL: " + wordEdit);
-    LOG.debug("Excel view URL: " + wordView);
-    LOG.debug("PowerPoint edit URL: " + powerPointEdit);
-    LOG.debug("PowerPoint view URL: " + powerPointView);
-  }
-
-  protected String generateSecretKey() {
+  protected Key generateSecretKey() {
     try {
-      KeyGenerator keyGen = KeyGenerator.getInstance("AES");
-      keyGen.init(128); // for example
+      KeyGenerator keyGen = KeyGenerator.getInstance(ALGORITHM);
+      keyGen.init(128);
       SecretKey key = keyGen.generateKey();
-      return Base64.getEncoder().encodeToString(key.getEncoded());
+      return key;
     } catch (NoSuchAlgorithmException e) {
       LOG.error("Cannot generate secret key {}", e.getMessage());
       return null;
     }
-
-  }
-
-  /**
-   * Stop.
-   */
-  @Override
-  public void stop() {
-    discoveryPlugin.stop();
-
   }
 }

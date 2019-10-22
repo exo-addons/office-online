@@ -8,9 +8,6 @@ import java.util.Base64;
 import java.util.List;
 
 import javax.crypto.Cipher;
-import javax.crypto.KeyGenerator;
-import javax.crypto.SecretKey;
-import javax.crypto.spec.SecretKeySpec;
 import javax.jcr.Node;
 import javax.jcr.RepositoryException;
 
@@ -36,11 +33,6 @@ import org.exoplatform.services.security.IdentityRegistry;
  */
 public class EditorService extends AbstractOfficeOnlineService {
 
-  /** The Constant TOKEN_DELIMITER. */
-  protected static final String TOKEN_DELIMITER      = "+";
-
-  /** The Constant TOKEN_DELIMITER_SPLIT. */
-  protected static final String TOKEN_DELIMITE_SPLIT = "\\+";
 
   /** The Constant LOG. */
   protected static final Log    LOG                  = ExoLogger.getLogger(EditorService.class);
@@ -125,71 +117,6 @@ public class EditorService extends AbstractOfficeOnlineService {
   }
 
   /**
-   * Generate access token.
-   *
-   * @param config the config
-   * @return the string
-   */
-  protected String generateAccessToken(EditorConfig config) {
-    try {
-      String keyStr = activeCache.get(SECRET_KEY);
-      byte[] decodedKey = Base64.getDecoder().decode(keyStr);
-      SecretKey key = new SecretKeySpec(decodedKey, 0, decodedKey.length, ALGORITHM);
-      Cipher c = Cipher.getInstance(ALGORITHM);
-      c.init(Cipher.ENCRYPT_MODE, key);
-      StringBuilder builder = new StringBuilder().append(config.getWorkspace())
-                                                 .append(TOKEN_DELIMITER)
-                                                 .append(config.getUserId())
-                                                 .append(TOKEN_DELIMITER)
-                                                 .append(config.getFileId());
-      config.getPermissions().forEach(permission -> {
-        builder.append(TOKEN_DELIMITER).append(permission.getShortName());
-      });
-      byte[] encrypted = c.doFinal(builder.toString().getBytes());
-      return new String(Base64.getUrlEncoder().encode(encrypted));
-    } catch (Exception e) {
-      LOG.error("Cannot generate access token. {}", e.getMessage());
-    }
-    return null;
-  }
-
-  /**
-   * Builds the editor config.
-   *
-   * @param accessToken the access token
-   * @return the editor config
-   * @throws OfficeOnlineException the office online exception
-   */
-  protected EditorConfig buildEditorConfig(String accessToken) throws OfficeOnlineException {
-    String decryptedToken = "";
-    try {
-      // TODO: store Key in cache instead of String representation of it
-      String keyStr = activeCache.get(SECRET_KEY);
-      byte[] decodedKey = Base64.getDecoder().decode(keyStr);
-      SecretKey key = new SecretKeySpec(decodedKey, 0, decodedKey.length, ALGORITHM);
-      Cipher c = Cipher.getInstance(ALGORITHM);
-      c.init(Cipher.DECRYPT_MODE, key);
-      byte[] decoded = Base64.getUrlDecoder().decode(accessToken.getBytes());
-      decryptedToken = new String(c.doFinal(decoded));
-    } catch (Exception e) {
-      LOG.error("Error occured while decoding/decrypting accessToken. {}", e.getMessage());
-      throw new OfficeOnlineException("Cannot decode/decrypt accessToken");
-    }
-
-    List<Permissions> permissions = new ArrayList<>();
-    List<String> values = Arrays.asList(decryptedToken.split(TOKEN_DELIMITE_SPLIT));
-    if (values.size() > 2) {
-      String workspace = values.get(0);
-      String userId = values.get(1);
-      String fileId = values.get(2);
-      values.stream().skip(3).forEach(value -> permissions.add(Permissions.fromShortName(value)));
-      return new EditorConfig(userId, fileId, workspace, permissions, accessToken);
-    } else {
-      throw new OfficeOnlineException("Decrypted token doesn't contain all required parameters");
-    }
-  }
-
-  /**
    * Gets the content.
    *
    * @param userId the user id
@@ -244,7 +171,8 @@ public class EditorService extends AbstractOfficeOnlineService {
   @Override
   public void start() {
     LOG.debug("Editor Service started");
-
+    
+    // Only for testing purposes
     EditorConfig config = new EditorConfig("vlad",
                                            "93268635624323427",
                                            "collaboration",
@@ -278,5 +206,6 @@ public class EditorService extends AbstractOfficeOnlineService {
   public void stop() {
     // TODO Auto-generated method stub
   }
+
 
 }
