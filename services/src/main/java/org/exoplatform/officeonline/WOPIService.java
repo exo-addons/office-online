@@ -279,9 +279,7 @@ public class WOPIService extends AbstractOfficeOnlineService {
     }
     discoveryPlugin.start();
 
-    if (LOG.isDebugEnabled()) {
-      LOG.debug("WOPI Service started");
-    }
+    LOG.info("WOPI Service started");
 
     // Only for testing purposes
     String excelEdit = discoveryPlugin.getActionUrl("xlsx", "edit");

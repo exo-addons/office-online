@@ -168,9 +168,8 @@ public class EditorService extends AbstractOfficeOnlineService {
    */
   @Override
   public void start() {
-    if (LOG.isDebugEnabled()) {
-      LOG.debug("Editor Service started");
-    }
+    LOG.info("Editor Service started");
+
     // Only for testing purposes
     EditorConfig config = new EditorConfig("vlad",
                                            "93268635624323427",
