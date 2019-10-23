@@ -394,7 +394,7 @@ public abstract class AbstractOfficeOnlineService implements Startable {
    * @return the editor config
    * @throws OfficeOnlineException the office online exception
    */
-  protected EditorConfig buildEditorConfig(String accessToken) throws OfficeOnlineException {
+  public EditorConfig buildEditorConfig(String accessToken) throws OfficeOnlineException {
     String decryptedToken = "";
     try {
       Key key = activeCache.get(SECRET_KEY);
