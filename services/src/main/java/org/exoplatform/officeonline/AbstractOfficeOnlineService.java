@@ -1,3 +1,6 @@
+/*
+ * 
+ */
 package org.exoplatform.officeonline;
 
 import java.net.URI;
@@ -20,6 +23,7 @@ import org.exoplatform.container.PortalContainer;
 import org.exoplatform.ecm.webui.utils.PermissionUtil;
 import org.exoplatform.ecm.webui.utils.Utils;
 import org.exoplatform.officeonline.exception.OfficeOnlineException;
+import org.exoplatform.portal.config.UserACL;
 import org.exoplatform.services.cache.CacheService;
 import org.exoplatform.services.cache.ExoCache;
 import org.exoplatform.services.cms.documents.DocumentService;
@@ -38,6 +42,7 @@ import org.exoplatform.services.security.IdentityRegistry;
 import org.exoplatform.services.wcm.core.NodetypeConstant;
 import org.exoplatform.services.wcm.utils.WCMCoreUtils;
 
+// TODO: Auto-generated Javadoc
 /**
  * The Class AbstractOfficeOnlineService.
  */
@@ -85,6 +90,9 @@ public abstract class AbstractOfficeOnlineService implements Startable {
   /** The document service. */
   protected final DocumentService        documentService;
 
+  /** The user ACL. */
+  protected final UserACL                userACL;
+
   /**
    * Instantiates a new office online editor service.
    *
@@ -96,6 +104,7 @@ public abstract class AbstractOfficeOnlineService implements Startable {
    * @param authenticator the authenticator
    * @param identityRegistry the identity registry
    * @param cacheService the cache service
+   * @param userACL the user ACL
    */
   public AbstractOfficeOnlineService(SessionProviderService sessionProviders,
                                      IDGeneratorService idGenerator,
@@ -104,7 +113,8 @@ public abstract class AbstractOfficeOnlineService implements Startable {
                                      DocumentService documentService,
                                      Authenticator authenticator,
                                      IdentityRegistry identityRegistry,
-                                     CacheService cacheService) {
+                                     CacheService cacheService,
+                                     UserACL userACL) {
     this.sessionProviders = sessionProviders;
     this.idGenerator = idGenerator;
     this.jcrService = jcrService;
@@ -113,6 +123,7 @@ public abstract class AbstractOfficeOnlineService implements Startable {
     this.authenticator = authenticator;
     this.identityRegistry = identityRegistry;
     this.activeCache = cacheService.getCacheInstance(CACHE_NAME);
+    this.userACL = userACL;
   }
 
   /**
@@ -162,8 +173,8 @@ public abstract class AbstractOfficeOnlineService implements Startable {
   protected boolean canEditDocument(Node node) throws RepositoryException {
     boolean res = false;
     if (node != null) {
-      String remoteUser = WCMCoreUtils.getRemoteUser();
-      String superUser = WCMCoreUtils.getSuperUser();
+      String remoteUser = ConversationState.getCurrent().getIdentity().getUserId();
+      String superUser = userACL.getSuperUser();
       boolean locked = node.isLocked();
       if (locked && (remoteUser.equalsIgnoreCase(superUser) || node.getLock().getLockOwner().equals(remoteUser))) {
         locked = false;
@@ -355,7 +366,7 @@ public abstract class AbstractOfficeOnlineService implements Startable {
    * @param config the config
    * @return the string
    */
-  protected String generateAccessToken(EditorConfig config) {
+  protected String generateAccessToken(EditorConfig config) throws OfficeOnlineException {
     try {
       Key key = activeCache.get(SECRET_KEY);
       Cipher chiper = Cipher.getInstance(ALGORITHM);
@@ -371,9 +382,9 @@ public abstract class AbstractOfficeOnlineService implements Startable {
       byte[] encrypted = chiper.doFinal(builder.toString().getBytes());
       return new String(Base64.getUrlEncoder().encode(encrypted));
     } catch (Exception e) {
-      LOG.error("Cannot generate access token. {}", e.getMessage());
+      LOG.error("Error occured while generating token. {}", e.getMessage());
+      throw new OfficeOnlineException("Couldn't generate token from editor config.");
     }
-    return null;
   }
 
   /**

@@ -1,19 +1,17 @@
 package org.exoplatform.officeonline;
 
 import java.io.InputStream;
-import java.security.Key;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Base64;
 import java.util.List;
 
-import javax.crypto.Cipher;
 import javax.jcr.Node;
 import javax.jcr.RepositoryException;
 
 import org.apache.commons.io.input.AutoCloseInputStream;
 
 import org.exoplatform.officeonline.exception.OfficeOnlineException;
+import org.exoplatform.portal.config.UserACL;
 import org.exoplatform.services.cache.CacheService;
 import org.exoplatform.services.cms.documents.DocumentService;
 import org.exoplatform.services.idgenerator.IDGeneratorService;
@@ -27,15 +25,13 @@ import org.exoplatform.services.security.Authenticator;
 import org.exoplatform.services.security.ConversationState;
 import org.exoplatform.services.security.IdentityRegistry;
 
-// TODO: Auto-generated Javadoc
 /**
  * The Class EditorService.
  */
 public class EditorService extends AbstractOfficeOnlineService {
 
-
   /** The Constant LOG. */
-  protected static final Log    LOG                  = ExoLogger.getLogger(EditorService.class);
+  protected static final Log LOG = ExoLogger.getLogger(EditorService.class);
 
   /**
    * Instantiates a new editor service.
@@ -55,7 +51,8 @@ public class EditorService extends AbstractOfficeOnlineService {
                        DocumentService documentService,
                        Authenticator authenticator,
                        IdentityRegistry identityRegistry,
-                       CacheService cacheService) {
+                       CacheService cacheService,
+                       UserACL userACL) {
     super(sessionProviders,
           idGenerator,
           jcrService,
@@ -63,7 +60,8 @@ public class EditorService extends AbstractOfficeOnlineService {
           documentService,
           authenticator,
           identityRegistry,
-          cacheService);
+          cacheService,
+          userACL);
   }
 
   /**
@@ -170,21 +168,23 @@ public class EditorService extends AbstractOfficeOnlineService {
    */
   @Override
   public void start() {
-    LOG.debug("Editor Service started");
-    
+    if (LOG.isDebugEnabled()) {
+      LOG.debug("Editor Service started");
+    }
     // Only for testing purposes
     EditorConfig config = new EditorConfig("vlad",
                                            "93268635624323427",
                                            "collaboration",
                                            Arrays.asList(Permissions.USER_CAN_WRITE, Permissions.USER_CAN_RENAME));
-    String accessToken = generateAccessToken(config);
-    LOG.debug("Access token #1: " + accessToken);
-
-    EditorConfig config2 = new EditorConfig("peter", "09372697", "private", new ArrayList<Permissions>());
-    String accessToken2 = generateAccessToken(config2);
-
-    LOG.debug("Access token #2: " + accessToken2);
     try {
+      String accessToken = generateAccessToken(config);
+      LOG.debug("Access token #1: " + accessToken);
+
+      EditorConfig config2 = new EditorConfig("peter", "09372697", "private", new ArrayList<Permissions>());
+      String accessToken2 = generateAccessToken(config2);
+
+      LOG.debug("Access token #2: " + accessToken2);
+
       EditorConfig decrypted1 = buildEditorConfig(accessToken);
       EditorConfig decrypted2 = buildEditorConfig(accessToken2);
 
@@ -206,6 +206,5 @@ public class EditorService extends AbstractOfficeOnlineService {
   public void stop() {
     // TODO Auto-generated method stub
   }
-
 
 }

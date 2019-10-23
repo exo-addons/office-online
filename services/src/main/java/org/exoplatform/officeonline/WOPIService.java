@@ -24,6 +24,7 @@ import org.exoplatform.container.xml.InitParams;
 import org.exoplatform.container.xml.PropertiesParam;
 import org.exoplatform.officeonline.exception.OfficeOnlineException;
 import org.exoplatform.officeonline.exception.WopiDiscoveryNotFoundException;
+import org.exoplatform.portal.config.UserACL;
 import org.exoplatform.services.cache.CacheService;
 import org.exoplatform.services.cms.documents.DocumentService;
 import org.exoplatform.services.idgenerator.IDGeneratorService;
@@ -37,8 +38,10 @@ import org.exoplatform.services.organization.User;
 import org.exoplatform.services.security.Authenticator;
 import org.exoplatform.services.security.ConversationState;
 import org.exoplatform.services.security.IdentityRegistry;
-import org.exoplatform.services.wcm.utils.WCMCoreUtils;
 
+/**
+ * The Class WOPIService.
+ */
 public class WOPIService extends AbstractOfficeOnlineService {
 
   /** The Constant LOG. */
@@ -125,6 +128,7 @@ public class WOPIService extends AbstractOfficeOnlineService {
   /** The Constant SHARE_URL_READ_WRITE. */
   protected static final String SHARE_URL_READ_WRITE              = "ReadWrite";
 
+  /** The Constant TOKEN_CONFIGURATION_PROPERTIES. */
   protected static final String TOKEN_CONFIGURATION_PROPERTIES    = "token-configuration";
 
   /** The discovery plugin. */
@@ -141,6 +145,7 @@ public class WOPIService extends AbstractOfficeOnlineService {
    * @param authenticator the authenticator
    * @param identityRegistry the identity registry
    * @param cacheService the cache service
+   * @param userACL the user ACL
    * @param initParams the init params
    */
   public WOPIService(SessionProviderService sessionProviders,
@@ -151,6 +156,7 @@ public class WOPIService extends AbstractOfficeOnlineService {
                      Authenticator authenticator,
                      IdentityRegistry identityRegistry,
                      CacheService cacheService,
+                     UserACL userACL,
                      InitParams initParams) {
     super(sessionProviders,
           idGenerator,
@@ -159,13 +165,16 @@ public class WOPIService extends AbstractOfficeOnlineService {
           documentService,
           authenticator,
           identityRegistry,
-          cacheService);
+          cacheService,
+          userACL);
     PropertiesParam param = initParams.getPropertiesParam(TOKEN_CONFIGURATION_PROPERTIES);
     String secretKey = param.getProperty(SECRET_KEY);
     if (secretKey != null && !secretKey.trim().isEmpty()) {
       byte[] decodedKey = Base64.getDecoder().decode(secretKey);
       SecretKey key = new SecretKeySpec(decodedKey, 0, decodedKey.length, ALGORITHM);
       activeCache.put(SECRET_KEY, key);
+    } else {
+      activeCache.put(SECRET_KEY, generateSecretKey());
     }
 
   }
@@ -260,6 +269,9 @@ public class WOPIService extends AbstractOfficeOnlineService {
     }
   }
 
+  /**
+   * Start.
+   */
   @Override
   public void start() {
     if (discoveryPlugin == null) {
@@ -267,11 +279,10 @@ public class WOPIService extends AbstractOfficeOnlineService {
     }
     discoveryPlugin.start();
 
-    if (activeCache.get(SECRET_KEY) == null) {
-      activeCache.put(SECRET_KEY, generateSecretKey());
+    if (LOG.isDebugEnabled()) {
+      LOG.debug("WOPI Service started");
     }
 
-    LOG.debug("WOPI Service started");
     // Only for testing purposes
     String excelEdit = discoveryPlugin.getActionUrl("xlsx", "edit");
     String excelView = discoveryPlugin.getActionUrl("xlsx", "view");
@@ -309,7 +320,7 @@ public class WOPIService extends AbstractOfficeOnlineService {
     map.put(BASE_FILE_NAME, node.getProperty("exo:title").getString());
     map.put(OWNER_ID, node.getProperty("exo:owner").getString());
     map.put(SIZE, getSize(node));
-    map.put(USER_ID, WCMCoreUtils.getRemoteUser());
+    map.put(USER_ID, ConversationState.getCurrent().getIdentity().getUserId());
     String version = node.isNodeType("mix:versionable") ? node.getBaseVersion().getName() : "1";
     map.put(VERSION, version);
   }
@@ -334,7 +345,7 @@ public class WOPIService extends AbstractOfficeOnlineService {
    * @param map the map
    */
   protected void addUserMetadataProperties(Map<String, Serializable> map) {
-    String user = WCMCoreUtils.getRemoteUser();
+    String user = ConversationState.getCurrent().getIdentity().getUserId();
     User exoUser = getUser(user);
     if (user != null) {
       user = exoUser.getDisplayName();
@@ -421,6 +432,11 @@ public class WOPIService extends AbstractOfficeOnlineService {
 
   }
 
+  /**
+   * Generate secret key.
+   *
+   * @return the key
+   */
   protected Key generateSecretKey() {
     try {
       KeyGenerator keyGen = KeyGenerator.getInstance(ALGORITHM);
