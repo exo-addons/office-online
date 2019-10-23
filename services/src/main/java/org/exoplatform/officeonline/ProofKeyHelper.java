@@ -20,13 +20,13 @@ import javax.xml.bind.DatatypeConverter;
 public class ProofKeyHelper {
 
   /** The Constant KEY_FACTORY_ALGORITHM. */
-  public static final String KEY_FACTORY_ALGORITHM = "RSA";
+  private static final String KEY_FACTORY_ALGORITHM = "RSA";
 
   /** The Constant SIGNATURE_ALGORITHM. */
-  public static final String SIGNATURE_ALGORITHM = "SHA256withRSA";
+  private static final String SIGNATURE_ALGORITHM = "SHA256withRSA";
 
   /** The Constant EPOCH_IN_TICKS. */
-  public static final long EPOCH_IN_TICKS = 621355968000000000L; // January 1, 1970 (start of Unix epoch) in "ticks"
+  private static final long EPOCH_IN_TICKS = 621355968000000000L; // January 1, 1970 (start of Unix epoch) in "ticks"
 
   /**
    * Instantiates a new proof key helper.

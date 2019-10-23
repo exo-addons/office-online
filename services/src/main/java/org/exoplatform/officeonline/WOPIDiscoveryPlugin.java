@@ -143,13 +143,15 @@ public class WOPIDiscoveryPlugin extends BaseComponentPlugin {
 
     registerApps(netZone.getApps());
 
-    LOG.debug("Successfully loaded WOPI discovery: WOPI enabled");
-
     WOPIDiscovery.ProofKey pk = discovery.getProofKey();
     proofKey = ProofKeyHelper.getPublicKey(pk.getModulus(), pk.getExponent());
     oldProofKey = ProofKeyHelper.getPublicKey(pk.getOldModulus(), pk.getOldExponent());
-    LOG.debug("Registered proof key: {}", proofKey);
-    LOG.debug("Registered old proof key: {}", oldProofKey);
+
+    if (LOG.isDebugEnabled()) {
+      LOG.debug("Successfully loaded WOPI discovery: WOPI enabled");
+      LOG.debug("Registered proof key: {}", proofKey);
+      LOG.debug("Registered old proof key: {}", oldProofKey);
+    }
   }
 
   /**
@@ -161,8 +163,10 @@ public class WOPIDiscoveryPlugin extends BaseComponentPlugin {
     if (discoveryUrl == null || discoveryUrl.isEmpty()) {
       throw new RuntimeException("DiscoveryUrl is not specified");
     }
+    if (LOG.isDebugEnabled()) {
+      LOG.debug("Fetching WOPI dicovery from discovery URL {}", discoveryUrl);
+    }
 
-    LOG.debug("Fetching WOPI dicovery from discovery URL {}", discoveryUrl);
     HttpClientBuilder httpClientBuilder = HttpClientBuilder.create();
     HttpGet request = new HttpGet(discoveryUrl);
     try (CloseableHttpClient httpClient = httpClientBuilder.build();
@@ -195,6 +199,5 @@ public class WOPIDiscoveryPlugin extends BaseComponentPlugin {
     });
     extensionActionURLs = actionURLs;
   }
- 
 
 }

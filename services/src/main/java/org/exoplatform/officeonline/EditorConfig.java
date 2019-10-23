@@ -3,26 +3,26 @@ package org.exoplatform.officeonline;
 import java.util.ArrayList;
 import java.util.List;
 
-
 /**
  * EditorConfig represents single user-permissions-file combination.
  */
 public class EditorConfig {
 
   /** The access token. */
-  protected String       accessToken;
+  protected String            accessToken;
 
   /** The user id. */
-  protected String       userId;
+  protected String            userId;
 
   /** The file id. */
-  protected String       fileId;
-  
+  protected String            fileId;
+
   /** The workspace. */
-  protected String workspace;
+  protected String            workspace;
 
   /** The permissions. */
-  protected List<String> permissions = new ArrayList<>();
+  protected List<Permissions> permissions = new ArrayList<>();
+
 
   /**
    * Instantiates a new editor config.
@@ -32,11 +32,28 @@ public class EditorConfig {
    * @param workspace the workspace
    * @param permissions the permissions
    */
-  public EditorConfig(String userId, String fileId, String workspace, List<String> permissions) {
+  public EditorConfig(String userId, String fileId, String workspace, List<Permissions> permissions) {
     this.userId = userId;
     this.fileId = fileId;
     this.workspace = workspace;
     this.permissions = permissions;
+  }
+  
+  /**
+   * Instantiates a new editor config.
+   *
+   * @param userId the user id
+   * @param fileId the file id
+   * @param workspace the workspace
+   * @param permissions the permissions
+   * @param accessToken the access token
+   */
+  public EditorConfig(String userId, String fileId, String workspace, List<Permissions> permissions, String accessToken) {
+    this.userId = userId;
+    this.fileId = fileId;
+    this.workspace = workspace;
+    this.permissions = permissions;
+    this.accessToken = accessToken;
   }
 
   /**
@@ -48,7 +65,6 @@ public class EditorConfig {
     return userId;
   }
 
- 
   /**
    * Gets the file id.
    *
@@ -63,7 +79,7 @@ public class EditorConfig {
    *
    * @return the permissions
    */
-  public List<String> getPermissions() {
+  public List<Permissions> getPermissions() {
     return permissions;
   }
 
@@ -72,7 +88,7 @@ public class EditorConfig {
    *
    * @param permissions the permissions
    */
-  public void setPermissions(List<String> permissions) {
+  public void setPermissions(List<Permissions> permissions) {
     this.permissions = permissions;
   }
 
@@ -102,5 +118,7 @@ public class EditorConfig {
   public String getWorkspace() {
     return workspace;
   }
+  
+  
 
 }
