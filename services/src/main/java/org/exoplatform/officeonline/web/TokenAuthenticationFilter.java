@@ -1,4 +1,4 @@
-package org.exoplatform.officeonline;
+package org.exoplatform.officeonline.web;
 
 import java.io.IOException;
 
@@ -11,6 +11,8 @@ import javax.servlet.http.HttpServletRequest;
 import org.exoplatform.container.ExoContainer;
 import org.exoplatform.container.ExoContainerContext;
 import org.exoplatform.container.web.AbstractFilter;
+import org.exoplatform.officeonline.EditorConfig;
+import org.exoplatform.officeonline.EditorService;
 import org.exoplatform.officeonline.exception.OfficeOnlineException;
 import org.exoplatform.services.jcr.ext.app.SessionProviderService;
 import org.exoplatform.services.jcr.ext.common.SessionProvider;
