@@ -22,8 +22,9 @@ import org.exoplatform.services.security.Authenticator;
 import org.exoplatform.services.security.ConversationState;
 import org.exoplatform.services.security.Identity;
 import org.exoplatform.services.security.IdentityRegistry;
+import org.exoplatform.web.filter.Filter;
 
-public class TokenAuthenticationFilter extends AbstractFilter {
+public class TokenAuthenticationFilter extends AbstractFilter implements Filter{
 
   private static final Log LOG = ExoLogger.getLogger(TokenAuthenticationFilter.class);
 

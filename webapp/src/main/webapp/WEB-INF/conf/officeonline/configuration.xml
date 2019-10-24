@@ -137,7 +137,7 @@
             <field name="patterns">
               <collection type="java.util.ArrayList" item-type="java.lang.String">
                 <value>
-                  <string>/wopi.*</string>
+                  <string>/rest/wopi.*</string>
                 </value>
               </collection>
             </field>
