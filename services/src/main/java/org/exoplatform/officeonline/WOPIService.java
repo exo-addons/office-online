@@ -39,6 +39,7 @@ import org.exoplatform.services.security.Authenticator;
 import org.exoplatform.services.security.ConversationState;
 import org.exoplatform.services.security.IdentityRegistry;
 
+// TODO: Auto-generated Javadoc
 /**
  * The Class WOPIService.
  */
@@ -138,35 +139,21 @@ public class WOPIService extends AbstractOfficeOnlineService {
    * Instantiates a new WOPI service.
    *
    * @param sessionProviders the session providers
-   * @param idGenerator the id generator
    * @param jcrService the jcr service
    * @param organization the organization
    * @param documentService the document service
-   * @param authenticator the authenticator
-   * @param identityRegistry the identity registry
    * @param cacheService the cache service
    * @param userACL the user ACL
    * @param initParams the init params
    */
   public WOPIService(SessionProviderService sessionProviders,
-                     IDGeneratorService idGenerator,
                      RepositoryService jcrService,
                      OrganizationService organization,
                      DocumentService documentService,
-                     Authenticator authenticator,
-                     IdentityRegistry identityRegistry,
                      CacheService cacheService,
                      UserACL userACL,
                      InitParams initParams) {
-    super(sessionProviders,
-          idGenerator,
-          jcrService,
-          organization,
-          documentService,
-          authenticator,
-          identityRegistry,
-          cacheService,
-          userACL);
+    super(sessionProviders, jcrService, organization, documentService, cacheService, userACL);
     PropertiesParam param = initParams.getPropertiesParam(TOKEN_CONFIGURATION_PROPERTIES);
     String secretKey = param.getProperty(SECRET_KEY);
     if (secretKey != null && !secretKey.trim().isEmpty()) {
@@ -185,37 +172,35 @@ public class WOPIService extends AbstractOfficeOnlineService {
    * @param userSchema the user schema
    * @param userHost the user host
    * @param userPort the user port
-   * @param accessToken the access token
+   * @param config the config
    * @return the map
-   * @throws RepositoryException the repository exception
    * @throws OfficeOnlineException the office online exception
    */
   public Map<String, Serializable> checkFileInfo(String userSchema,
                                                  String userHost,
                                                  int userPort,
-                                                 String accessToken) throws RepositoryException, OfficeOnlineException {
-    EditorConfig config = buildEditorConfig(accessToken);
-    Map<String, Serializable> map = new HashMap<>();
-    // remember real context state and session provider to restore them at the end
-    ConversationState contextState = ConversationState.getCurrent();
-    SessionProvider contextProvider = sessionProviders.getSessionProvider(null);
+                                                 EditorConfig config) throws OfficeOnlineException {
+
+    if (config == null) {
+      throw new OfficeOnlineException("Cannot check file info: config is null");
+    }
+
     try {
-      if (!setUserConvoState(config.getUserId())) {
-        LOG.error("Couldn't set user conversation state. UserId: {}", config.getUserId());
-        throw new OfficeOnlineException("Cannot set conversation state " + config.getUserId());
-      }
       Node node = nodeByUUID(config.getFileId(), config.getWorkspace());
+      Map<String, Serializable> map = new HashMap<>();
       addRequiredProperties(map, node);
       addHostCapabilitiesProperties(map);
       addUserMetadataProperties(map);
       addUserPermissionsProperties(map, node);
-      addFileURLProperties(map, node, accessToken, userSchema, userHost, userPort);
+      addFileURLProperties(map, node, config.getAccessToken(), userSchema, userHost, userPort);
       addBreadcrumbProperties(map, node, userSchema, userHost, userPort);
-
-    } finally {
-      restoreConvoState(contextState, contextProvider);
+      return map;
+    } catch (RepositoryException e) {
+      LOG.error("Error occured while checking file info {}", e.getMessage());
+      throw new OfficeOnlineException("Cannot check file info for fileId: " + config.getFileId() + ", workspace: "
+          + config.getWorkspace());
     }
-    return map;
+
   }
 
   /**
@@ -288,13 +273,14 @@ public class WOPIService extends AbstractOfficeOnlineService {
     String wordView = discoveryPlugin.getActionUrl("docx", "view");
     String powerPointEdit = discoveryPlugin.getActionUrl("pptx", "edit");
     String powerPointView = discoveryPlugin.getActionUrl("pptx", "view");
-
-    LOG.debug("Excel edit URL: " + excelEdit);
-    LOG.debug("Excel view URL: " + excelView);
-    LOG.debug("Word edit URL: " + wordEdit);
-    LOG.debug("Excel view URL: " + wordView);
-    LOG.debug("PowerPoint edit URL: " + powerPointEdit);
-    LOG.debug("PowerPoint view URL: " + powerPointView);
+    if (LOG.isDebugEnabled()) {
+      LOG.debug("Excel edit URL: " + excelEdit);
+      LOG.debug("Excel view URL: " + excelView);
+      LOG.debug("Word edit URL: " + wordEdit);
+      LOG.debug("Excel view URL: " + wordView);
+      LOG.debug("PowerPoint edit URL: " + powerPointEdit);
+      LOG.debug("PowerPoint view URL: " + powerPointView);
+    }
   }
 
   /**

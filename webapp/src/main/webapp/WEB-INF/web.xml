@@ -19,17 +19,21 @@
   02110-1301 USA, or see the FSF site: http://www.fsf.org.
 
 -->
-<web-app xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns="http://java.sun.com/xml/ns/javaee" xsi:schemaLocation="http://java.sun.com/xml/ns/javaee http://java.sun.com/xml/ns/javaee/web-app_3_0.xsd" metadata-complete="true" version="3.0">
+<web-app xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns="http://java.sun.com/xml/ns/javaee"
+  xsi:schemaLocation="http://java.sun.com/xml/ns/javaee http://java.sun.com/xml/ns/javaee/web-app_3_0.xsd"
+  metadata-complete="true" version="3.0">
   <display-name>officeonline</display-name>
-  <absolute-ordering/>
+  <absolute-ordering />
   <filter>
     <filter-name>ResourceRequestFilter</filter-name>
     <filter-class>org.exoplatform.portal.application.ResourceRequestFilter</filter-class>
   </filter>
+
   <filter-mapping>
     <filter-name>ResourceRequestFilter</filter-name>
     <url-pattern>/*</url-pattern>
   </filter-mapping>
+
   <listener>
     <listener-class>org.exoplatform.container.web.PortalContainerConfigOwner</listener-class>
   </listener>

@@ -27,7 +27,6 @@ import org.exoplatform.portal.config.UserACL;
 import org.exoplatform.services.cache.CacheService;
 import org.exoplatform.services.cache.ExoCache;
 import org.exoplatform.services.cms.documents.DocumentService;
-import org.exoplatform.services.idgenerator.IDGeneratorService;
 import org.exoplatform.services.jcr.RepositoryService;
 import org.exoplatform.services.jcr.ext.app.SessionProviderService;
 import org.exoplatform.services.jcr.ext.common.SessionProvider;
@@ -35,12 +34,8 @@ import org.exoplatform.services.log.ExoLogger;
 import org.exoplatform.services.log.Log;
 import org.exoplatform.services.organization.OrganizationService;
 import org.exoplatform.services.organization.User;
-import org.exoplatform.services.security.Authenticator;
 import org.exoplatform.services.security.ConversationState;
-import org.exoplatform.services.security.Identity;
-import org.exoplatform.services.security.IdentityRegistry;
 import org.exoplatform.services.wcm.core.NodetypeConstant;
-import org.exoplatform.services.wcm.utils.WCMCoreUtils;
 
 // TODO: Auto-generated Javadoc
 /**
@@ -69,17 +64,11 @@ public abstract class AbstractOfficeOnlineService implements Startable {
   /** Cache of Editing documents. */
   protected final ExoCache<String, Key>  activeCache;
 
-  /** The generator. */
-  protected final IDGeneratorService     idGenerator;
-
   /** The session providers. */
   protected final SessionProviderService sessionProviders;
 
-  /** The authenticator. */
-  protected final Authenticator          authenticator;
-
-  /** The identity registry. */
-  protected final IdentityRegistry       identityRegistry;
+  /** The user ACL. */
+  protected final UserACL                userACL;
 
   /** The jcr service. */
   protected final RepositoryService      jcrService;
@@ -90,38 +79,24 @@ public abstract class AbstractOfficeOnlineService implements Startable {
   /** The document service. */
   protected final DocumentService        documentService;
 
-  /** The user ACL. */
-  protected final UserACL                userACL;
-
   /**
    * Instantiates a new office online editor service.
    *
-   * @param sessionProviders the session providers
-   * @param idGenerator the id generator
    * @param jcrService the jcr service
    * @param organization the organization
    * @param documentService the document service
-   * @param authenticator the authenticator
-   * @param identityRegistry the identity registry
    * @param cacheService the cache service
-   * @param userACL the user ACL
    */
   public AbstractOfficeOnlineService(SessionProviderService sessionProviders,
-                                     IDGeneratorService idGenerator,
                                      RepositoryService jcrService,
                                      OrganizationService organization,
                                      DocumentService documentService,
-                                     Authenticator authenticator,
-                                     IdentityRegistry identityRegistry,
                                      CacheService cacheService,
                                      UserACL userACL) {
     this.sessionProviders = sessionProviders;
-    this.idGenerator = idGenerator;
     this.jcrService = jcrService;
     this.organization = organization;
     this.documentService = documentService;
-    this.authenticator = authenticator;
-    this.identityRegistry = identityRegistry;
     this.activeCache = cacheService.getCacheInstance(CACHE_NAME);
     this.userACL = userACL;
   }
@@ -188,78 +163,6 @@ public abstract class AbstractOfficeOnlineService implements Startable {
   }
 
   /**
-   * Gets the user.
-   *
-   * @param username the username
-   * @return the user
-   */
-  protected User getUser(String username) {
-    try {
-      return organization.getUserHandler().findUserByName(username);
-    } catch (Exception e) {
-      LOG.error("Error searching user " + username, e);
-      return null;
-    }
-  }
-
-  /**
-   * Sets ConversationState by userId.
-   *
-   * @param userId the userId
-   * @return true if successful, false when the user is not found
-   */
-  @SuppressWarnings("deprecation")
-  protected boolean setUserConvoState(String userId) {
-    Identity userIdentity = userIdentity(userId);
-    if (userIdentity != null) {
-      ConversationState state = new ConversationState(userIdentity);
-      // Keep subject as attribute in ConversationState.
-      state.setAttribute(ConversationState.SUBJECT, userIdentity.getSubject());
-      ConversationState.setCurrent(state);
-      SessionProvider userProvider = new SessionProvider(state);
-      sessionProviders.setSessionProvider(null, userProvider);
-      return true;
-    }
-    LOG.warn("User identity not found " + userId + " for setting conversation state");
-    return false;
-  }
-
-  /**
-   * Restores the conversation state.
-   * 
-   * @param contextState the contextState
-   * @param contextProvider the contextProvider
-   */
-  protected void restoreConvoState(ConversationState contextState, SessionProvider contextProvider) {
-    ConversationState.setCurrent(contextState);
-    sessionProviders.setSessionProvider(null, contextProvider);
-  }
-
-  /**
-   * Find or create user identity.
-   *
-   * @param userId the user id
-   * @return the identity can be null if not found and cannot be created via
-   *         current authenticator
-   */
-  protected Identity userIdentity(String userId) {
-    Identity userIdentity = identityRegistry.getIdentity(userId);
-    if (userIdentity == null) {
-      // We create user identity by authenticator, but not register it in the
-      // registry
-      try {
-        if (LOG.isDebugEnabled()) {
-          LOG.debug("User identity not registered, trying to create it for: " + userId);
-        }
-        userIdentity = authenticator.createIdentity(userId);
-      } catch (Exception e) {
-        LOG.warn("Failed to create user identity: " + userId, e);
-      }
-    }
-    return userIdentity;
-  }
-
-  /**
    * Platform url.
    *
    * @param schema the schema
@@ -280,6 +183,21 @@ public abstract class AbstractOfficeOnlineService implements Startable {
     platformUrl.append(PortalContainer.getCurrentPortalContainerName());
 
     return platformUrl;
+  }
+
+  /**
+   * Gets the user.
+   *
+   * @param username the username
+   * @return the user
+   */
+  protected User getUser(String username) {
+    try {
+      return organization.getUserHandler().findUserByName(username);
+    } catch (Exception e) {
+      LOG.error("Error searching user " + username, e);
+      return null;
+    }
   }
 
   /**
@@ -365,6 +283,7 @@ public abstract class AbstractOfficeOnlineService implements Startable {
    *
    * @param config the config
    * @return the string
+   * @throws OfficeOnlineException the office online exception
    */
   protected String generateAccessToken(EditorConfig config) throws OfficeOnlineException {
     try {
@@ -394,7 +313,7 @@ public abstract class AbstractOfficeOnlineService implements Startable {
    * @return the editor config
    * @throws OfficeOnlineException the office online exception
    */
-  protected EditorConfig buildEditorConfig(String accessToken) throws OfficeOnlineException {
+  public EditorConfig buildEditorConfig(String accessToken) throws OfficeOnlineException {
     String decryptedToken = "";
     try {
       Key key = activeCache.get(SECRET_KEY);

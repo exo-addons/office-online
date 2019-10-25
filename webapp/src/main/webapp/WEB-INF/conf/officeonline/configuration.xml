@@ -32,18 +32,18 @@
     <key>org.exoplatform.officeonline.rest.EditorResource</key>
     <type>org.exoplatform.officeonline.rest.EditorResource</type>
   </component>
-  
+
   <component>
     <key>org.exoplatform.officeonline.WOPIService</key>
     <type>org.exoplatform.officeonline.WOPIService</type>
-     <init-params>
+    <init-params>
       <properties-param>
         <name>token-configuration</name>
         <property name="secret-key" value="${officeonline.token.secret:}" />
       </properties-param>
     </init-params>
   </component>
-  
+
   <component>
     <key>org.exoplatform.officeonline.EditorService</key>
     <type>org.exoplatform.officeonline.EditorService</type>
@@ -116,6 +116,33 @@
           </object>
         </object-param>
 
+      </init-params>
+    </component-plugin>
+  </external-component-plugins>
+
+
+  <external-component-plugins>
+    <target-component>org.exoplatform.web.filter.ExtensibleFilter</target-component>
+    <component-plugin>
+      <name>Onlyoffice Editor integration filter plugin</name>
+      <set-method>addFilterDefinitions</set-method>
+      <type>org.exoplatform.web.filter.FilterDefinitionPlugin</type>
+      <init-params>
+        <object-param>
+          <name>Onlyoffice Editor integration filter</name>
+          <object type="org.exoplatform.web.filter.FilterDefinition">
+            <field name="filter">
+              <object type="org.exoplatform.officeonline.TokenAuthenticationFilter" />
+            </field>
+            <field name="patterns">
+              <collection type="java.util.ArrayList" item-type="java.lang.String">
+                <value>
+                  <string>/rest/wopi.*</string>
+                </value>
+              </collection>
+            </field>
+          </object>
+        </object-param>
       </init-params>
     </component-plugin>
   </external-component-plugins>

@@ -18,8 +18,12 @@
  */
 package org.exoplatform.officeonline.rest;
 
+import java.io.Serializable;
 import java.net.InetAddress;
+import java.net.URI;
+import java.util.Map;
 
+import javax.servlet.ServletContext;
 import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.GET;
 import javax.ws.rs.HeaderParam;
@@ -33,7 +37,9 @@ import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
 import javax.ws.rs.core.UriInfo;
 
+import org.exoplatform.officeonline.EditorConfig;
 import org.exoplatform.officeonline.WOPIService;
+import org.exoplatform.officeonline.exception.OfficeOnlineException;
 import org.exoplatform.services.log.ExoLogger;
 import org.exoplatform.services.log.Log;
 import org.exoplatform.services.rest.resource.ResourceContainer;
@@ -43,6 +49,12 @@ import org.exoplatform.services.rest.resource.ResourceContainer;
  */
 @Path("/wopi")
 public class WOPIResource implements ResourceContainer {
+
+  /** The Constant ACCESS_TOKEN. */
+  public static final String ACCESS_TOKEN = "access_token";
+  
+  /** The Constant ACCESS_TOKEN. */
+  public static final String EDITOR_CONFIG_PARAM = "editorConfig";
 
   protected enum Operation {
     GET_LOCK, GET_SHARE_URL, LOCK, PUT, PUT_RELATIVE, REFRESH_LOCK, RENAME_FILE, UNLOCK
@@ -86,9 +98,6 @@ public class WOPIResource implements ResourceContainer {
 
   /** The Constant TIMESTAMP. */
   protected static final String TIMESTAMP         = "X-WOPI-TimeStamp";
-
-  /** The Constant ACCESS_TOKEN. */
-  protected static final String ACCESS_TOKEN      = "access_token";
 
   /** The Constant API_VERSION. */
   protected static final String API_VERSION       = "1.1";
@@ -156,10 +165,23 @@ public class WOPIResource implements ResourceContainer {
   @GET
   @Path("/files/{fileId}")
   @Produces(MediaType.APPLICATION_JSON)
-  public Response checkFileInfo(@Context UriInfo uriInfo, @Context HttpServletRequest request) {
+  public Response checkFileInfo(@Context UriInfo uriInfo, @Context HttpServletRequest request, @Context ServletContext context) {
     verifyProofKey(request);
-    // TODO: return file info
-    return null;
+    EditorConfig config = (EditorConfig) context.getAttribute(EDITOR_CONFIG_PARAM);
+    URI requestUri = uriInfo.getRequestUri();
+
+    try {
+      Map<String, Serializable> fileInfo = wopiService.checkFileInfo(requestUri.getScheme(),
+                                                                     requestUri.getHost(),
+                                                                     requestUri.getPort(),
+                                                                     config);
+      return Response.ok(fileInfo).type(MediaType.APPLICATION_JSON).build();
+    } catch (OfficeOnlineException e) {
+      return Response.status(Status.BAD_REQUEST)
+                     .entity("{\"error\": \"" + e.getMessage() + "\"}")
+                     .type(MediaType.APPLICATION_JSON)
+                     .build();
+    }
   }
 
   /**
@@ -260,7 +282,6 @@ public class WOPIResource implements ResourceContainer {
   @Path("/api/version")
   @Produces(MediaType.APPLICATION_JSON)
   public Response versionGet(@Context UriInfo uriInfo, @Context HttpServletRequest request) {
-
     String title = this.getClass().getPackage().getImplementationTitle();
     String version = this.getClass().getPackage().getImplementationVersion();
 
