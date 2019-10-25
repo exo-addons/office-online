@@ -14,17 +14,12 @@ import org.exoplatform.officeonline.exception.OfficeOnlineException;
 import org.exoplatform.portal.config.UserACL;
 import org.exoplatform.services.cache.CacheService;
 import org.exoplatform.services.cms.documents.DocumentService;
-import org.exoplatform.services.idgenerator.IDGeneratorService;
 import org.exoplatform.services.jcr.RepositoryService;
 import org.exoplatform.services.jcr.ext.app.SessionProviderService;
-import org.exoplatform.services.jcr.ext.common.SessionProvider;
 import org.exoplatform.services.log.ExoLogger;
 import org.exoplatform.services.log.Log;
 import org.exoplatform.services.organization.OrganizationService;
-import org.exoplatform.services.security.Authenticator;
-import org.exoplatform.services.security.ConversationState;
-import org.exoplatform.services.security.IdentityRegistry;
-
+=
 /**
  * The Class EditorService.
  */
@@ -37,31 +32,19 @@ public class EditorService extends AbstractOfficeOnlineService {
    * Instantiates a new editor service.
    *
    * @param sessionProviders the session providers
-   * @param idGenerator the id generator
    * @param jcrService the jcr service
    * @param organization the organization
    * @param documentService the document service
-   * @param authenticator the authenticator
-   * @param identityRegistry the identity registry
+   * @param cacheService the cache service
+   * @param userACL the user ACL
    */
   public EditorService(SessionProviderService sessionProviders,
-                       IDGeneratorService idGenerator,
                        RepositoryService jcrService,
                        OrganizationService organization,
                        DocumentService documentService,
-                       Authenticator authenticator,
-                       IdentityRegistry identityRegistry,
                        CacheService cacheService,
                        UserACL userACL) {
-    super(sessionProviders,
-          idGenerator,
-          jcrService,
-          organization,
-          documentService,
-          authenticator,
-          identityRegistry,
-          cacheService,
-          userACL);
+    super(sessionProviders, jcrService, organization, documentService, cacheService, userACL);
   }
 
   /**
@@ -83,57 +66,36 @@ public class EditorService extends AbstractOfficeOnlineService {
                                          String userId,
                                          String workspace,
                                          String fileId) throws RepositoryException, OfficeOnlineException {
-    EditorConfig config = null;
-    // remember real context state and session provider to restore them at the end
-    ConversationState contextState = ConversationState.getCurrent();
-    SessionProvider contextProvider = sessionProviders.getSessionProvider(null);
-    try {
-      if (!setUserConvoState(userId)) {
-        LOG.error("Couldn't set user conversation state. UserId: {}", userId);
-        throw new OfficeOnlineException("Cannot set conversation state " + userId);
+    Node document = nodeByUUID(workspace, fileId);
+    List<Permissions> permissions = new ArrayList<>();
+
+    if (document != null) {
+      if (canEditDocument(document)) {
+        permissions.add(Permissions.USER_CAN_WRITE);
+        permissions.add(Permissions.USER_CAN_RENAME);
+      } else {
+        permissions.add(Permissions.READ_ONLY);
       }
-
-      Node document = nodeByUUID(workspace, fileId);
-      List<Permissions> permissions = new ArrayList<>();
-
-      if (document != null) {
-        if (canEditDocument(document)) {
-          permissions.add(Permissions.USER_CAN_WRITE);
-          permissions.add(Permissions.USER_CAN_RENAME);
-        } else {
-          permissions.add(Permissions.READ_ONLY);
-        }
-      }
-
-      config = new EditorConfig(userId, fileId, workspace, permissions);
-      String accessToken = generateAccessToken(config);
-      config.setAccessToken(accessToken);
-    } finally {
-      restoreConvoState(contextState, contextProvider);
     }
+    EditorConfig config = new EditorConfig(userId, fileId, workspace, permissions);
+    String accessToken = generateAccessToken(config);
+    config.setAccessToken(accessToken);
     return config;
   }
 
   /**
    * Gets the content.
    *
-   * @param userId the user id
-   * @param fileId the file id
-   * @param accessToken the access token
+   * @param config the config
    * @return the content
    * @throws OfficeOnlineException the office online exception
    */
-  public DocumentContent getContent(String accessToken) throws OfficeOnlineException {
-    EditorConfig config = buildEditorConfig(accessToken);
-    ConversationState contextState = ConversationState.getCurrent();
-    SessionProvider contextProvider = sessionProviders.getSessionProvider(null);
+  public DocumentContent getContent(EditorConfig config) throws OfficeOnlineException {
+    if (config == null) {
+      throw new OfficeOnlineException("Cannot getContent. Config is null.");
+    }
+
     try {
-      // We all the job under actual (requester) user here
-      if (!setUserConvoState(config.getUserId())) {
-        LOG.error("Couldn't set user conversation state. UserId: {}", config.getUserId());
-        throw new OfficeOnlineException("Cannot set conversation state " + config.getUserId());
-      }
-      // work in user session
       Node node = nodeByUUID(config.getFileId(), config.getWorkspace());
       if (node == null) {
         throw new OfficeOnlineException("File not found. fileId: " + config.getFileId());
@@ -156,9 +118,7 @@ public class EditorService extends AbstractOfficeOnlineService {
       };
     } catch (RepositoryException e) {
       LOG.error("Cannot get content of node. FileId: " + config.getFileId(), e.getMessage());
-      throw new OfficeOnlineException("Cannot get file content");
-    } finally {
-      restoreConvoState(contextState, contextProvider);
+      throw new OfficeOnlineException("Cannot get file content. FileId: " + config.getFileId());
     }
 
   }
@@ -177,20 +137,24 @@ public class EditorService extends AbstractOfficeOnlineService {
                                            Arrays.asList(Permissions.USER_CAN_WRITE, Permissions.USER_CAN_RENAME));
     try {
       String accessToken = generateAccessToken(config);
-      LOG.debug("Access token #1: " + accessToken);
+      if (LOG.isDebugEnabled()) {
+        LOG.debug("Access token #1: " + accessToken);
+      }
 
       EditorConfig config2 = new EditorConfig("peter", "09372697", "private", new ArrayList<Permissions>());
       String accessToken2 = generateAccessToken(config2);
-
-      LOG.debug("Access token #2: " + accessToken2);
-
+      if (LOG.isDebugEnabled()) {
+        LOG.debug("Access token #2: " + accessToken2);
+      }
       EditorConfig decrypted1 = buildEditorConfig(accessToken);
       EditorConfig decrypted2 = buildEditorConfig(accessToken2);
-
-      LOG.debug("DECRYPTED 1: " + decrypted1.getWorkspace() + " " + decrypted1.getUserId() + " " + decrypted1.getFileId());
-      decrypted1.getPermissions().forEach(LOG::debug);
-
-      LOG.debug("DECRYPTED 2: " + decrypted2.getWorkspace() + " " + decrypted2.getUserId() + " " + decrypted2.getFileId());
+      if (LOG.isDebugEnabled()) {
+        LOG.debug("DECRYPTED 1: " + decrypted1.getWorkspace() + " " + decrypted1.getUserId() + " " + decrypted1.getFileId());
+        decrypted1.getPermissions().forEach(LOG::debug);
+      }
+      if (LOG.isDebugEnabled()) {
+        LOG.debug("DECRYPTED 2: " + decrypted2.getWorkspace() + " " + decrypted2.getUserId() + " " + decrypted2.getFileId());
+      }
       decrypted2.getPermissions().forEach(LOG::debug);
     } catch (OfficeOnlineException e) {
       LOG.error(e);

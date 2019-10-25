@@ -132,7 +132,7 @@
           <name>Onlyoffice Editor integration filter</name>
           <object type="org.exoplatform.web.filter.FilterDefinition">
             <field name="filter">
-              <object type="org.exoplatform.officeonline.web.TokenAuthenticationFilter" />
+              <object type="org.exoplatform.officeonline.TokenAuthenticationFilter" />
             </field>
             <field name="patterns">
               <collection type="java.util.ArrayList" item-type="java.lang.String">

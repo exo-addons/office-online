@@ -1,8 +1,9 @@
-package org.exoplatform.officeonline.web;
+package org.exoplatform.officeonline;
 
 import java.io.IOException;
 
 import javax.servlet.FilterChain;
+import javax.servlet.ServletContext;
 import javax.servlet.ServletException;
 import javax.servlet.ServletRequest;
 import javax.servlet.ServletResponse;
@@ -11,9 +12,8 @@ import javax.servlet.http.HttpServletRequest;
 import org.exoplatform.container.ExoContainer;
 import org.exoplatform.container.ExoContainerContext;
 import org.exoplatform.container.web.AbstractFilter;
-import org.exoplatform.officeonline.EditorConfig;
-import org.exoplatform.officeonline.EditorService;
 import org.exoplatform.officeonline.exception.OfficeOnlineException;
+import org.exoplatform.officeonline.rest.WOPIResource;
 import org.exoplatform.services.jcr.ext.app.SessionProviderService;
 import org.exoplatform.services.jcr.ext.common.SessionProvider;
 import org.exoplatform.services.log.ExoLogger;
@@ -24,20 +24,22 @@ import org.exoplatform.services.security.Identity;
 import org.exoplatform.services.security.IdentityRegistry;
 import org.exoplatform.web.filter.Filter;
 
-public class TokenAuthenticationFilter extends AbstractFilter implements Filter{
+public class TokenAuthenticationFilter extends AbstractFilter implements Filter {
 
   private static final Log LOG = ExoLogger.getLogger(TokenAuthenticationFilter.class);
 
   @Override
   public void doFilter(ServletRequest request, ServletResponse response, FilterChain chain) throws IOException, ServletException {
+    ServletContext context = request.getServletContext();
     HttpServletRequest httpRequest = (HttpServletRequest) request;
     ExoContainer container = getContainer();
     try {
       ExoContainerContext.setCurrentContainer(container);
-      ConversationState state = getCurrentState(container, httpRequest);
+      ConversationState state = getCurrentState(context, httpRequest);
       ConversationState.setCurrent(state);
       chain.doFilter(request, response);
     } finally {
+      context.removeAttribute(WOPIResource.ACCESS_TOKEN);
       try {
         ConversationState.setCurrent(null);
       } catch (Exception e) {
@@ -54,12 +56,12 @@ public class TokenAuthenticationFilter extends AbstractFilter implements Filter{
   /**
    * Gives the current state
    */
-  private ConversationState getCurrentState(ExoContainer container, HttpServletRequest httpRequest) {
-    EditorService editorService = (EditorService) container.getComponentInstanceOfType(EditorService.class);
+  private ConversationState getCurrentState(ServletContext context, HttpServletRequest httpRequest) {
+    EditorService editorService = (EditorService) getContainer().getComponentInstanceOfType(EditorService.class);
     SessionProviderService sessionProviders =
-                                            (SessionProviderService) container.getComponentInstanceOfType(SessionProviderService.class);
+                                            (SessionProviderService) getContainer().getComponentInstanceOfType(SessionProviderService.class);
 
-    String token = httpRequest.getParameter("access_token");
+    String token = httpRequest.getParameter(WOPIResource.ACCESS_TOKEN);
     if (token != null) {
       EditorConfig config = null;
       try {
@@ -77,6 +79,7 @@ public class TokenAuthenticationFilter extends AbstractFilter implements Filter{
         ConversationState.setCurrent(state);
         SessionProvider userProvider = new SessionProvider(state);
         sessionProviders.setSessionProvider(null, userProvider);
+        context.setAttribute(WOPIResource.EDITOR_CONFIG_PARAM, config);
         return state;
       }
       LOG.warn("User identity not found " + config.getUserId() + " for setting conversation state");

@@ -61,7 +61,7 @@ public class EditorConfig {
    *
    * @return the user id
    */
-  public String getUserId() {
+  protected String getUserId() {
     return userId;
   }
 
@@ -70,7 +70,7 @@ public class EditorConfig {
    *
    * @return the file id
    */
-  public String getFileId() {
+  protected String getFileId() {
     return fileId;
   }
 
@@ -79,17 +79,8 @@ public class EditorConfig {
    *
    * @return the permissions
    */
-  public List<Permissions> getPermissions() {
+  protected List<Permissions> getPermissions() {
     return permissions;
-  }
-
-  /**
-   * Sets the permissions.
-   *
-   * @param permissions the permissions
-   */
-  public void setPermissions(List<Permissions> permissions) {
-    this.permissions = permissions;
   }
 
   /**
@@ -97,7 +88,7 @@ public class EditorConfig {
    *
    * @return the access token
    */
-  public String getAccessToken() {
+  protected String getAccessToken() {
     return accessToken;
   }
 
@@ -106,7 +97,7 @@ public class EditorConfig {
    *
    * @param accessToken the new access token
    */
-  public void setAccessToken(String accessToken) {
+  protected void setAccessToken(String accessToken) {
     this.accessToken = accessToken;
   }
 
@@ -115,10 +106,8 @@ public class EditorConfig {
    *
    * @return the workspace
    */
-  public String getWorkspace() {
+  protected String getWorkspace() {
     return workspace;
   }
   
-  
-
 }
