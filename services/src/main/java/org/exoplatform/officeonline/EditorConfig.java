@@ -3,6 +3,9 @@ package org.exoplatform.officeonline;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.exoplatform.ws.frameworks.json.impl.JsonException;
+import org.exoplatform.ws.frameworks.json.impl.JsonGeneratorImpl;
+
 /**
  * EditorConfig represents single user-permissions-file combination.
  */
@@ -108,6 +111,17 @@ public class EditorConfig {
    */
   protected String getWorkspace() {
     return workspace;
+  }
+  
+  /**
+   * Return this config as JSON string.
+   *
+   * @return the string
+   * @throws JsonException the json exception
+   */
+  public String toJSON() throws JsonException {
+    JsonGeneratorImpl gen = new JsonGeneratorImpl();
+    return gen.createJsonObject(this).toString();
   }
   
 }

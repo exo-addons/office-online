@@ -20,7 +20,19 @@
 
 -->
 <gatein-resources xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-	xsi:schemaLocation="http://www.exoplatform.org/xml/ns/gatein_resources_1_4 http://www.exoplatform.org/xml/ns/gatein_resources_1_4"
-	xmlns="http://www.exoplatform.org/xml/ns/gatein_resources_1_4">
+  xsi:schemaLocation="http://www.exoplatform.org/xml/ns/gatein_resources_1_4 http://www.exoplatform.org/xml/ns/gatein_resources_1_4"
+  xmlns="http://www.exoplatform.org/xml/ns/gatein_resources_1_4">
+
+  <!-- Javascript for Onlyoffice editor in WCM -->
+  <module>
+    <name>officeonline</name>
+    <load-group>officeonlineGRP</load-group>
+    <script>
+      <path>/js/officeonline.js</path>
+    </script>
+    <depends>
+      <module>jquery</module>
+    </depends>
+  </module>
 
 </gatein-resources>

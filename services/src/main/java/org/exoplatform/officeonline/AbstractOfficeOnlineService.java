@@ -105,23 +105,14 @@ public abstract class AbstractOfficeOnlineService implements Startable {
    * Node by UUID.
    *
    * @param uuid the uuid
-   * @return the node
-   * @throws RepositoryException the repository exception
-   */
-  protected Node nodeByUUID(String uuid) throws RepositoryException {
-    String workspace = jcrService.getCurrentRepository().getConfiguration().getDefaultWorkspaceName();
-    return nodeByUUID(uuid, workspace);
-  }
-
-  /**
-   * Node by UUID.
-   *
-   * @param uuid the uuid
    * @param workspace the workspace
    * @return the node
    * @throws RepositoryException the repository exception
    */
   protected Node nodeByUUID(String uuid, String workspace) throws RepositoryException {
+    if(workspace == null) {
+      workspace = jcrService.getCurrentRepository().getConfiguration().getDefaultWorkspaceName();
+    }
     SessionProvider sp = sessionProviders.getSessionProvider(null);
     Session userSession = sp.getSession(workspace, jcrService.getCurrentRepository());
     return userSession.getNodeByUUID(uuid);

@@ -27,19 +27,14 @@ import org.exoplatform.officeonline.exception.WopiDiscoveryNotFoundException;
 import org.exoplatform.portal.config.UserACL;
 import org.exoplatform.services.cache.CacheService;
 import org.exoplatform.services.cms.documents.DocumentService;
-import org.exoplatform.services.idgenerator.IDGeneratorService;
 import org.exoplatform.services.jcr.RepositoryService;
 import org.exoplatform.services.jcr.ext.app.SessionProviderService;
-import org.exoplatform.services.jcr.ext.common.SessionProvider;
 import org.exoplatform.services.log.ExoLogger;
 import org.exoplatform.services.log.Log;
 import org.exoplatform.services.organization.OrganizationService;
 import org.exoplatform.services.organization.User;
-import org.exoplatform.services.security.Authenticator;
 import org.exoplatform.services.security.ConversationState;
-import org.exoplatform.services.security.IdentityRegistry;
 
-// TODO: Auto-generated Javadoc
 /**
  * The Class WOPIService.
  */
@@ -383,8 +378,11 @@ public class WOPIService extends AbstractOfficeOnlineService {
                                                            .append(PortalContainer.getCurrentRestContextName())
                                                            .toString();
 
-    String downloadURL =
-                       new StringBuilder(platformRestURL).append("/officeonline/editor/content/").append(accessToken).toString();
+    String downloadURL = new StringBuilder(platformRestURL).append("/officeonline/editor/content/")
+                                                           .append(node.getUUID())
+                                                           .append("?accessToken=")
+                                                           .append(accessToken)
+                                                           .toString();
     map.put(DOWNLOAD_URL, downloadURL);
     // TODO: set url to the portlet
     map.put(HOST_EDIT_URL, null);

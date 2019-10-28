@@ -19,7 +19,7 @@ import org.exoplatform.services.jcr.ext.app.SessionProviderService;
 import org.exoplatform.services.log.ExoLogger;
 import org.exoplatform.services.log.Log;
 import org.exoplatform.services.organization.OrganizationService;
-=
+
 /**
  * The Class EditorService.
  */
@@ -66,7 +66,8 @@ public class EditorService extends AbstractOfficeOnlineService {
                                          String userId,
                                          String workspace,
                                          String fileId) throws RepositoryException, OfficeOnlineException {
-    Node document = nodeByUUID(workspace, fileId);
+
+    Node document = nodeByUUID(fileId, workspace);
     List<Permissions> permissions = new ArrayList<>();
 
     if (document != null) {
@@ -86,13 +87,17 @@ public class EditorService extends AbstractOfficeOnlineService {
   /**
    * Gets the content.
    *
+   * @param fileId the fileId
    * @param config the config
    * @return the content
    * @throws OfficeOnlineException the office online exception
    */
-  public DocumentContent getContent(EditorConfig config) throws OfficeOnlineException {
+  public DocumentContent getContent(String fileId, EditorConfig config) throws OfficeOnlineException {
     if (config == null) {
       throw new OfficeOnlineException("Cannot getContent. Config is null.");
+    }
+    if (!fileId.equals(config.getFileId())) {
+      throw new OfficeOnlineException("FileId from request doesn't match config.fileId");
     }
 
     try {
