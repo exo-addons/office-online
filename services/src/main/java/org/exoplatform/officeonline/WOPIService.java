@@ -22,6 +22,7 @@ import org.exoplatform.container.PortalContainer;
 import org.exoplatform.container.component.ComponentPlugin;
 import org.exoplatform.container.xml.InitParams;
 import org.exoplatform.container.xml.PropertiesParam;
+import org.exoplatform.ecm.webui.utils.Utils;
 import org.exoplatform.officeonline.exception.OfficeOnlineException;
 import org.exoplatform.officeonline.exception.WopiDiscoveryNotFoundException;
 import org.exoplatform.portal.config.UserACL;
@@ -35,6 +36,7 @@ import org.exoplatform.services.organization.OrganizationService;
 import org.exoplatform.services.organization.User;
 import org.exoplatform.services.security.ConversationState;
 
+// TODO: Auto-generated Javadoc
 /**
  * The Class WOPIService.
  */
@@ -195,7 +197,6 @@ public class WOPIService extends AbstractOfficeOnlineService {
       throw new OfficeOnlineException("Cannot check file info for fileId: " + config.getFileId() + ", workspace: "
           + config.getWorkspace());
     }
-
   }
 
   /**
@@ -247,6 +248,27 @@ public class WOPIService extends AbstractOfficeOnlineService {
     } else {
       throw new WopiDiscoveryNotFoundException("WopiDiscoveryPlugin is not an instance of " + pclass.getName());
     }
+  }
+
+  /**
+   * Gets the action url.
+   *
+   * @param fileId the file id
+   * @param action the action
+   * @return the action url
+   * @throws RepositoryException the repository exception
+   * @throws OfficeOnlineException the office online exception
+   */
+  public String getActionUrl(String fileId, String workspace, String action) throws RepositoryException, OfficeOnlineException {
+    Node node = nodeByUUID(fileId, workspace);
+    String title = node.getProperty(Utils.EXO_TITLE).getString();
+    if (title.contains(".")) {
+      String extension = title.substring(title.lastIndexOf("."));
+      return discoveryPlugin.getActionUrl(extension, action);
+    } else {
+      throw new OfficeOnlineException("Cannot get file extension. FileId: " + fileId);
+    }
+
   }
 
   /**
@@ -363,7 +385,7 @@ public class WOPIService extends AbstractOfficeOnlineService {
    */
   protected void addFileURLProperties(Map<String, Serializable> map,
                                       Node node,
-                                      String accessToken,
+                                      AccessToken accessToken,
                                       String schema,
                                       String host,
                                       int port) throws RepositoryException {
@@ -381,7 +403,7 @@ public class WOPIService extends AbstractOfficeOnlineService {
     String downloadURL = new StringBuilder(platformRestURL).append("/officeonline/editor/content/")
                                                            .append(node.getUUID())
                                                            .append("?accessToken=")
-                                                           .append(accessToken)
+                                                           .append(accessToken.getToken())
                                                            .toString();
     map.put(DOWNLOAD_URL, downloadURL);
     // TODO: set url to the portlet

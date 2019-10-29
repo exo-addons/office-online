@@ -79,7 +79,7 @@ public class EditorService extends AbstractOfficeOnlineService {
       }
     }
     EditorConfig config = new EditorConfig(userId, fileId, workspace, permissions);
-    String accessToken = generateAccessToken(config);
+    AccessToken accessToken = generateAccessToken(config);
     config.setAccessToken(accessToken);
     return config;
   }
@@ -141,24 +141,24 @@ public class EditorService extends AbstractOfficeOnlineService {
                                            "collaboration",
                                            Arrays.asList(Permissions.USER_CAN_WRITE, Permissions.USER_CAN_RENAME));
     try {
-      String accessToken = generateAccessToken(config);
+      AccessToken accessToken = generateAccessToken(config);
       if (LOG.isDebugEnabled()) {
-        LOG.debug("Access token #1: " + accessToken);
+        LOG.debug("Access token #1: " + accessToken.getToken());
       }
 
       EditorConfig config2 = new EditorConfig("peter", "09372697", "private", new ArrayList<Permissions>());
-      String accessToken2 = generateAccessToken(config2);
+      AccessToken accessToken2 = generateAccessToken(config2);
       if (LOG.isDebugEnabled()) {
-        LOG.debug("Access token #2: " + accessToken2);
+        LOG.debug("Access token #2: " + accessToken2.getToken());
       }
-      EditorConfig decrypted1 = buildEditorConfig(accessToken);
-      EditorConfig decrypted2 = buildEditorConfig(accessToken2);
+      EditorConfig decrypted1 = buildEditorConfig(accessToken.getToken());
+      EditorConfig decrypted2 = buildEditorConfig(accessToken2.getToken());
       if (LOG.isDebugEnabled()) {
-        LOG.debug("DECRYPTED 1: " + decrypted1.getWorkspace() + " " + decrypted1.getUserId() + " " + decrypted1.getFileId());
+        LOG.debug("DECRYPTED 1: " + decrypted1.getWorkspace() + " " + decrypted1.getUserId() + " " + decrypted1.getFileId() + " " + decrypted1.getAccessToken().getExpires());
         decrypted1.getPermissions().forEach(LOG::debug);
       }
       if (LOG.isDebugEnabled()) {
-        LOG.debug("DECRYPTED 2: " + decrypted2.getWorkspace() + " " + decrypted2.getUserId() + " " + decrypted2.getFileId());
+        LOG.debug("DECRYPTED 2: " + decrypted2.getWorkspace() + " " + decrypted2.getUserId() + " " + decrypted2.getFileId() + " " + decrypted1.getAccessToken().getExpires() );
       }
       decrypted2.getPermissions().forEach(LOG::debug);
     } catch (OfficeOnlineException e) {

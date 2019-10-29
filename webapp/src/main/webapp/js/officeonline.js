@@ -41,8 +41,11 @@
    * Editor core class.
    */
   function Editor() {
-    this.initEditor = function(config) {
+    this.initEditor = function(accessToken, actionURL) {
       log("Init method called");
+      log("AccessToken: " + accessToken.token);
+      log("Expires: " + accessToken.expires);
+      log("actionURL: " + actionURL);
     };
   }
 

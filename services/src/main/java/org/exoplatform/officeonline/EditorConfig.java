@@ -12,7 +12,7 @@ import org.exoplatform.ws.frameworks.json.impl.JsonGeneratorImpl;
 public class EditorConfig {
 
   /** The access token. */
-  protected String            accessToken;
+  protected AccessToken       accessToken;
 
   /** The user id. */
   protected String            userId;
@@ -25,7 +25,6 @@ public class EditorConfig {
 
   /** The permissions. */
   protected List<Permissions> permissions = new ArrayList<>();
-
 
   /**
    * Instantiates a new editor config.
@@ -41,7 +40,7 @@ public class EditorConfig {
     this.workspace = workspace;
     this.permissions = permissions;
   }
-  
+
   /**
    * Instantiates a new editor config.
    *
@@ -50,8 +49,9 @@ public class EditorConfig {
    * @param workspace the workspace
    * @param permissions the permissions
    * @param accessToken the access token
+   * @param tokenExpires the token ttl
    */
-  public EditorConfig(String userId, String fileId, String workspace, List<Permissions> permissions, String accessToken) {
+  public EditorConfig(String userId, String fileId, String workspace, List<Permissions> permissions, AccessToken accessToken) {
     this.userId = userId;
     this.fileId = fileId;
     this.workspace = workspace;
@@ -91,7 +91,7 @@ public class EditorConfig {
    *
    * @return the access token
    */
-  protected String getAccessToken() {
+  public AccessToken getAccessToken() {
     return accessToken;
   }
 
@@ -100,7 +100,7 @@ public class EditorConfig {
    *
    * @param accessToken the new access token
    */
-  protected void setAccessToken(String accessToken) {
+  protected void setAccessToken(AccessToken accessToken) {
     this.accessToken = accessToken;
   }
 
@@ -112,7 +112,7 @@ public class EditorConfig {
   protected String getWorkspace() {
     return workspace;
   }
-  
+
   /**
    * Return this config as JSON string.
    *
@@ -123,5 +123,5 @@ public class EditorConfig {
     JsonGeneratorImpl gen = new JsonGeneratorImpl();
     return gen.createJsonObject(this).toString();
   }
-  
+
 }

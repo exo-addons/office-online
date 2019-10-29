@@ -44,22 +44,24 @@ import org.exoplatform.services.wcm.core.NodetypeConstant;
 public abstract class AbstractOfficeOnlineService implements Startable {
 
   /** The Constant LOG. */
-  protected static final Log             LOG                  = ExoLogger.getLogger(AbstractOfficeOnlineService.class);
+  protected static final Log             LOG                   = ExoLogger.getLogger(AbstractOfficeOnlineService.class);
 
   /** The Constant CACHE_NAME. */
-  public static final String             CACHE_NAME           = "officeonline.Cache".intern();
+  public static final String             CACHE_NAME            = "officeonline.Cache".intern();
 
   /** The Constant SECRET_KEY. */
-  protected static final String          SECRET_KEY           = "secret-key";
+  protected static final String          SECRET_KEY            = "secret-key";
 
   /** The Constant ALGORITHM. */
-  protected static final String          ALGORITHM            = "AES";
+  protected static final String          ALGORITHM             = "AES";
 
   /** The Constant TOKEN_DELIMITER. */
-  protected static final String          TOKEN_DELIMITER      = "+";
+  protected static final String          TOKEN_DELIMITER       = "+";
 
   /** The Constant TOKEN_DELIMITER_SPLIT. */
-  protected static final String          TOKEN_DELIMITE_SPLIT = "\\+";
+  protected static final String          TOKEN_DELIMITE_SPLIT  = "\\+";
+
+  protected static final long            TOKEN_EXPIRES_MINUTES = 30;
 
   /** Cache of Editing documents. */
   protected final ExoCache<String, Key>  activeCache;
@@ -110,7 +112,7 @@ public abstract class AbstractOfficeOnlineService implements Startable {
    * @throws RepositoryException the repository exception
    */
   protected Node nodeByUUID(String uuid, String workspace) throws RepositoryException {
-    if(workspace == null) {
+    if (workspace == null) {
       workspace = jcrService.getCurrentRepository().getConfiguration().getDefaultWorkspaceName();
     }
     SessionProvider sp = sessionProviders.getSessionProvider(null);
@@ -276,21 +278,27 @@ public abstract class AbstractOfficeOnlineService implements Startable {
    * @return the string
    * @throws OfficeOnlineException the office online exception
    */
-  protected String generateAccessToken(EditorConfig config) throws OfficeOnlineException {
+  protected AccessToken generateAccessToken(EditorConfig config) throws OfficeOnlineException {
     try {
       Key key = activeCache.get(SECRET_KEY);
       Cipher chiper = Cipher.getInstance(ALGORITHM);
       chiper.init(Cipher.ENCRYPT_MODE, key);
+
+      long expires = System.currentTimeMillis() + TOKEN_EXPIRES_MINUTES * 60000;
+
       StringBuilder builder = new StringBuilder().append(config.getWorkspace())
                                                  .append(TOKEN_DELIMITER)
                                                  .append(config.getUserId())
                                                  .append(TOKEN_DELIMITER)
-                                                 .append(config.getFileId());
+                                                 .append(config.getFileId())
+                                                 .append(TOKEN_DELIMITER)
+                                                 .append(expires);
       config.getPermissions().forEach(permission -> {
         builder.append(TOKEN_DELIMITER).append(permission.getShortName());
       });
       byte[] encrypted = chiper.doFinal(builder.toString().getBytes());
-      return new String(Base64.getUrlEncoder().encode(encrypted));
+      String token = new String(Base64.getUrlEncoder().encode(encrypted));
+      return new AccessToken(token, expires);
     } catch (Exception e) {
       LOG.error("Error occured while generating token. {}", e.getMessage());
       throw new OfficeOnlineException("Couldn't generate token from editor config.");
@@ -300,17 +308,17 @@ public abstract class AbstractOfficeOnlineService implements Startable {
   /**
    * Builds the editor config.
    *
-   * @param accessToken the access token
+   * @param token the access token
    * @return the editor config
    * @throws OfficeOnlineException the office online exception
    */
-  public EditorConfig buildEditorConfig(String accessToken) throws OfficeOnlineException {
+  public EditorConfig buildEditorConfig(String token) throws OfficeOnlineException {
     String decryptedToken = "";
     try {
       Key key = activeCache.get(SECRET_KEY);
       Cipher chiper = Cipher.getInstance(ALGORITHM);
       chiper.init(Cipher.DECRYPT_MODE, key);
-      byte[] decoded = Base64.getUrlDecoder().decode(accessToken.getBytes());
+      byte[] decoded = Base64.getUrlDecoder().decode(token.getBytes());
       decryptedToken = new String(chiper.doFinal(decoded));
     } catch (Exception e) {
       LOG.error("Error occured while decoding/decrypting accessToken. {}", e.getMessage());
@@ -323,8 +331,9 @@ public abstract class AbstractOfficeOnlineService implements Startable {
       String workspace = values.get(0);
       String userId = values.get(1);
       String fileId = values.get(2);
-      values.stream().skip(3).forEach(value -> permissions.add(Permissions.fromShortName(value)));
-      return new EditorConfig(userId, fileId, workspace, permissions, accessToken);
+      long expires = Long.parseLong(values.get(3));
+      values.stream().skip(4).forEach(value -> permissions.add(Permissions.fromShortName(value)));
+      return new EditorConfig(userId, fileId, workspace, permissions, new AccessToken(token, expires));
     } else {
       throw new OfficeOnlineException("Decrypted token doesn't contain all required parameters");
     }
