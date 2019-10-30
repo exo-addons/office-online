@@ -113,15 +113,4 @@ public class EditorConfig {
     return workspace;
   }
 
-  /**
-   * Return this config as JSON string.
-   *
-   * @return the string
-   * @throws JsonException the json exception
-   */
-  public String toJSON() throws JsonException {
-    JsonGeneratorImpl gen = new JsonGeneratorImpl();
-    return gen.createJsonObject(this).toString();
-  }
-
 }

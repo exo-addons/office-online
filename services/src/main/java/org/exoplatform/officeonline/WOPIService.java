@@ -51,6 +51,9 @@ public class WOPIService extends AbstractOfficeOnlineService {
   /** The Constant OWNER_ID. */
   protected static final String OWNER_ID                          = "OwnerId";
 
+  /** The Constant FILES_ENDPOINT. */
+  protected static final String FILES_ENDPOINT                    = "/wopi/files/";
+
   /** The Constant SIZE. */
   protected static final String SIZE                              = "Size";
 
@@ -116,6 +119,9 @@ public class WOPIService extends AbstractOfficeOnlineService {
 
   /** The Constant USER_FRIENDLY_NAME. */
   protected static final String USER_FRIENDLY_NAME                = "UserFriendlyName";
+
+  /** The Constant PLACEHOLDER_WOPISRC. */
+  protected static final String PLACEHOLDER_WOPISRC               = "wopisrc";
 
   /** The Constant SHARE_URL. */
   protected static final String SHARE_URL                         = "ShareUrl";
@@ -253,22 +259,41 @@ public class WOPIService extends AbstractOfficeOnlineService {
   /**
    * Gets the action url.
    *
+   * @param requestInfo the request info
    * @param fileId the file id
+   * @param workspace the workspace
    * @param action the action
    * @return the action url
    * @throws RepositoryException the repository exception
    * @throws OfficeOnlineException the office online exception
    */
-  public String getActionUrl(String fileId, String workspace, String action) throws RepositoryException, OfficeOnlineException {
+  public String getActionUrl(RequestInfo requestInfo, String fileId, String workspace, String action) throws RepositoryException,
+                                                                                                      OfficeOnlineException {
     Node node = nodeByUUID(fileId, workspace);
     String title = node.getProperty(Utils.EXO_TITLE).getString();
     if (title.contains(".")) {
-      String extension = title.substring(title.lastIndexOf("."));
-      return discoveryPlugin.getActionUrl(extension, action);
+      String extension = title.substring(title.lastIndexOf(".") + 1);
+      String actionURL = discoveryPlugin.getActionUrl(extension, action);
+      return String.format("%s%s=%s&", actionURL, PLACEHOLDER_WOPISRC, getWOPISrc(requestInfo, fileId));
     } else {
       throw new OfficeOnlineException("Cannot get file extension. FileId: " + fileId);
     }
 
+  }
+
+  /**
+   * Gets the WOPI src.
+   *
+   * @param requestInfo the request info
+   * @param fileId the file id
+   * @return the WOPI src
+   */
+  protected Object getWOPISrc(RequestInfo requestInfo, String fileId) {
+    StringBuilder builder = new StringBuilder();
+    builder.append(platformRestUrl(platformUrl(requestInfo.getScheme(), requestInfo.getServerName(), requestInfo.getPort())));
+    builder.append(FILES_ENDPOINT);
+    builder.append(fileId);
+    return builder.toString();
   }
 
   /**

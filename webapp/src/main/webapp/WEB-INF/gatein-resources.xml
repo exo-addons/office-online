@@ -35,4 +35,12 @@
     </depends>
   </module>
 
+  <portlet-skin>
+    <application-name>officeonline</application-name>
+    <portlet-name>OfficeOnlineEditorPortlet</portlet-name>
+    <skin-name>Enterprise</skin-name>
+    <css-path>/skin/officeonline.css</css-path>
+    <overwrite>true</overwrite>
+  </portlet-skin>
+
 </gatein-resources>

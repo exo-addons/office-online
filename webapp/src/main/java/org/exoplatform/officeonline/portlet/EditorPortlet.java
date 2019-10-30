@@ -15,6 +15,7 @@ import org.exoplatform.container.ExoContainerContext;
 import org.exoplatform.officeonline.AccessToken;
 import org.exoplatform.officeonline.EditorConfig;
 import org.exoplatform.officeonline.EditorService;
+import org.exoplatform.officeonline.RequestInfo;
 import org.exoplatform.officeonline.WOPIService;
 import org.exoplatform.officeonline.exception.OfficeOnlineException;
 import org.exoplatform.services.log.ExoLogger;
@@ -67,21 +68,18 @@ public class EditorPortlet extends GenericPortlet {
     String fileId = webuiContext.getRequestParameter("fileId");
     if (fileId != null) {
       try {
-        EditorConfig config = editorService.createEditorConfig(request.getScheme(),
-                                                               request.getServerName(),
-                                                               request.getServerPort(),
-                                                               request.getRemoteUser(),
-                                                               null,
-                                                               fileId);
+        
+        EditorConfig config = editorService.createEditorConfig(request.getRemoteUser(), fileId, null);
         AccessToken token = config.getAccessToken();
-        // TODO: choose action instead of using DEFAULT_ACTION
-        String actionURL = wopiService.getActionUrl(fileId, null, DEFAULT_ACTION);
+        RequestInfo requestInfo = new RequestInfo(request.getScheme(), request.getServerName(), request.getServerPort(), request.getRemoteUser());
+        String actionURL = wopiService.getActionUrl(requestInfo, fileId, null, DEFAULT_ACTION);
         JavascriptManager js = webuiContext.getJavascriptManager();
         RequireJS require = js.require("SHARED/officeonline", "officeonline");
-        require.addScripts("officeonline.initEditor(" + token + ", " + actionURL + ");");
+        require.addScripts("officeonline.initEditor(" + token.toJSON() + ", \"" + actionURL + "\");");
       } catch (RepositoryException e) {
         LOG.error("Error reading document node by ID: {}", fileId, e);
-
+      } catch (JsonException e) {
+        LOG.error("Error creating JSON from access token for node by ID: {}", fileId, e);
       } catch (OfficeOnlineException e) {
         LOG.error("Error creating document editor for node by ID: {}", fileId, e);
       }

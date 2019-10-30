@@ -50,22 +50,16 @@ public class EditorService extends AbstractOfficeOnlineService {
   /**
    * Creates the editor config.
    *
-   * @param userSchema the user schema
-   * @param userHost the user host
-   * @param userPort the user port
-   * @param userId the user id
+   * @param userId the userId
    * @param workspace the workspace
    * @param fileId the file id
    * @return the editor config
    * @throws RepositoryException the repository exception
    * @throws OfficeOnlineException the office online exception
    */
-  public EditorConfig createEditorConfig(String userSchema,
-                                         String userHost,
-                                         int userPort,
-                                         String userId,
-                                         String workspace,
-                                         String fileId) throws RepositoryException, OfficeOnlineException {
+  public EditorConfig createEditorConfig(String userId,
+                                         String fileId,
+                                         String workspace) throws RepositoryException, OfficeOnlineException {
 
     Node document = nodeByUUID(fileId, workspace);
     List<Permissions> permissions = new ArrayList<>();

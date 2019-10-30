@@ -1,5 +1,7 @@
 package org.exoplatform.officeonline;
 
+import org.exoplatform.ws.frameworks.json.impl.JsonException;
+import org.exoplatform.ws.frameworks.json.impl.JsonGeneratorImpl;
 
 /**
  * The Class AccessToken.
@@ -40,6 +42,17 @@ public class AccessToken {
    */
   public long getExpires() {
     return expires;
+  }
+
+  /**
+   * Return this config as JSON string.
+   *
+   * @return the string
+   * @throws JsonException the json exception
+   */
+  public String toJSON() throws JsonException {
+    JsonGeneratorImpl gen = new JsonGeneratorImpl();
+    return gen.createJsonObject(this).toString();
   }
 
 }

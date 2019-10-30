@@ -177,6 +177,20 @@ public abstract class AbstractOfficeOnlineService implements Startable {
 
     return platformUrl;
   }
+  
+  /**
+   * Platform REST URL.
+   *
+   * @param platformUrl the platform URL
+   * @return the string builder
+   */
+  protected StringBuilder platformRestUrl(CharSequence platformUrl) {
+    StringBuilder restUrl = new StringBuilder(platformUrl);
+    restUrl.append('/');
+    restUrl.append(PortalContainer.getCurrentRestContextName());
+
+    return restUrl;
+  }
 
   /**
    * Gets the user.
@@ -225,6 +239,8 @@ public abstract class AbstractOfficeOnlineService implements Startable {
     }
     return uri;
   }
+  
+  
 
   /**
    * ECMS explorer page relative URL (within the Platform).
