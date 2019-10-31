@@ -61,6 +61,7 @@ public abstract class AbstractOfficeOnlineService implements Startable {
   /** The Constant TOKEN_DELIMITER_SPLIT. */
   protected static final String          TOKEN_DELIMITE_SPLIT  = "\\+";
 
+  /** The Constant TOKEN_EXPIRES_MINUTES. */
   protected static final long            TOKEN_EXPIRES_MINUTES = 30;
 
   /** Cache of Editing documents. */
@@ -84,10 +85,12 @@ public abstract class AbstractOfficeOnlineService implements Startable {
   /**
    * Instantiates a new office online editor service.
    *
+   * @param sessionProviders the session providers
    * @param jcrService the jcr service
    * @param organization the organization
    * @param documentService the document service
    * @param cacheService the cache service
+   * @param userACL the user ACL
    */
   public AbstractOfficeOnlineService(SessionProviderService sessionProviders,
                                      RepositoryService jcrService,
@@ -103,21 +106,28 @@ public abstract class AbstractOfficeOnlineService implements Startable {
     this.userACL = userACL;
   }
 
+
   /**
    * Node by UUID.
    *
    * @param uuid the uuid
    * @param workspace the workspace
    * @return the node
-   * @throws RepositoryException the repository exception
+   * @throws OfficeOnlineException the office online exception
    */
-  protected Node nodeByUUID(String uuid, String workspace) throws RepositoryException {
-    if (workspace == null) {
-      workspace = jcrService.getCurrentRepository().getConfiguration().getDefaultWorkspaceName();
+  protected Node nodeByUUID(String uuid, String workspace) throws OfficeOnlineException {
+    try {
+      if (workspace == null) {
+        workspace = jcrService.getCurrentRepository().getConfiguration().getDefaultWorkspaceName();
+      }
+      SessionProvider sp = sessionProviders.getSessionProvider(null);
+      Session userSession = sp.getSession(workspace, jcrService.getCurrentRepository());
+      return userSession.getNodeByUUID(uuid);
+    } catch (RepositoryException e) {
+      LOG.error("Cannot get node by UUID: {}. Error: {}", uuid, e.getMessage());
+      throw new OfficeOnlineException("Cannot find node by UUID. UUID: " + uuid + ", workspace: " + workspace);
     }
-    SessionProvider sp = sessionProviders.getSessionProvider(null);
-    Session userSession = sp.getSession(workspace, jcrService.getCurrentRepository());
-    return userSession.getNodeByUUID(uuid);
+
   }
 
   /**
@@ -177,7 +187,7 @@ public abstract class AbstractOfficeOnlineService implements Startable {
 
     return platformUrl;
   }
-  
+
   /**
    * Platform REST URL.
    *
@@ -239,8 +249,6 @@ public abstract class AbstractOfficeOnlineService implements Startable {
     }
     return uri;
   }
-  
-  
 
   /**
    * ECMS explorer page relative URL (within the Platform).

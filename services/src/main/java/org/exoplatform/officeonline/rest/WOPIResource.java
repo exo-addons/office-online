@@ -18,6 +18,7 @@
  */
 package org.exoplatform.officeonline.rest;
 
+import java.io.IOException;
 import java.io.Serializable;
 import java.net.InetAddress;
 import java.net.URI;
@@ -51,12 +52,12 @@ import org.exoplatform.services.rest.resource.ResourceContainer;
 public class WOPIResource implements ResourceContainer {
 
   /** The Constant ACCESS_TOKEN. */
-  public static final String ACCESS_TOKEN = "access_token";
-  
+  public static final String ACCESS_TOKEN        = "access_token";
+
   /** The Constant ACCESS_TOKEN. */
   public static final String EDITOR_CONFIG_PARAM = "editorConfig";
 
-  protected enum Operation {
+  public enum Operation {
     GET_LOCK, GET_SHARE_URL, LOCK, PUT, PUT_RELATIVE, REFRESH_LOCK, RENAME_FILE, UNLOCK
   }
 
@@ -115,6 +116,48 @@ public class WOPIResource implements ResourceContainer {
    */
   public WOPIResource(WOPIService wopiService) {
     this.wopiService = wopiService;
+  }
+
+  /**
+   * Files.
+   *
+   * @param uriInfo the uri info
+   * @param request the request
+   * @param operation the operation
+   * @param fileId the file id
+   * @return the response
+   */
+  @POST
+  @Path("/files/{fileId}/contents")
+  @Produces(MediaType.APPLICATION_JSON)
+  public Response putFile(@Context UriInfo uriInfo,
+                          @Context HttpServletRequest request,
+                          @Context ServletContext context,
+                          @HeaderParam(OVERRIDE) Operation operation,
+                          @PathParam("fileId") String fileId) {
+
+    verifyProofKey(request);
+    if (operation == Operation.PUT) {
+      EditorConfig config = (EditorConfig) context.getAttribute(EDITOR_CONFIG_PARAM);
+      try {
+        wopiService.putFile(config, request.getInputStream());
+      }
+      catch (OfficeOnlineException e) {
+        return Response.status(Status.BAD_REQUEST)
+            .entity("{\"error\": \"" + e.getMessage() + "\"}")
+            .type(MediaType.APPLICATION_JSON)
+            .build();
+      }
+      catch (IOException e) {
+        return Response.status(Status.BAD_REQUEST)
+            .entity("{\"error\": \"Cannot get request body\"}")
+            .type(MediaType.APPLICATION_JSON)
+            .build();
+      }
+
+    }
+    return null;
+
   }
 
   /**

@@ -1,11 +1,14 @@
 package org.exoplatform.officeonline;
 
+import java.io.IOException;
+import java.io.InputStream;
 import java.io.Serializable;
 import java.net.URI;
 import java.security.Key;
 import java.security.NoSuchAlgorithmException;
 import java.util.Arrays;
 import java.util.Base64;
+import java.util.Calendar;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -14,7 +17,6 @@ import javax.crypto.SecretKey;
 import javax.crypto.spec.SecretKeySpec;
 import javax.jcr.Node;
 import javax.jcr.RepositoryException;
-import javax.jcr.UnsupportedRepositoryOperationException;
 
 import org.apache.commons.lang.StringUtils;
 
@@ -36,6 +38,7 @@ import org.exoplatform.services.organization.OrganizationService;
 import org.exoplatform.services.organization.User;
 import org.exoplatform.services.security.ConversationState;
 
+// TODO: Auto-generated Javadoc
 /**
  * The Class WOPIService.
  */
@@ -134,6 +137,24 @@ public class WOPIService extends AbstractOfficeOnlineService {
   /** The Constant TOKEN_CONFIGURATION_PROPERTIES. */
   protected static final String TOKEN_CONFIGURATION_PROPERTIES    = "token-configuration";
 
+  /** The Constant JCR_CONTENT. */
+  protected static final String JCR_CONTENT                       = "jcr:content";
+
+  /** The Constant JCR_DATA. */
+  protected static final String JCR_DATA                          = "jcr:data";
+
+  /** The Constant EXO_LAST_MODIFIER. */
+  protected static final String EXO_LAST_MODIFIER                 = "exo:lastModifier";
+
+  /** The Constant EXO_LAST_MODIFIED_DATE. */
+  protected static final String EXO_LAST_MODIFIED_DATE            = "exo:lastModifiedDate";
+
+  /** The Constant EXO_DATE_MODIFIED. */
+  protected static final String EXO_DATE_MODIFIED                 = "exo:dateModified";
+
+  /** The Constant JCR_LAST_MODIFIED. */
+  protected static final String JCR_LAST_MODIFIED                 = "jcr:lastModified";
+
   /** The discovery plugin. */
   protected WOPIDiscoveryPlugin discoveryPlugin;
 
@@ -166,6 +187,56 @@ public class WOPIService extends AbstractOfficeOnlineService {
       activeCache.put(SECRET_KEY, generateSecretKey());
     }
 
+  }
+
+  /**
+   * Put file.
+   *
+   * @param config the config
+   * @param data the data
+   * @throws OfficeOnlineException the office online exception
+   */
+  public void putFile(EditorConfig config, InputStream data) throws OfficeOnlineException {
+    if (config != null) {
+      Node node = nodeByUUID(config.getFileId(), config.getWorkspace());
+      try {
+        Node content = node.getNode(JCR_CONTENT);
+        if (canEditDocument(node)) {
+          // TODO: check locks
+
+          content.setProperty(JCR_DATA, data);
+          Calendar editedTime = Calendar.getInstance();
+          content.setProperty(JCR_LAST_MODIFIED, editedTime);
+          if (content.hasProperty(EXO_DATE_MODIFIED)) {
+            content.setProperty(EXO_DATE_MODIFIED, editedTime);
+          }
+          if (content.hasProperty(EXO_LAST_MODIFIED_DATE)) {
+            content.setProperty(EXO_LAST_MODIFIED_DATE, editedTime);
+          }
+          if (node.hasProperty(EXO_LAST_MODIFIED_DATE)) {
+            node.setProperty(EXO_LAST_MODIFIED_DATE, editedTime);
+          }
+          if (node.hasProperty(EXO_DATE_MODIFIED)) {
+            node.setProperty(EXO_DATE_MODIFIED, editedTime);
+          }
+          if (node.hasProperty(EXO_LAST_MODIFIER)) {
+            node.setProperty(EXO_LAST_MODIFIER, config.getUserId());
+          }
+          if (data != null) {
+            try {
+              data.close();
+            } catch (IOException e) {
+              LOG.error("Error closing data stream. FileID:" + config.getFileId());
+            }
+          }
+        }
+
+      } catch (RepositoryException e) {
+        LOG.error("Error while putFile. {}", e.getMessage());
+        throw new OfficeOnlineException("Cannot perform putFile operation. FileId: " + config.getFileId() + ", workspace: "
+            + config.getWorkspace());
+      }
+    }
   }
 
   /**
@@ -337,11 +408,9 @@ public class WOPIService extends AbstractOfficeOnlineService {
    *
    * @param map the map
    * @param node the node
-   * @throws UnsupportedRepositoryOperationException the unsupported repository operation exception
    * @throws RepositoryException the repository exception
    */
-  protected void addRequiredProperties(Map<String, Serializable> map, Node node) throws UnsupportedRepositoryOperationException,
-                                                                                 RepositoryException {
+  protected void addRequiredProperties(Map<String, Serializable> map, Node node) throws RepositoryException {
     map.put(BASE_FILE_NAME, node.getProperty("exo:title").getString());
     map.put(OWNER_ID, node.getProperty("exo:owner").getString());
     map.put(SIZE, getSize(node));
@@ -476,4 +545,5 @@ public class WOPIService extends AbstractOfficeOnlineService {
       return null;
     }
   }
+
 }

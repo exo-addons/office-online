@@ -130,8 +130,8 @@ public class EditorService extends AbstractOfficeOnlineService {
     LOG.info("Editor Service started");
 
     // Only for testing purposes
-    EditorConfig config = new EditorConfig("vlad",
-                                           "93268635624323427",
+    EditorConfig config = new EditorConfig("root",
+                                           "133001737f00010116b5fe3a8dfdc07c",
                                            "collaboration",
                                            Arrays.asList(Permissions.USER_CAN_WRITE, Permissions.USER_CAN_RENAME));
     try {
@@ -140,7 +140,7 @@ public class EditorService extends AbstractOfficeOnlineService {
         LOG.debug("Access token #1: " + accessToken.getToken());
       }
 
-      EditorConfig config2 = new EditorConfig("peter", "09372697", "private", new ArrayList<Permissions>());
+      EditorConfig config2 = new EditorConfig("peter", "133001737f00010116b5fe3a8dfdc07c", "collaboration", new ArrayList<Permissions>());
       AccessToken accessToken2 = generateAccessToken(config2);
       if (LOG.isDebugEnabled()) {
         LOG.debug("Access token #2: " + accessToken2.getToken());
