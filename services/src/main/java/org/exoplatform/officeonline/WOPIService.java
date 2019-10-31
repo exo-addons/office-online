@@ -36,7 +36,6 @@ import org.exoplatform.services.organization.OrganizationService;
 import org.exoplatform.services.organization.User;
 import org.exoplatform.services.security.ConversationState;
 
-// TODO: Auto-generated Javadoc
 /**
  * The Class WOPIService.
  */
@@ -373,7 +372,7 @@ public class WOPIService extends AbstractOfficeOnlineService {
   protected void addUserMetadataProperties(Map<String, Serializable> map) {
     String user = ConversationState.getCurrent().getIdentity().getUserId();
     User exoUser = getUser(user);
-    if (user != null) {
+    if (exoUser != null) {
       user = exoUser.getDisplayName();
     }
     map.put(IS_ANONYMOUS_USER, false);
