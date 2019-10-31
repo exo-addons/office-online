@@ -4,7 +4,7 @@
   xsi:schemaLocation="http://www.gatein.org/xml/ns/gatein_objects_1_2 http://www.gatein.org/xml/ns/gatein_objects_1_2"
   xmlns="http://www.gatein.org/xml/ns/gatein_objects_1_2">
   <page>
-    <name>oeditor</name>
+    <name>mseditor</name>
     <title>Office Online Editor Page</title>
     <access-permissions>*:/platform/users</access-permissions>
     <edit-permission>manager:/platform/administrators</edit-permission>

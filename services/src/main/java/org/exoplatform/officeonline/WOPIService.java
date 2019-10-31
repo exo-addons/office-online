@@ -370,14 +370,12 @@ public class WOPIService extends AbstractOfficeOnlineService {
    * @param map the map
    */
   protected void addUserMetadataProperties(Map<String, Serializable> map) {
-    String user = ConversationState.getCurrent().getIdentity().getUserId();
-    User exoUser = getUser(user);
-    if (exoUser != null) {
-      user = exoUser.getDisplayName();
-    }
+    String userId = ConversationState.getCurrent().getIdentity().getUserId();
+    User user = getUser(userId);
+    String displayName = user != null ? user.getDisplayName() : userId;
     map.put(IS_ANONYMOUS_USER, false);
     map.put(LICENSE_CHECK_FOR_EDIT_IS_ENABLED, true);
-    map.put(USER_FRIENDLY_NAME, user);
+    map.put(USER_FRIENDLY_NAME, displayName);
   }
 
   /**

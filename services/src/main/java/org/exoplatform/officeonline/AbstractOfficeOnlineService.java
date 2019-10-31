@@ -37,31 +37,31 @@ import org.exoplatform.services.organization.User;
 import org.exoplatform.services.security.ConversationState;
 import org.exoplatform.services.wcm.core.NodetypeConstant;
 
-// TODO: Auto-generated Javadoc
 /**
  * The Class AbstractOfficeOnlineService.
  */
 public abstract class AbstractOfficeOnlineService implements Startable {
 
   /** The Constant LOG. */
-  protected static final Log             LOG                   = ExoLogger.getLogger(AbstractOfficeOnlineService.class);
+  protected static final Log             LOG                  = ExoLogger.getLogger(AbstractOfficeOnlineService.class);
 
   /** The Constant CACHE_NAME. */
-  public static final String             CACHE_NAME            = "officeonline.Cache".intern();
+  public static final String             CACHE_NAME           = "officeonline.Cache".intern();
 
   /** The Constant SECRET_KEY. */
-  protected static final String          SECRET_KEY            = "secret-key";
+  protected static final String          SECRET_KEY           = "secret-key";
 
   /** The Constant ALGORITHM. */
-  protected static final String          ALGORITHM             = "AES";
+  protected static final String          ALGORITHM            = "AES";
 
   /** The Constant TOKEN_DELIMITER. */
-  protected static final String          TOKEN_DELIMITER       = "+";
+  protected static final String          TOKEN_DELIMITER      = "+";
 
   /** The Constant TOKEN_DELIMITER_SPLIT. */
-  protected static final String          TOKEN_DELIMITE_SPLIT  = "\\+";
+  protected static final String          TOKEN_DELIMITE_SPLIT = "\\+";
 
-  protected static final long            TOKEN_EXPIRES_MINUTES = 30;
+  /** The Constant TOKEN_EXPIRES. */
+  protected static final long            TOKEN_EXPIRES        = 30 * 60000;
 
   /** Cache of Editing documents. */
   protected final ExoCache<String, Key>  activeCache;
@@ -84,10 +84,12 @@ public abstract class AbstractOfficeOnlineService implements Startable {
   /**
    * Instantiates a new office online editor service.
    *
+   * @param sessionProviders the session providers
    * @param jcrService the jcr service
    * @param organization the organization
    * @param documentService the document service
    * @param cacheService the cache service
+   * @param userACL the user ACL
    */
   public AbstractOfficeOnlineService(SessionProviderService sessionProviders,
                                      RepositoryService jcrService,
@@ -177,7 +179,7 @@ public abstract class AbstractOfficeOnlineService implements Startable {
 
     return platformUrl;
   }
-  
+
   /**
    * Platform REST URL.
    *
@@ -239,8 +241,6 @@ public abstract class AbstractOfficeOnlineService implements Startable {
     }
     return uri;
   }
-  
-  
 
   /**
    * ECMS explorer page relative URL (within the Platform).
@@ -294,22 +294,22 @@ public abstract class AbstractOfficeOnlineService implements Startable {
    * @return the string
    * @throws OfficeOnlineException the office online exception
    */
-  protected AccessToken generateAccessToken(EditorConfig config) throws OfficeOnlineException {
+  protected AccessToken generateAccessToken(EditorConfig.Builder configBuilder) throws OfficeOnlineException {
     try {
       Key key = activeCache.get(SECRET_KEY);
       Cipher chiper = Cipher.getInstance(ALGORITHM);
       chiper.init(Cipher.ENCRYPT_MODE, key);
 
-      long expires = System.currentTimeMillis() + TOKEN_EXPIRES_MINUTES * 60000;
+      long expires = System.currentTimeMillis() + TOKEN_EXPIRES;
 
-      StringBuilder builder = new StringBuilder().append(config.getWorkspace())
+      StringBuilder builder = new StringBuilder().append(configBuilder.getWorkspace())
                                                  .append(TOKEN_DELIMITER)
-                                                 .append(config.getUserId())
+                                                 .append(configBuilder.getUserId())
                                                  .append(TOKEN_DELIMITER)
-                                                 .append(config.getFileId())
+                                                 .append(configBuilder.getFileId())
                                                  .append(TOKEN_DELIMITER)
                                                  .append(expires);
-      config.getPermissions().forEach(permission -> {
+      configBuilder.getPermissions().forEach(permission -> {
         builder.append(TOKEN_DELIMITER).append(permission.getShortName());
       });
       byte[] encrypted = chiper.doFinal(builder.toString().getBytes());
