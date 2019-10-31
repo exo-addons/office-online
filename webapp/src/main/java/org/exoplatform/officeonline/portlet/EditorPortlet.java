@@ -11,7 +11,7 @@ import javax.portlet.RenderRequest;
 import javax.portlet.RenderResponse;
 
 import org.exoplatform.container.ExoContainer;
-import org.exoplatform.container.ExoContainerContext;
+import org.exoplatform.container.PortalContainer;
 import org.exoplatform.officeonline.AccessToken;
 import org.exoplatform.officeonline.EditorConfig;
 import org.exoplatform.officeonline.EditorService;
@@ -48,7 +48,7 @@ public class EditorPortlet extends GenericPortlet {
   @Override
   public void init() throws PortletException {
     super.init();
-    ExoContainer container = ExoContainerContext.getCurrentContainer();
+    ExoContainer container = PortalContainer.getInstance();
     this.editorService = container.getComponentInstanceOfType(EditorService.class);
     this.wopiService = container.getComponentInstanceOfType(WOPIService.class);
   }

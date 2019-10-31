@@ -302,14 +302,14 @@ public abstract class AbstractOfficeOnlineService implements Startable {
 
       long expires = System.currentTimeMillis() + TOKEN_EXPIRES;
 
-      StringBuilder builder = new StringBuilder().append(configBuilder.getWorkspace())
+      StringBuilder builder = new StringBuilder().append(configBuilder.workspace())
                                                  .append(TOKEN_DELIMITER)
-                                                 .append(configBuilder.getUserId())
+                                                 .append(configBuilder.userId())
                                                  .append(TOKEN_DELIMITER)
-                                                 .append(configBuilder.getFileId())
+                                                 .append(configBuilder.fileId())
                                                  .append(TOKEN_DELIMITER)
                                                  .append(expires);
-      configBuilder.getPermissions().forEach(permission -> {
+      configBuilder.permissions().forEach(permission -> {
         builder.append(TOKEN_DELIMITER).append(permission.getShortName());
       });
       byte[] encrypted = chiper.doFinal(builder.toString().getBytes());

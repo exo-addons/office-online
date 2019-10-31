@@ -71,12 +71,12 @@ public class EditorService extends AbstractOfficeOnlineService {
         permissions.add(Permissions.READ_ONLY);
       }
     }
-    EditorConfig.Builder configBuilder = new EditorConfig.Builder().setUserId(userId)
-                                                                   .setFileId(fileId)
-                                                                   .setWorkspace(workspace)
-                                                                   .setPermissions(permissions);
+    EditorConfig.Builder configBuilder = new EditorConfig.Builder().userId(userId)
+                                                                   .fileId(fileId)
+                                                                   .workspace(workspace)
+                                                                   .permissions(permissions);
     AccessToken accessToken = generateAccessToken(configBuilder);
-    configBuilder.setAccessToken(accessToken);
+    configBuilder.accessToken(accessToken);
     return configBuilder.build();
   }
 
@@ -132,10 +132,10 @@ public class EditorService extends AbstractOfficeOnlineService {
     LOG.info("Editor Service started");
 
     // Only for testing purposes
-    EditorConfig.Builder configBuilder = new EditorConfig.Builder().setUserId("root")
-                                                                   .setFileId("133001737f00010116b5fe3a8dfdc07c")
-                                                                   .setWorkspace("collaboration")
-                                                                   .setPermissions(Arrays.asList(Permissions.USER_CAN_WRITE,
+    EditorConfig.Builder configBuilder = new EditorConfig.Builder().userId("root")
+                                                                   .fileId("133001737f00010116b5fe3a8dfdc07c")
+                                                                   .workspace("collaboration")
+                                                                   .permissions(Arrays.asList(Permissions.USER_CAN_WRITE,
                                                                                                  Permissions.USER_CAN_RENAME));
     try {
       AccessToken accessToken = generateAccessToken(configBuilder);
@@ -144,10 +144,10 @@ public class EditorService extends AbstractOfficeOnlineService {
       }
 
       // Only for testing purposes
-      EditorConfig.Builder configBuilder2 = new EditorConfig.Builder().setUserId("peter")
-                                                                      .setFileId("133001737f00010116b5fe3a8dfdc07c")
-                                                                      .setWorkspace("collaboration")
-                                                                      .setPermissions(Arrays.asList(Permissions.USER_CAN_WRITE));
+      EditorConfig.Builder configBuilder2 = new EditorConfig.Builder().userId("peter")
+                                                                      .fileId("133001737f00010116b5fe3a8dfdc07c")
+                                                                      .workspace("collaboration")
+                                                                      .permissions(Arrays.asList(Permissions.USER_CAN_WRITE));
       AccessToken accessToken2 = generateAccessToken(configBuilder2);
       if (LOG.isDebugEnabled()) {
         LOG.debug("Access token #2: " + accessToken2.getToken());

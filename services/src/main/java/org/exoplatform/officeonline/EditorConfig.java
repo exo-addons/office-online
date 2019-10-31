@@ -104,48 +104,48 @@ public class EditorConfig {
     /** The permissions. */
     private List<Permissions> permissions = new ArrayList<>();
 
-    protected Builder setAccessToken(AccessToken accessToken) {
+    protected Builder accessToken(AccessToken accessToken) {
       this.accessToken = accessToken;
       return this;
     }
 
-    protected Builder setUserId(String userId) {
+    protected Builder userId(String userId) {
       this.userId = userId;
       return this;
     }
 
-    protected Builder setFileId(String fileId) {
+    protected Builder fileId(String fileId) {
       this.fileId = fileId;
       return this;
     }
 
-    protected Builder setWorkspace(String workspace) {
+    protected Builder workspace(String workspace) {
       this.workspace = workspace;
       return this;
     }
 
-    protected Builder setPermissions(List<Permissions> permissions) {
+    protected Builder permissions(List<Permissions> permissions) {
       this.permissions = permissions;
       return this;
     }
 
-    protected String getUserId() {
+    protected String userId() {
       return userId;
     }
 
-    protected String getFileId() {
+    protected String fileId() {
       return fileId;
     }
 
-    protected String getWorkspace() {
+    protected String workspace() {
       return workspace;
     }
 
-    protected List<Permissions> getPermissions() {
+    protected List<Permissions> permissions() {
       return permissions;
     }
 
-    protected AccessToken getAccessToken() {
+    protected AccessToken accessToken() {
       return accessToken;
     }
 
