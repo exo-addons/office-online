@@ -3,6 +3,8 @@
  */
 package org.exoplatform.officeonline.rest;
 
+import java.io.FileNotFoundException;
+
 import javax.servlet.ServletContext;
 import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.GET;
@@ -19,6 +21,7 @@ import org.exoplatform.officeonline.DocumentContent;
 import org.exoplatform.officeonline.EditorConfig;
 import org.exoplatform.officeonline.EditorService;
 import org.exoplatform.officeonline.WOPIService;
+import org.exoplatform.officeonline.exception.BadParameterException;
 import org.exoplatform.officeonline.exception.OfficeOnlineException;
 import org.exoplatform.services.rest.resource.ResourceContainer;
 
@@ -52,10 +55,19 @@ public class EditorResource implements ResourceContainer {
                           @Context ServletContext context,
                           @PathParam("fileId") String fileId) {
     EditorConfig config = (EditorConfig) context.getAttribute(WOPIResource.EDITOR_CONFIG_PARAM);
+    
+    if(config == null) {
+      return Response.status(Status.BAD_REQUEST)
+          .entity("{\"error\": \"Couldn't obtain editor config from access token\"}")
+          .type(MediaType.APPLICATION_JSON)
+          .build();
+    }
+    
     try {
       DocumentContent content = editorService.getContent(fileId, config);
       return Response.ok().entity(content.getData()).type(content.getType()).build();
-    } catch (OfficeOnlineException e) {
+    } 
+    catch (OfficeOnlineException e) {
       return Response.status(Status.BAD_REQUEST)
                      .entity("{\"error\": \"" + e.getMessage() + "\"}")
                      .type(MediaType.APPLICATION_JSON)
