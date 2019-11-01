@@ -1,14 +1,6 @@
 package org.exoplatform.officeonline.exception;
 
-
-/**
- * The Class BadParameterException.
- */
-public class BadParameterException extends OfficeOnlineException {
-  
-  protected Operation operation;
-  /** The lock. */
-  protected String lock;
+public class ActionNotFoundException extends OfficeOnlineException {
 
   /** The Constant serialVersionUID. */
   private static final long serialVersionUID = 8675025886542058617L;
@@ -18,7 +10,7 @@ public class BadParameterException extends OfficeOnlineException {
    *
    * @param message the message
    */
-  public BadParameterException(String message) {
+  public ActionNotFoundException(String message) {
     super(message);
   }
 
@@ -27,7 +19,7 @@ public class BadParameterException extends OfficeOnlineException {
    *
    * @param cause the cause
    */
-  public BadParameterException(Throwable cause) {
+  public ActionNotFoundException(Throwable cause) {
     super(cause);
   }
 
@@ -37,18 +29,7 @@ public class BadParameterException extends OfficeOnlineException {
    * @param message the message
    * @param cause the cause
    */
-  public BadParameterException(String message, Throwable cause) {
+  public ActionNotFoundException(String message, Throwable cause) {
     super(message, cause);
   }
-
-  public String getLock() {
-    return lock;
-  }
-
-  public void setLock(String lock) {
-    this.lock = lock;
-  }
-
-  
-  
 }

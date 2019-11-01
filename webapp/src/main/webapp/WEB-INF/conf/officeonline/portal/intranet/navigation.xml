@@ -25,11 +25,11 @@
   <priority>1</priority>
   <page-nodes>
     <node>
-      <uri>oeditor</uri>
-      <name>oeditor</name>
-      <label>#{portal.intranet.oeditor}</label>
+      <uri>mseditor</uri>
+      <name>mseditor</name>
+      <label>#{portal.intranet.mseditor}</label>
       <visibility>SYSTEM</visibility>
-      <page-reference>portal::intranet::oeditor</page-reference>
+      <page-reference>portal::intranet::mseditor</page-reference>
     </node>
   </page-nodes>
 </node-navigation>

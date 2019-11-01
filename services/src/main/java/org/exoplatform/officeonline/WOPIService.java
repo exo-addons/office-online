@@ -25,6 +25,8 @@ import org.exoplatform.container.component.ComponentPlugin;
 import org.exoplatform.container.xml.InitParams;
 import org.exoplatform.container.xml.PropertiesParam;
 import org.exoplatform.ecm.webui.utils.Utils;
+import org.exoplatform.officeonline.exception.ActionNotFoundException;
+import org.exoplatform.officeonline.exception.FileExtensionException;
 import org.exoplatform.officeonline.exception.OfficeOnlineException;
 import org.exoplatform.officeonline.exception.WopiDiscoveryNotFoundException;
 import org.exoplatform.portal.config.UserACL;
@@ -344,9 +346,13 @@ public class WOPIService extends AbstractOfficeOnlineService {
     if (title.contains(".")) {
       String extension = title.substring(title.lastIndexOf(".") + 1);
       String actionURL = discoveryPlugin.getActionUrl(extension, action);
-      return String.format("%s%s=%s&", actionURL, PLACEHOLDER_WOPISRC, getWOPISrc(requestInfo, fileId));
+      if (actionURL != null) {
+        return String.format("%s%s=%s&", actionURL, PLACEHOLDER_WOPISRC, getWOPISrc(requestInfo, fileId));
+      } else {
+        throw new ActionNotFoundException("Cannot find actionURL for file extension " + extension + " and action: " + action);
+      }
     } else {
-      throw new OfficeOnlineException("Cannot get file extension. FileId: " + fileId);
+      throw new FileExtensionException("Cannot get file extension. FileId: " + fileId + ". Title: " + title);
     }
 
   }
@@ -439,14 +445,12 @@ public class WOPIService extends AbstractOfficeOnlineService {
    * @param map the map
    */
   protected void addUserMetadataProperties(Map<String, Serializable> map) {
-    String user = ConversationState.getCurrent().getIdentity().getUserId();
-    User exoUser = getUser(user);
-    if (exoUser != null) {
-      user = exoUser.getDisplayName();
-    }
+    String userId = ConversationState.getCurrent().getIdentity().getUserId();
+    User user = getUser(userId);
+    String displayName = user != null ? user.getDisplayName() : userId;
     map.put(IS_ANONYMOUS_USER, false);
     map.put(LICENSE_CHECK_FOR_EDIT_IS_ENABLED, true);
-    map.put(USER_FRIENDLY_NAME, user);
+    map.put(USER_FRIENDLY_NAME, displayName);
   }
 
   /**

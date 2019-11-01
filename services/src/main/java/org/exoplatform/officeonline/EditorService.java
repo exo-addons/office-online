@@ -10,6 +10,8 @@ import javax.jcr.RepositoryException;
 
 import org.apache.commons.io.input.AutoCloseInputStream;
 
+import org.exoplatform.officeonline.exception.BadParameterException;
+import org.exoplatform.officeonline.exception.FileNotFoundException;
 import org.exoplatform.officeonline.exception.OfficeOnlineException;
 import org.exoplatform.portal.config.UserACL;
 import org.exoplatform.services.cache.CacheService;
@@ -57,25 +59,27 @@ public class EditorService extends AbstractOfficeOnlineService {
    * @throws RepositoryException the repository exception
    * @throws OfficeOnlineException the office online exception
    */
-  public EditorConfig createEditorConfig(String userId,
-                                         String fileId,
-                                         String workspace) throws RepositoryException, OfficeOnlineException {
+  public EditorConfig createEditorConfig(String userId, String fileId, String workspace) throws OfficeOnlineException {
 
-    Node document = nodeByUUID(fileId, workspace);
-    List<Permissions> permissions = new ArrayList<>();
-
-    if (document != null) {
-      if (canEditDocument(document)) {
-        permissions.add(Permissions.USER_CAN_WRITE);
-        permissions.add(Permissions.USER_CAN_RENAME);
-      } else {
-        permissions.add(Permissions.READ_ONLY);
-      }
+    Node node = nodeByUUID(fileId, workspace);
+    if (node == null) {
+      throw new FileNotFoundException("File not found. FileId: " + fileId + ", workspace: " + workspace);
     }
-    EditorConfig config = new EditorConfig(userId, fileId, workspace, permissions);
-    AccessToken accessToken = generateAccessToken(config);
-    config.setAccessToken(accessToken);
-    return config;
+
+    List<Permissions> permissions = new ArrayList<>();
+    if (canEditDocument(node)) {
+      permissions.add(Permissions.USER_CAN_WRITE);
+      permissions.add(Permissions.USER_CAN_RENAME);
+    } else {
+      permissions.add(Permissions.READ_ONLY);
+    }
+    EditorConfig.Builder configBuilder = new EditorConfig.Builder().userId(userId)
+                                                                   .fileId(fileId)
+                                                                   .workspace(workspace)
+                                                                   .permissions(permissions);
+    AccessToken accessToken = generateAccessToken(configBuilder);
+    configBuilder.accessToken(accessToken);
+    return configBuilder.build();
   }
 
   /**
@@ -87,18 +91,16 @@ public class EditorService extends AbstractOfficeOnlineService {
    * @throws OfficeOnlineException the office online exception
    */
   public DocumentContent getContent(String fileId, EditorConfig config) throws OfficeOnlineException {
-    if (config == null) {
-      throw new OfficeOnlineException("Cannot getContent. Config is null.");
-    }
     if (!fileId.equals(config.getFileId())) {
-      throw new OfficeOnlineException("FileId from request doesn't match config.fileId");
+      throw new BadParameterException("FileId doesn't match fileId specified in token");
+    }
+
+    Node node = nodeByUUID(config.getFileId(), config.getWorkspace());
+    if (node == null) {
+      throw new FileNotFoundException("File not found. FileId: " + config.getFileId() + ", workspace: " + config.getWorkspace());
     }
 
     try {
-      Node node = nodeByUUID(config.getFileId(), config.getWorkspace());
-      if (node == null) {
-        throw new OfficeOnlineException("File not found. fileId: " + config.getFileId());
-      }
       Node content = nodeContent(node);
 
       final String mimeType = content.getProperty("jcr:mimeType").getString();
@@ -130,35 +132,41 @@ public class EditorService extends AbstractOfficeOnlineService {
     LOG.info("Editor Service started");
 
     // Only for testing purposes
-    EditorConfig config = new EditorConfig("root",
-                                           "133001737f00010116b5fe3a8dfdc07c",
-                                           "collaboration",
-                                           Arrays.asList(Permissions.USER_CAN_WRITE, Permissions.USER_CAN_RENAME));
+    EditorConfig.Builder configBuilder = new EditorConfig.Builder().userId("root")
+                                                                   .fileId("133001737f00010116b5fe3a8dfdc07c")
+                                                                   .workspace("collaboration")
+                                                                   .permissions(Arrays.asList(Permissions.USER_CAN_WRITE,
+                                                                                              Permissions.USER_CAN_RENAME));
     try {
-      AccessToken accessToken = generateAccessToken(config);
+      AccessToken accessToken = generateAccessToken(configBuilder);
       if (LOG.isDebugEnabled()) {
         LOG.debug("Access token #1: " + accessToken.getToken());
       }
 
-      EditorConfig config2 = new EditorConfig("peter", "133001737f00010116b5fe3a8dfdc07c", "collaboration", new ArrayList<Permissions>());
-      AccessToken accessToken2 = generateAccessToken(config2);
+      // Only for testing purposes
+      EditorConfig.Builder configBuilder2 = new EditorConfig.Builder().userId("peter")
+                                                                      .fileId("133001737f00010116b5fe3a8dfdc07c")
+                                                                      .workspace("collaboration")
+                                                                      .permissions(Arrays.asList(Permissions.USER_CAN_WRITE));
+      AccessToken accessToken2 = generateAccessToken(configBuilder2);
       if (LOG.isDebugEnabled()) {
         LOG.debug("Access token #2: " + accessToken2.getToken());
       }
       EditorConfig decrypted1 = buildEditorConfig(accessToken.getToken());
       EditorConfig decrypted2 = buildEditorConfig(accessToken2.getToken());
       if (LOG.isDebugEnabled()) {
-        LOG.debug("DECRYPTED 1: " + decrypted1.getWorkspace() + " " + decrypted1.getUserId() + " " + decrypted1.getFileId() + " " + decrypted1.getAccessToken().getExpires());
+        LOG.debug("DECRYPTED 1: " + decrypted1.getWorkspace() + " " + decrypted1.getUserId() + " " + decrypted1.getFileId() + " "
+            + decrypted1.getAccessToken().getExpires());
         decrypted1.getPermissions().forEach(LOG::debug);
       }
       if (LOG.isDebugEnabled()) {
-        LOG.debug("DECRYPTED 2: " + decrypted2.getWorkspace() + " " + decrypted2.getUserId() + " " + decrypted2.getFileId() + " " + decrypted1.getAccessToken().getExpires() );
+        LOG.debug("DECRYPTED 2: " + decrypted2.getWorkspace() + " " + decrypted2.getUserId() + " " + decrypted2.getFileId() + " "
+            + decrypted1.getAccessToken().getExpires());
       }
       decrypted2.getPermissions().forEach(LOG::debug);
     } catch (OfficeOnlineException e) {
       LOG.error(e);
     }
-
   }
 
   /**

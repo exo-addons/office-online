@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<bundle>
+  <!-- For client UI -->
+  <OfficeonlineEditorClient>
+    <EditButtonTitle>Edit Online</EditButtonTitle>
+    <UpdateBannerTitle>The document has been updated.</UpdateBannerTitle>
+    <ReloadButtonTitle>Reload</ReloadButtonTitle>
+
+    <ErrorTitle>Error</ErrorTitle>
+    <InfoTitle>Information</InfoTitle>
+
+  </OfficeonlineEditorClient>
+  
+  <!-- Messages -->
+  <OnlyofficeEditor>
+    <message>
+      <ViewerNotFound>Online document editor not found</ViewerNotFound>
+    </message>
+    <error>
+      <EditorCannotBeCreated>Editor cannot be created. Please retry.</EditorCannotBeCreated>
+      <FileNotFound>File not found. Please retry.</FileNotFound>
+      <WrongExtension>Wrong file extension. Please retry.</WrongExtension>
+      <ActionNotFound>Action not found. Please retry.</ActionNotFound>
+      <CannotReadDocument>Cannot read the document. Please retry.</CannotReadDocument>      
+      <DocumentIdRequired>Wrong request: document ID required.</DocumentIdRequired>
+    </error>
+  </OnlyofficeEditor>
+</bundle>

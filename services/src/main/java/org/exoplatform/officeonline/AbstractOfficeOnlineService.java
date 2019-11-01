@@ -37,32 +37,31 @@ import org.exoplatform.services.organization.User;
 import org.exoplatform.services.security.ConversationState;
 import org.exoplatform.services.wcm.core.NodetypeConstant;
 
-// TODO: Auto-generated Javadoc
 /**
  * The Class AbstractOfficeOnlineService.
  */
 public abstract class AbstractOfficeOnlineService implements Startable {
 
   /** The Constant LOG. */
-  protected static final Log             LOG                   = ExoLogger.getLogger(AbstractOfficeOnlineService.class);
+  protected static final Log             LOG                  = ExoLogger.getLogger(AbstractOfficeOnlineService.class);
 
   /** The Constant CACHE_NAME. */
-  public static final String             CACHE_NAME            = "officeonline.Cache".intern();
+  public static final String             CACHE_NAME           = "officeonline.Cache".intern();
 
   /** The Constant SECRET_KEY. */
-  protected static final String          SECRET_KEY            = "secret-key";
+  protected static final String          SECRET_KEY           = "secret-key";
 
   /** The Constant ALGORITHM. */
-  protected static final String          ALGORITHM             = "AES";
+  protected static final String          ALGORITHM            = "AES";
 
   /** The Constant TOKEN_DELIMITER. */
-  protected static final String          TOKEN_DELIMITER       = "+";
+  protected static final String          TOKEN_DELIMITER      = "+";
 
   /** The Constant TOKEN_DELIMITER_SPLIT. */
-  protected static final String          TOKEN_DELIMITE_SPLIT  = "\\+";
+  protected static final String          TOKEN_DELIMITE_SPLIT = "\\+";
 
-  /** The Constant TOKEN_EXPIRES_MINUTES. */
-  protected static final long            TOKEN_EXPIRES_MINUTES = 30;
+  /** The Constant TOKEN_EXPIRES. */
+  protected static final long            TOKEN_EXPIRES        = 30 * 60000;
 
   /** Cache of Editing documents. */
   protected final ExoCache<String, Key>  activeCache;
@@ -106,16 +105,14 @@ public abstract class AbstractOfficeOnlineService implements Startable {
     this.userACL = userACL;
   }
 
-
   /**
    * Node by UUID.
    *
    * @param uuid the uuid
    * @param workspace the workspace
    * @return the node
-   * @throws OfficeOnlineException the office online exception
    */
-  protected Node nodeByUUID(String uuid, String workspace) throws OfficeOnlineException {
+  protected Node nodeByUUID(String uuid, String workspace) {
     try {
       if (workspace == null) {
         workspace = jcrService.getCurrentRepository().getConfiguration().getDefaultWorkspaceName();
@@ -124,10 +121,9 @@ public abstract class AbstractOfficeOnlineService implements Startable {
       Session userSession = sp.getSession(workspace, jcrService.getCurrentRepository());
       return userSession.getNodeByUUID(uuid);
     } catch (RepositoryException e) {
-      LOG.error("Cannot get node by UUID: {}. Error: {}", uuid, e.getMessage());
-      throw new OfficeOnlineException("Cannot find node by UUID. UUID: " + uuid + ", workspace: " + workspace);
+      LOG.error("Cannot find node by UUID: {}, workspace: {}. Error: {}", uuid, workspace, e.getMessage());
+      return null;
     }
-
   }
 
   /**
@@ -146,23 +142,28 @@ public abstract class AbstractOfficeOnlineService implements Startable {
    *
    * @param node the node
    * @return true, if successful
-   * @throws RepositoryException the repository exception
    */
-  protected boolean canEditDocument(Node node) throws RepositoryException {
-    boolean res = false;
-    if (node != null) {
-      String remoteUser = ConversationState.getCurrent().getIdentity().getUserId();
-      String superUser = userACL.getSuperUser();
-      boolean locked = node.isLocked();
-      if (locked && (remoteUser.equalsIgnoreCase(superUser) || node.getLock().getLockOwner().equals(remoteUser))) {
-        locked = false;
+  protected boolean canEditDocument(Node node) {
+    try {
+      boolean res = false;
+      if (node != null) {
+        String remoteUser = ConversationState.getCurrent().getIdentity().getUserId();
+        String superUser = userACL.getSuperUser();
+        boolean locked = node.isLocked();
+        if (locked && (remoteUser.equalsIgnoreCase(superUser) || node.getLock().getLockOwner().equals(remoteUser))) {
+          locked = false;
+        }
+        res = !locked && PermissionUtil.canSetProperty(node);
       }
-      res = !locked && PermissionUtil.canSetProperty(node);
+      if (!res && LOG.isDebugEnabled()) {
+        LOG.debug("Cannot edit: {}", node != null ? node.getPath() : null);
+      }
+      return res;
+    } catch (RepositoryException e) {
+      LOG.error("Cannot check document permissions: {}", e.getMessage());
+      return false;
     }
-    if (!res && LOG.isDebugEnabled()) {
-      LOG.debug("Cannot edit: {}", node != null ? node.getPath() : null);
-    }
-    return res;
+
   }
 
   /**
@@ -302,22 +303,22 @@ public abstract class AbstractOfficeOnlineService implements Startable {
    * @return the string
    * @throws OfficeOnlineException the office online exception
    */
-  protected AccessToken generateAccessToken(EditorConfig config) throws OfficeOnlineException {
+  protected AccessToken generateAccessToken(EditorConfig.Builder configBuilder) throws OfficeOnlineException {
     try {
       Key key = activeCache.get(SECRET_KEY);
       Cipher chiper = Cipher.getInstance(ALGORITHM);
       chiper.init(Cipher.ENCRYPT_MODE, key);
 
-      long expires = System.currentTimeMillis() + TOKEN_EXPIRES_MINUTES * 60000;
+      long expires = System.currentTimeMillis() + TOKEN_EXPIRES;
 
-      StringBuilder builder = new StringBuilder().append(config.getWorkspace())
+      StringBuilder builder = new StringBuilder().append(configBuilder.workspace())
                                                  .append(TOKEN_DELIMITER)
-                                                 .append(config.getUserId())
+                                                 .append(configBuilder.userId())
                                                  .append(TOKEN_DELIMITER)
-                                                 .append(config.getFileId())
+                                                 .append(configBuilder.fileId())
                                                  .append(TOKEN_DELIMITER)
                                                  .append(expires);
-      config.getPermissions().forEach(permission -> {
+      configBuilder.permissions().forEach(permission -> {
         builder.append(TOKEN_DELIMITER).append(permission.getShortName());
       });
       byte[] encrypted = chiper.doFinal(builder.toString().getBytes());
