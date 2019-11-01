@@ -1,7 +1,5 @@
 package org.exoplatform.officeonline.portlet;
 
-import static org.exoplatform.Officeonline.webui.OfficeonlineContext.showError;
-
 import java.io.IOException;
 import java.util.ResourceBundle;
 
