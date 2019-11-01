@@ -27,7 +27,11 @@ import org.exoplatform.container.xml.PropertiesParam;
 import org.exoplatform.ecm.webui.utils.Utils;
 import org.exoplatform.officeonline.exception.ActionNotFoundException;
 import org.exoplatform.officeonline.exception.FileExtensionException;
+import org.exoplatform.officeonline.exception.FileNotFoundException;
+import org.exoplatform.officeonline.exception.LockMismatchException;
 import org.exoplatform.officeonline.exception.OfficeOnlineException;
+import org.exoplatform.officeonline.exception.PermissionDeniedException;
+import org.exoplatform.officeonline.exception.SizeMismatchException;
 import org.exoplatform.officeonline.exception.WopiDiscoveryNotFoundException;
 import org.exoplatform.portal.config.UserACL;
 import org.exoplatform.services.cache.CacheService;
@@ -197,48 +201,64 @@ public class WOPIService extends AbstractOfficeOnlineService {
    * @param config the config
    * @param data the data
    * @throws OfficeOnlineException the office online exception
+   * @throws SizeMismatchException 
    */
-  public void putFile(EditorConfig config, InputStream data) throws OfficeOnlineException {
-    if (config != null) {
-      Node node = nodeByUUID(config.getFileId(), config.getWorkspace());
-      try {
+  public void putFile(EditorConfig config, String lockId, InputStream data) throws OfficeOnlineException,
+                                                                            LockMismatchException,
+                                                                            SizeMismatchException {
+    Node node = nodeByUUID(config.getFileId(), config.getWorkspace());
+    if (node == null) {
+      throw new FileNotFoundException("File not found. FileId: " + config.getFileId() + ", workspace: " + config.getWorkspace());
+    }
+    try {
+      if (canEditDocument(node)) {
         Node content = node.getNode(JCR_CONTENT);
-        if (canEditDocument(node)) {
-          // TODO: check locks
-
-          content.setProperty(JCR_DATA, data);
-          Calendar editedTime = Calendar.getInstance();
-          content.setProperty(JCR_LAST_MODIFIED, editedTime);
-          if (content.hasProperty(EXO_DATE_MODIFIED)) {
-            content.setProperty(EXO_DATE_MODIFIED, editedTime);
+        if (!node.isLocked()) {
+          long size = content.getProperty(JCR_DATA).getLength();
+          if (size != 0) {
+            throw new SizeMismatchException("File is unlocked and size isn't equal to 0.", "");
           }
-          if (content.hasProperty(EXO_LAST_MODIFIED_DATE)) {
-            content.setProperty(EXO_LAST_MODIFIED_DATE, editedTime);
-          }
-          if (node.hasProperty(EXO_LAST_MODIFIED_DATE)) {
-            node.setProperty(EXO_LAST_MODIFIED_DATE, editedTime);
-          }
-          if (node.hasProperty(EXO_DATE_MODIFIED)) {
-            node.setProperty(EXO_DATE_MODIFIED, editedTime);
-          }
-          if (node.hasProperty(EXO_LAST_MODIFIER)) {
-            node.setProperty(EXO_LAST_MODIFIER, config.getUserId());
-          }
-          if (data != null) {
-            try {
-              data.close();
-            } catch (IOException e) {
-              LOG.error("Error closing data stream. FileID:" + config.getFileId());
-            }
+        } else {
+          String lockToken = node.getLock().getLockToken();
+          if (!lockToken.equals(lockId)) {
+            throw new LockMismatchException("Given lock is different from the file lock", lockToken);
           }
         }
 
-      } catch (RepositoryException e) {
-        LOG.error("Error while putFile. {}", e.getMessage());
-        throw new OfficeOnlineException("Cannot perform putFile operation. FileId: " + config.getFileId() + ", workspace: "
-            + config.getWorkspace());
+        content.setProperty(JCR_DATA, data);
+        Calendar editedTime = Calendar.getInstance();
+        content.setProperty(JCR_LAST_MODIFIED, editedTime);
+        if (content.hasProperty(EXO_DATE_MODIFIED)) {
+          content.setProperty(EXO_DATE_MODIFIED, editedTime);
+        }
+        if (content.hasProperty(EXO_LAST_MODIFIED_DATE)) {
+          content.setProperty(EXO_LAST_MODIFIED_DATE, editedTime);
+        }
+        if (node.hasProperty(EXO_LAST_MODIFIED_DATE)) {
+          node.setProperty(EXO_LAST_MODIFIED_DATE, editedTime);
+        }
+        if (node.hasProperty(EXO_DATE_MODIFIED)) {
+          node.setProperty(EXO_DATE_MODIFIED, editedTime);
+        }
+        if (node.hasProperty(EXO_LAST_MODIFIER)) {
+          node.setProperty(EXO_LAST_MODIFIER, config.getUserId());
+        }
+        if (data != null) {
+          try {
+            data.close();
+          } catch (IOException e) {
+            LOG.error("Error closing data stream. FileID:" + config.getFileId());
+          }
+        }
+      } else {
+        throw new PermissionDeniedException("Cannnot update file. Permission denied");
       }
+    } catch (RepositoryException e) {
+      LOG.error("Error while putFile. {}", e.getMessage());
+      throw new OfficeOnlineException("Cannot perform putFile operation. FileId: " + config.getFileId() + ", workspace: "
+          + config.getWorkspace());
     }
+
   }
 
   /**

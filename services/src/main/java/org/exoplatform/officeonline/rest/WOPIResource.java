@@ -40,7 +40,11 @@ import javax.ws.rs.core.UriInfo;
 
 import org.exoplatform.officeonline.EditorConfig;
 import org.exoplatform.officeonline.WOPIService;
+import org.exoplatform.officeonline.exception.LockMismatchException;
 import org.exoplatform.officeonline.exception.OfficeOnlineException;
+import org.exoplatform.officeonline.exception.PermissionDeniedException;
+import org.exoplatform.officeonline.exception.SizeMismatchException;
+import org.exoplatform.officeonline.exception.UpdateConflictException;
 import org.exoplatform.services.log.ExoLogger;
 import org.exoplatform.services.log.Log;
 import org.exoplatform.services.rest.resource.ResourceContainer;
@@ -139,24 +143,51 @@ public class WOPIResource implements ResourceContainer {
     verifyProofKey(request);
     if (operation == Operation.PUT) {
       EditorConfig config = (EditorConfig) context.getAttribute(EDITOR_CONFIG_PARAM);
-      try {
-        wopiService.putFile(config, request.getInputStream());
-      }
-      catch (OfficeOnlineException e) {
+      if (config != null) {
+        try {
+          String lockId = request.getHeader(LOCK);
+          wopiService.putFile(config, lockId, request.getInputStream());
+          return Response.status(Status.OK).header(LOCK, lockId).type(MediaType.APPLICATION_JSON).build();
+        } catch (SizeMismatchException e) {
+          return Response.status(Status.CONFLICT)
+                         .entity("{\"error\": \"Size mismatch\"}")
+                         .header(LOCK, e.getLockId())
+                         .type(MediaType.APPLICATION_JSON)
+                         .build();
+        } catch (LockMismatchException e) {
+          return Response.status(Status.CONFLICT)
+                         .entity("{\"error\": \"Lock mismatch\"}")
+                         .header(LOCK, e.getLockId())
+                         .type(MediaType.APPLICATION_JSON)
+                         .build();
+        } catch (PermissionDeniedException e) {
+          return Response.status(Status.FORBIDDEN)
+                         .entity("{\"error\": \"Permission denied\"}")
+                         .type(MediaType.APPLICATION_JSON)
+                         .build();
+        } catch (OfficeOnlineException e) {
+          return Response.status(Status.BAD_REQUEST)
+                         .entity("{\"error\": \"" + e.getMessage() + "\"}")
+                         .type(MediaType.APPLICATION_JSON)
+                         .build();
+        } catch (IOException e) {
+          return Response.status(Status.BAD_REQUEST)
+                         .entity("{\"error\": \"Cannot get request body\"}")
+                         .type(MediaType.APPLICATION_JSON)
+                         .build();
+        }
+      } else {
         return Response.status(Status.BAD_REQUEST)
-            .entity("{\"error\": \"" + e.getMessage() + "\"}")
-            .type(MediaType.APPLICATION_JSON)
-            .build();
+                       .entity("{\"error\": \"Couldn't build config from access token\"}")
+                       .type(MediaType.APPLICATION_JSON)
+                       .build();
       }
-      catch (IOException e) {
-        return Response.status(Status.BAD_REQUEST)
-            .entity("{\"error\": \"Cannot get request body\"}")
-            .type(MediaType.APPLICATION_JSON)
-            .build();
-      }
-
+    } else {
+      return Response.status(Status.BAD_REQUEST)
+                     .entity("{\"error\": \"Wrong operation\"}")
+                     .type(MediaType.APPLICATION_JSON)
+                     .build();
     }
-    return null;
 
   }
 
