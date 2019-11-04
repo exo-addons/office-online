@@ -24,6 +24,7 @@ import java.net.InetAddress;
 import java.net.URI;
 import java.util.Map;
 
+import javax.jcr.RepositoryException;
 import javax.servlet.ServletContext;
 import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.GET;
@@ -168,6 +169,11 @@ public class WOPIResource implements ResourceContainer {
         } catch (OfficeOnlineException e) {
           return Response.status(Status.BAD_REQUEST)
                          .entity("{\"error\": \"" + e.getMessage() + "\"}")
+                         .type(MediaType.APPLICATION_JSON)
+                         .build();
+        } catch (RepositoryException e) {
+          return Response.status(Status.BAD_REQUEST)
+                         .entity("{\"error\": \"Internal error while saving content\"}")
                          .type(MediaType.APPLICATION_JSON)
                          .build();
         } catch (IOException e) {

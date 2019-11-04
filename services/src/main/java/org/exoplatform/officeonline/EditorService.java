@@ -11,7 +11,6 @@ import javax.jcr.RepositoryException;
 import org.apache.commons.io.input.AutoCloseInputStream;
 
 import org.exoplatform.officeonline.exception.BadParameterException;
-import org.exoplatform.officeonline.exception.FileNotFoundException;
 import org.exoplatform.officeonline.exception.OfficeOnlineException;
 import org.exoplatform.portal.config.UserACL;
 import org.exoplatform.services.cache.CacheService;
@@ -59,13 +58,10 @@ public class EditorService extends AbstractOfficeOnlineService {
    * @throws RepositoryException the repository exception
    * @throws OfficeOnlineException the office online exception
    */
-  public EditorConfig createEditorConfig(String userId, String fileId, String workspace) throws OfficeOnlineException {
+  public EditorConfig createEditorConfig(String userId, String fileId, String workspace) throws OfficeOnlineException,
+                                                                                         RepositoryException {
 
     Node node = nodeByUUID(fileId, workspace);
-    if (node == null) {
-      throw new FileNotFoundException("File not found. FileId: " + fileId + ", workspace: " + workspace);
-    }
-
     List<Permissions> permissions = new ArrayList<>();
     if (canEditDocument(node)) {
       permissions.add(Permissions.USER_CAN_WRITE);
@@ -94,13 +90,8 @@ public class EditorService extends AbstractOfficeOnlineService {
     if (!fileId.equals(config.getFileId())) {
       throw new BadParameterException("FileId doesn't match fileId specified in token");
     }
-
-    Node node = nodeByUUID(config.getFileId(), config.getWorkspace());
-    if (node == null) {
-      throw new FileNotFoundException("File not found. FileId: " + config.getFileId() + ", workspace: " + config.getWorkspace());
-    }
-
     try {
+      Node node = nodeByUUID(config.getFileId(), config.getWorkspace());
       Node content = nodeContent(node);
 
       final String mimeType = content.getProperty("jcr:mimeType").getString();
