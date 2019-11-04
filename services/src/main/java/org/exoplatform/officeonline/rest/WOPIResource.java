@@ -52,6 +52,7 @@ import org.exoplatform.services.log.ExoLogger;
 import org.exoplatform.services.log.Log;
 import org.exoplatform.services.rest.resource.ResourceContainer;
 
+// TODO: Auto-generated Javadoc
 /**
  * The Class WOPIService.
  */
@@ -64,8 +65,27 @@ public class WOPIResource implements ResourceContainer {
   /** The Constant ACCESS_TOKEN. */
   public static final String EDITOR_CONFIG_PARAM = "editorConfig";
 
+  /**
+   * The Enum Operation.
+   */
   public enum Operation {
-    GET_LOCK, GET_SHARE_URL, LOCK, PUT, PUT_RELATIVE, REFRESH_LOCK, RENAME_FILE, UNLOCK
+
+    /** The get lock. */
+    GET_LOCK,
+    /** The get share url. */
+    GET_SHARE_URL,
+    /** The lock. */
+    LOCK,
+    /** The put. */
+    PUT,
+    /** The put relative. */
+    PUT_RELATIVE,
+    /** The refresh lock. */
+    REFRESH_LOCK,
+    /** The rename file. */
+    RENAME_FILE,
+    /** The unlock. */
+    UNLOCK
   }
 
   /** The Constant FILE_CONVERSION. */
@@ -119,7 +139,7 @@ public class WOPIResource implements ResourceContainer {
   /**
    * Instantiates a new WOPI service.
    *
-   * @param editorService the editor service
+   * @param wopiService the wopi service
    */
   public WOPIResource(WOPIService wopiService) {
     this.wopiService = wopiService;
@@ -130,6 +150,7 @@ public class WOPIResource implements ResourceContainer {
    *
    * @param uriInfo the uri info
    * @param request the request
+   * @param context the context
    * @param operation the operation
    * @param fileId the file id
    * @return the response
@@ -203,7 +224,7 @@ public class WOPIResource implements ResourceContainer {
    *
    * @param uriInfo the uri info
    * @param request the request
-   * @param operation the operation
+   * @param context the context
    * @param fileId the file id
    * @return the response
    */
@@ -260,13 +281,22 @@ public class WOPIResource implements ResourceContainer {
   @Produces(MediaType.APPLICATION_JSON)
   public Response files(@Context UriInfo uriInfo,
                         @Context HttpServletRequest request,
+                        @Context ServletContext context,
                         @HeaderParam(OVERRIDE) Operation operation,
                         @PathParam("fileId") String fileId) {
 
     verifyProofKey(request);
+
+    EditorConfig config = (EditorConfig) context.getAttribute(EDITOR_CONFIG_PARAM);
+    if (config == null) {
+      return Response.status(Status.UNAUTHORIZED)
+                     .entity("{\"error\": \"Couldn't build config from access token\"}")
+                     .type(MediaType.APPLICATION_JSON)
+                     .build();
+    }
     switch (operation) {
     case GET_LOCK:
-      return getLock();
+      return getLock(fileId, config);
     case GET_SHARE_URL:
       return getShareUrl();
     case LOCK:
@@ -289,6 +319,7 @@ public class WOPIResource implements ResourceContainer {
    *
    * @param uriInfo the uri info
    * @param request the request
+   * @param context the context
    * @return the response
    */
   @GET
@@ -376,11 +407,29 @@ public class WOPIResource implements ResourceContainer {
   /**
    * Gets the lock.
    *
+   * @param fileId the file id
    * @return the lock
    */
-  private Response getLock() {
-    // TODO get lock
-    return null;
+  private Response getLock(String fileId, EditorConfig config) {
+    try {
+      String lock = wopiService.getLock(fileId, config);
+      return Response.ok().header(LOCK, lock != null ? lock : "").build();
+    } catch (BadParameterException e) {
+      return Response.status(Status.BAD_REQUEST)
+                     .entity("{\"error\": \"" + e.getMessage() + "\"}")
+                     .type(MediaType.APPLICATION_JSON)
+                     .build();
+    } catch (FileNotFoundException e) {
+      return Response.status(Status.NOT_FOUND)
+                     .entity("{\"error\": \"" + e.getMessage() + "\"}")
+                     .type(MediaType.APPLICATION_JSON)
+                     .build();
+    } catch (RepositoryException e) {
+      return Response.status(Status.INTERNAL_SERVER_ERROR)
+                     .entity("{\"error\": \"" + e.getMessage() + "\"}")
+                     .type(MediaType.APPLICATION_JSON)
+                     .build();
+    }
   }
 
   /**

@@ -27,6 +27,7 @@ import org.exoplatform.container.xml.InitParams;
 import org.exoplatform.container.xml.PropertiesParam;
 import org.exoplatform.ecm.webui.utils.Utils;
 import org.exoplatform.officeonline.exception.ActionNotFoundException;
+import org.exoplatform.officeonline.exception.BadParameterException;
 import org.exoplatform.officeonline.exception.FileExtensionNotFoundException;
 import org.exoplatform.officeonline.exception.FileNotFoundException;
 import org.exoplatform.officeonline.exception.LockMismatchException;
@@ -231,9 +232,12 @@ public class WOPIService extends AbstractOfficeOnlineService {
    * Put file.
    *
    * @param config the config
+   * @param lockId the lock id
    * @param data the data
    * @throws OfficeOnlineException the office online exception
-   * @throws SizeMismatchException 
+   * @throws LockMismatchException the lock mismatch exception
+   * @throws SizeMismatchException the size mismatch exception
+   * @throws RepositoryException the repository exception
    */
   public void putFile(EditorConfig config, String lockId, InputStream data) throws OfficeOnlineException,
                                                                             LockMismatchException,
@@ -476,6 +480,23 @@ public class WOPIService extends AbstractOfficeOnlineService {
   @Override
   public void stop() {
     discoveryPlugin.stop();
+  }
+
+  /**
+   * Gets the lock.
+   *
+   * @param fileId the file id
+   * @param config the config
+   * @return the lock
+   * @throws RepositoryException 
+   */
+  public String getLock(String fileId,
+                        EditorConfig config) throws FileNotFoundException, BadParameterException, RepositoryException {
+    if (!fileId.equals(config.getFileId())) {
+      throw new BadParameterException("FileId doesn't match fileId specified in token");
+    }
+    Node node = nodeByUUID(config.getFileId(), config.getWorkspace());
+    return node.isLocked() ? node.getLock().getLockToken() : null;
   }
 
   /**
