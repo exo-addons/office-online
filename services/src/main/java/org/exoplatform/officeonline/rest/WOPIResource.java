@@ -39,13 +39,15 @@ import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
 import javax.ws.rs.core.UriInfo;
 
+import org.exoplatform.officeonline.DocumentContent;
 import org.exoplatform.officeonline.EditorConfig;
 import org.exoplatform.officeonline.WOPIService;
+import org.exoplatform.officeonline.exception.BadParameterException;
+import org.exoplatform.officeonline.exception.FileNotFoundException;
 import org.exoplatform.officeonline.exception.LockMismatchException;
 import org.exoplatform.officeonline.exception.OfficeOnlineException;
 import org.exoplatform.officeonline.exception.PermissionDeniedException;
 import org.exoplatform.officeonline.exception.SizeMismatchException;
-import org.exoplatform.officeonline.exception.UpdateConflictException;
 import org.exoplatform.services.log.ExoLogger;
 import org.exoplatform.services.log.Log;
 import org.exoplatform.services.rest.resource.ResourceContainer;
@@ -149,15 +151,14 @@ public class WOPIResource implements ResourceContainer {
           String lockId = request.getHeader(LOCK);
           wopiService.putFile(config, lockId, request.getInputStream());
           return Response.status(Status.OK).header(LOCK, lockId).type(MediaType.APPLICATION_JSON).build();
-        } catch (SizeMismatchException e) {
-          return Response.status(Status.CONFLICT)
-                         .entity("{\"error\": \"Size mismatch\"}")
-                         .header(LOCK, e.getLockId())
+        } catch (FileNotFoundException e) {
+          return Response.status(Status.NOT_FOUND)
+                         .entity("{\"error\": \"" + e.getMessage() + "\"}")
                          .type(MediaType.APPLICATION_JSON)
                          .build();
-        } catch (LockMismatchException e) {
+        } catch (LockMismatchException | SizeMismatchException e) {
           return Response.status(Status.CONFLICT)
-                         .entity("{\"error\": \"Lock mismatch\"}")
+                         .entity("{\"error\": \"" + e.getMessage() + "\"}")
                          .header(LOCK, e.getLockId())
                          .type(MediaType.APPLICATION_JSON)
                          .build();
@@ -172,18 +173,18 @@ public class WOPIResource implements ResourceContainer {
                          .type(MediaType.APPLICATION_JSON)
                          .build();
         } catch (RepositoryException e) {
-          return Response.status(Status.BAD_REQUEST)
+          return Response.status(Status.INTERNAL_SERVER_ERROR)
                          .entity("{\"error\": \"Internal error while saving content\"}")
                          .type(MediaType.APPLICATION_JSON)
                          .build();
         } catch (IOException e) {
-          return Response.status(Status.BAD_REQUEST)
+          return Response.status(Status.INTERNAL_SERVER_ERROR)
                          .entity("{\"error\": \"Cannot get request body\"}")
                          .type(MediaType.APPLICATION_JSON)
                          .build();
         }
       } else {
-        return Response.status(Status.BAD_REQUEST)
+        return Response.status(Status.UNAUTHORIZED)
                        .entity("{\"error\": \"Couldn't build config from access token\"}")
                        .type(MediaType.APPLICATION_JSON)
                        .build();
@@ -195,6 +196,54 @@ public class WOPIResource implements ResourceContainer {
                      .build();
     }
 
+  }
+
+  /**
+   * Files.
+   *
+   * @param uriInfo the uri info
+   * @param request the request
+   * @param operation the operation
+   * @param fileId the file id
+   * @return the response
+   */
+  @GET
+  @Path("/files/{fileId}/contents")
+  @Produces(MediaType.APPLICATION_JSON)
+  public Response getFile(@Context UriInfo uriInfo,
+                          @Context HttpServletRequest request,
+                          @Context ServletContext context,
+                          @PathParam("fileId") String fileId) {
+
+    verifyProofKey(request);
+    EditorConfig config = (EditorConfig) context.getAttribute(EDITOR_CONFIG_PARAM);
+    if (config != null) {
+      try {
+        DocumentContent content = wopiService.getContent(fileId, config);
+        return Response.ok().header(ITEM_VERSION, content.getVersion()).entity(content.getData()).type(content.getType()).build();
+      } catch (BadParameterException e) {
+        return Response.status(Status.BAD_REQUEST)
+                       .entity("{\"error\": \"" + e.getMessage() + "\"}")
+                       .type(MediaType.APPLICATION_JSON)
+                       .build();
+      } catch (FileNotFoundException e) {
+        return Response.status(Status.NOT_FOUND)
+                       .entity("{\"error\": \"" + e.getMessage() + "\"}")
+                       .type(MediaType.APPLICATION_JSON)
+                       .build();
+      } catch (OfficeOnlineException e) {
+        return Response.status(Status.BAD_REQUEST)
+                       .entity("{\"error\": \"" + e.getMessage() + "\"}")
+                       .type(MediaType.APPLICATION_JSON)
+                       .build();
+      }
+
+    } else {
+      return Response.status(Status.UNAUTHORIZED)
+                     .entity("{\"error\": \"Couldn't build config from access token\"}")
+                     .type(MediaType.APPLICATION_JSON)
+                     .build();
+    }
   }
 
   /**

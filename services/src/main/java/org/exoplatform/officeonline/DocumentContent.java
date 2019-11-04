@@ -30,4 +30,11 @@ public abstract class DocumentContent {
    */
   public abstract String getType();
   
+  /**
+   * Gets the version.
+   *
+   * @return the version
+   */
+  public abstract String getVersion();
+  
 }
