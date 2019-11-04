@@ -18,6 +18,7 @@ import javax.jcr.UnsupportedRepositoryOperationException;
 
 import org.apache.commons.lang.StringUtils;
 
+import org.exoplatform.commons.utils.MimeTypeResolver;
 import org.exoplatform.container.PortalContainer;
 import org.exoplatform.container.component.ComponentPlugin;
 import org.exoplatform.container.xml.InitParams;
@@ -38,6 +39,7 @@ import org.exoplatform.services.organization.OrganizationService;
 import org.exoplatform.services.organization.User;
 import org.exoplatform.services.security.ConversationState;
 
+// TODO: Auto-generated Javadoc
 /**
  * The Class WOPIService.
  */
@@ -139,6 +141,9 @@ public class WOPIService extends AbstractOfficeOnlineService {
   /** The discovery plugin. */
   protected WOPIDiscoveryPlugin discoveryPlugin;
 
+  /** The file extensions. */
+  protected Map<String, String> fileExtensions                    = new HashMap<>();
+
   /**
    * Instantiates a new WOPI service.
    *
@@ -167,7 +172,35 @@ public class WOPIService extends AbstractOfficeOnlineService {
     } else {
       activeCache.put(SECRET_KEY, generateSecretKey());
     }
+    initFileExtensions();
+  }
 
+  /**
+   * Inits the file extensions.
+   */
+  protected void initFileExtensions() {
+    fileExtensions.put("application/msword", "doc");
+    fileExtensions.put("application/vnd.openxmlformats-officedocument.wordprocessingml.document", "docx");
+    fileExtensions.put("application/vnd.openxmlformats-officedocument.wordprocessingml.template", "dotx");
+    fileExtensions.put("application/vnd.ms-word.document.macroEnabled.1", "docm");
+    fileExtensions.put("application/vnd.ms-word.template.macroEnabled.12", "dotm");
+
+    fileExtensions.put("application/vnd.ms-excel", "xls");
+    fileExtensions.put("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", "xlsx");
+    fileExtensions.put("application/vnd.openxmlformats-officedocument.spreadsheetml.template", "xltx");
+    fileExtensions.put("application/vnd.ms-excel.sheet.macroEnabled.12", "xlsm");
+    fileExtensions.put("application/vnd.ms-excel.template.macroEnabled.12", "xltm");
+    fileExtensions.put("application/vnd.ms-excel.addin.macroEnabled.12", "xlam");
+    fileExtensions.put("application/vnd.ms-excel.sheet.binary.macroEnabled.12", "xlsb");
+
+    fileExtensions.put("application/vnd.ms-powerpoint", "ppt");
+    fileExtensions.put("application/vnd.openxmlformats-officedocument.presentationml.presentation", "pptx");
+    fileExtensions.put("application/vnd.openxmlformats-officedocument.presentationml.template", "potx");
+    fileExtensions.put("application/vnd.openxmlformats-officedocument.presentationml.slideshow", "ppsx");
+    fileExtensions.put("application/vnd.ms-powerpoint.addin.macroEnabled.12", "ppam");
+    fileExtensions.put("application/vnd.ms-powerpoint.presentation.macroEnabled.12", "pptm");
+    fileExtensions.put("application/vnd.ms-powerpoint.template.macroEnabled.12", "potm");
+    fileExtensions.put("application/vnd.ms-powerpoint.slideshow.macroEnabled.12", "ppsm");
   }
 
   /**
@@ -184,10 +217,6 @@ public class WOPIService extends AbstractOfficeOnlineService {
                                                  String userHost,
                                                  int userPort,
                                                  EditorConfig config) throws OfficeOnlineException {
-
-    if (config == null) {
-      throw new OfficeOnlineException("Cannot check file info: config is null");
-    }
 
     try {
       Node node = nodeByUUID(config.getFileId(), config.getWorkspace());
@@ -271,19 +300,42 @@ public class WOPIService extends AbstractOfficeOnlineService {
   public String getActionUrl(RequestInfo requestInfo, String fileId, String workspace, String action) throws RepositoryException,
                                                                                                       OfficeOnlineException {
     Node node = nodeByUUID(fileId, workspace);
+    String extension = getFileExtension(node);
+    String actionURL = discoveryPlugin.getActionUrl(extension, action);
+    if (actionURL != null) {
+      return String.format("%s%s=%s&", actionURL, PLACEHOLDER_WOPISRC, getWOPISrc(requestInfo, fileId));
+    } else {
+      throw new ActionNotFoundException("Cannot find actionURL for file extension " + extension + " and action: " + action);
+    }
+  }
+
+  /**
+   * Gets the file extension.
+   *
+   * @param node the node
+   * @return the file extension
+   * @throws RepositoryException the repository exception
+   * @throws FileExtensionNotFoundException the file extension not found exception
+   */
+  protected String getFileExtension(Node node) throws RepositoryException, FileExtensionNotFoundException {
     String title = node.getProperty(Utils.EXO_TITLE).getString();
     if (title.contains(".")) {
-      String extension = title.substring(title.lastIndexOf(".") + 1);
-      String actionURL = discoveryPlugin.getActionUrl(extension, action);
-      if (actionURL != null) {
-        return String.format("%s%s=%s&", actionURL, PLACEHOLDER_WOPISRC, getWOPISrc(requestInfo, fileId));
-      } else {
-        throw new ActionNotFoundException("Cannot find actionURL for file extension " + extension + " and action: " + action);
-      }
-    } else {
-      throw new FileExtensionNotFoundException("Cannot get file extension. FileId: " + fileId + ". Title: " + title);
+      return title.substring(title.lastIndexOf(".") + 1);
     }
 
+    String mimeType;
+    if (node.isNodeType(Utils.NT_FILE)) {
+      mimeType = node.getNode(Utils.JCR_CONTENT).getProperty(Utils.JCR_MIMETYPE).getString();
+    } else {
+      mimeType = new MimeTypeResolver().getMimeType(node.getName());
+    }
+
+    String extension = fileExtensions.get(mimeType);
+    if (extension != null) {
+      return extension;
+    } else {
+      throw new FileExtensionNotFoundException("Cannot get file extension. FileId: " + node.getUUID() + ". Title: " + title);
+    }
   }
 
   /**

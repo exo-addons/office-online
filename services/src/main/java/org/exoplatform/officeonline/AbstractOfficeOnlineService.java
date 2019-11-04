@@ -23,6 +23,7 @@ import org.picocontainer.Startable;
 import org.exoplatform.container.PortalContainer;
 import org.exoplatform.ecm.webui.utils.PermissionUtil;
 import org.exoplatform.ecm.webui.utils.Utils;
+import org.exoplatform.officeonline.exception.FileNotFoundException;
 import org.exoplatform.officeonline.exception.OfficeOnlineException;
 import org.exoplatform.portal.config.UserACL;
 import org.exoplatform.services.cache.CacheService;
@@ -113,7 +114,7 @@ public abstract class AbstractOfficeOnlineService implements Startable {
    * @param workspace the workspace
    * @return the node
    */
-  protected Node nodeByUUID(String uuid, String workspace) throws RepositoryException {
+  protected Node nodeByUUID(String uuid, String workspace) throws FileNotFoundException, RepositoryException {
     try {
       if (workspace == null) {
         workspace = jcrService.getCurrentRepository().getConfiguration().getDefaultWorkspaceName();
@@ -122,8 +123,8 @@ public abstract class AbstractOfficeOnlineService implements Startable {
       Session userSession = sp.getSession(workspace, jcrService.getCurrentRepository());
       return userSession.getNodeByUUID(uuid);
     } catch (ItemNotFoundException e) {
-      LOG.error("Cannot find node by UUID: {}, workspace: {}. Error: {}", uuid, workspace, e.getMessage());
-      return null;
+      LOG.warn("Cannot find node by UUID: {}, workspace: {}. Error: {}", uuid, workspace, e.getMessage());
+      throw new FileNotFoundException("File not found. FileId: " + uuid + ", workspace: " + workspace);
     }
 
   }
