@@ -3,8 +3,6 @@
  */
 package org.exoplatform.officeonline.rest;
 
-import java.io.FileNotFoundException;
-
 import javax.servlet.ServletContext;
 import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.GET;
@@ -20,8 +18,6 @@ import javax.ws.rs.core.UriInfo;
 import org.exoplatform.officeonline.DocumentContent;
 import org.exoplatform.officeonline.EditorConfig;
 import org.exoplatform.officeonline.EditorService;
-import org.exoplatform.officeonline.WOPIService;
-import org.exoplatform.officeonline.exception.BadParameterException;
 import org.exoplatform.officeonline.exception.OfficeOnlineException;
 import org.exoplatform.services.rest.resource.ResourceContainer;
 

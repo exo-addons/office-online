@@ -19,7 +19,7 @@ import org.exoplatform.officeonline.EditorService;
 import org.exoplatform.officeonline.RequestInfo;
 import org.exoplatform.officeonline.WOPIService;
 import org.exoplatform.officeonline.exception.ActionNotFoundException;
-import org.exoplatform.officeonline.exception.FileExtensionException;
+import org.exoplatform.officeonline.exception.FileExtensionNotFoundException;
 import org.exoplatform.officeonline.exception.FileNotFoundException;
 import org.exoplatform.officeonline.exception.OfficeOnlineException;
 import org.exoplatform.services.log.ExoLogger;
@@ -105,7 +105,7 @@ public class EditorPortlet extends GenericPortlet {
         showError(i18n.getString("OfficeonlineEditorClient.ErrorTitle"),
                   i18n.getString("OfficeonlineEditor.error.FileNotFound"),
                   require);
-      } catch (FileExtensionException e) {
+      } catch (FileExtensionNotFoundException e) {
         LOG.error("Error while getting file extension. ID: {}", fileId, e);
         showError(i18n.getString("OfficeonlineEditorClient.ErrorTitle"),
                   i18n.getString("OfficeonlineEditor.error.WrongExtension"),

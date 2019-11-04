@@ -13,6 +13,7 @@ import java.util.Base64;
 import java.util.List;
 
 import javax.crypto.Cipher;
+import javax.jcr.ItemNotFoundException;
 import javax.jcr.Node;
 import javax.jcr.RepositoryException;
 import javax.jcr.Session;
@@ -112,7 +113,7 @@ public abstract class AbstractOfficeOnlineService implements Startable {
    * @param workspace the workspace
    * @return the node
    */
-  protected Node nodeByUUID(String uuid, String workspace) {
+  protected Node nodeByUUID(String uuid, String workspace) throws RepositoryException {
     try {
       if (workspace == null) {
         workspace = jcrService.getCurrentRepository().getConfiguration().getDefaultWorkspaceName();
@@ -120,7 +121,7 @@ public abstract class AbstractOfficeOnlineService implements Startable {
       SessionProvider sp = sessionProviders.getSessionProvider(null);
       Session userSession = sp.getSession(workspace, jcrService.getCurrentRepository());
       return userSession.getNodeByUUID(uuid);
-    } catch (RepositoryException e) {
+    } catch (ItemNotFoundException e) {
       LOG.error("Cannot find node by UUID: {}, workspace: {}. Error: {}", uuid, workspace, e.getMessage());
       return null;
     }
@@ -144,26 +145,21 @@ public abstract class AbstractOfficeOnlineService implements Startable {
    * @param node the node
    * @return true, if successful
    */
-  protected boolean canEditDocument(Node node) {
-    try {
-      boolean res = false;
-      if (node != null) {
-        String remoteUser = ConversationState.getCurrent().getIdentity().getUserId();
-        String superUser = userACL.getSuperUser();
-        boolean locked = node.isLocked();
-        if (locked && (remoteUser.equalsIgnoreCase(superUser) || node.getLock().getLockOwner().equals(remoteUser))) {
-          locked = false;
-        }
-        res = !locked && PermissionUtil.canSetProperty(node);
+  protected boolean canEditDocument(Node node) throws RepositoryException {
+    boolean res = false;
+    if (node != null) {
+      String remoteUser = ConversationState.getCurrent().getIdentity().getUserId();
+      String superUser = userACL.getSuperUser();
+      boolean locked = node.isLocked();
+      if (locked && (remoteUser.equalsIgnoreCase(superUser) || node.getLock().getLockOwner().equals(remoteUser))) {
+        locked = false;
       }
-      if (!res && LOG.isDebugEnabled()) {
-        LOG.debug("Cannot edit: {}", node != null ? node.getPath() : null);
-      }
-      return res;
-    } catch (RepositoryException e) {
-      LOG.error("Cannot check document permissions: {}", e.getMessage());
-      return false;
+      res = !locked && PermissionUtil.canSetProperty(node);
     }
+    if (!res && LOG.isDebugEnabled()) {
+      LOG.debug("Cannot edit: {}", node != null ? node.getPath() : null);
+    }
+    return res;
 
   }
 

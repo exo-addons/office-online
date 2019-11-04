@@ -1,11 +1,11 @@
 package org.exoplatform.officeonline.exception;
 
-public class FileExtensionException extends OfficeOnlineException {
+public class FileExtensionNotFoundException extends OfficeOnlineException {
 
   /** The Constant serialVersionUID. */
   private static final long serialVersionUID = 8675025886542058618L;
 
-  public FileExtensionException(String message) {
+  public FileExtensionNotFoundException(String message) {
     super(message);
   }
 
@@ -14,7 +14,7 @@ public class FileExtensionException extends OfficeOnlineException {
    *
    * @param cause the cause
    */
-  public FileExtensionException(Throwable cause) {
+  public FileExtensionNotFoundException(Throwable cause) {
     super(cause);
   }
 
@@ -24,7 +24,7 @@ public class FileExtensionException extends OfficeOnlineException {
    * @param message the message
    * @param cause the cause
    */
-  public FileExtensionException(String message, Throwable cause) {
+  public FileExtensionNotFoundException(String message, Throwable cause) {
     super(message, cause);
   }
 

@@ -24,7 +24,7 @@ import org.exoplatform.container.xml.InitParams;
 import org.exoplatform.container.xml.PropertiesParam;
 import org.exoplatform.ecm.webui.utils.Utils;
 import org.exoplatform.officeonline.exception.ActionNotFoundException;
-import org.exoplatform.officeonline.exception.FileExtensionException;
+import org.exoplatform.officeonline.exception.FileExtensionNotFoundException;
 import org.exoplatform.officeonline.exception.OfficeOnlineException;
 import org.exoplatform.officeonline.exception.WopiDiscoveryNotFoundException;
 import org.exoplatform.portal.config.UserACL;
@@ -281,7 +281,7 @@ public class WOPIService extends AbstractOfficeOnlineService {
         throw new ActionNotFoundException("Cannot find actionURL for file extension " + extension + " and action: " + action);
       }
     } else {
-      throw new FileExtensionException("Cannot get file extension. FileId: " + fileId + ". Title: " + title);
+      throw new FileExtensionNotFoundException("Cannot get file extension. FileId: " + fileId + ". Title: " + title);
     }
 
   }
