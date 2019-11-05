@@ -18,11 +18,13 @@
  */
 package org.exoplatform.officeonline.rest;
 
+import java.io.IOException;
 import java.io.Serializable;
 import java.net.InetAddress;
 import java.net.URI;
 import java.util.Map;
 
+import javax.jcr.RepositoryException;
 import javax.servlet.ServletContext;
 import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.GET;
@@ -37,13 +39,22 @@ import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
 import javax.ws.rs.core.UriInfo;
 
+import org.exoplatform.officeonline.DocumentContent;
 import org.exoplatform.officeonline.EditorConfig;
 import org.exoplatform.officeonline.WOPIService;
+import org.exoplatform.officeonline.exception.AuthenticationFailedException;
+import org.exoplatform.officeonline.exception.BadParameterException;
+import org.exoplatform.officeonline.exception.EditorConfigNotFoundException;
+import org.exoplatform.officeonline.exception.FileNotFoundException;
+import org.exoplatform.officeonline.exception.LockMismatchException;
 import org.exoplatform.officeonline.exception.OfficeOnlineException;
+import org.exoplatform.officeonline.exception.PermissionDeniedException;
+import org.exoplatform.officeonline.exception.SizeMismatchException;
 import org.exoplatform.services.log.ExoLogger;
 import org.exoplatform.services.log.Log;
 import org.exoplatform.services.rest.resource.ResourceContainer;
 
+// TODO: Auto-generated Javadoc
 /**
  * The Class WOPIService.
  */
@@ -51,13 +62,35 @@ import org.exoplatform.services.rest.resource.ResourceContainer;
 public class WOPIResource implements ResourceContainer {
 
   /** The Constant ACCESS_TOKEN. */
-  public static final String ACCESS_TOKEN = "access_token";
-  
-  /** The Constant ACCESS_TOKEN. */
-  public static final String EDITOR_CONFIG_PARAM = "editorConfig";
+  public static final String ACCESS_TOKEN            = "access_token";
 
-  protected enum Operation {
-    GET_LOCK, GET_SHARE_URL, LOCK, PUT, PUT_RELATIVE, REFRESH_LOCK, RENAME_FILE, UNLOCK
+  /** The Constant WRONG_TOKEN. */
+  public static final String WRONG_TOKEN_ATTRIBUTE   = "wrong_token";
+
+  /** The Constant ACCESS_TOKEN. */
+  public static final String EDITOR_CONFIG_ATTRIBUTE = "editorConfig";
+
+  /**
+   * The Enum Operation.
+   */
+  public enum Operation {
+
+    /** The get lock. */
+    GET_LOCK,
+    /** The get share url. */
+    GET_SHARE_URL,
+    /** The lock. */
+    LOCK,
+    /** The put. */
+    PUT,
+    /** The put relative. */
+    PUT_RELATIVE,
+    /** The refresh lock. */
+    REFRESH_LOCK,
+    /** The rename file. */
+    RENAME_FILE,
+    /** The unlock. */
+    UNLOCK
   }
 
   /** The Constant FILE_CONVERSION. */
@@ -111,10 +144,136 @@ public class WOPIResource implements ResourceContainer {
   /**
    * Instantiates a new WOPI service.
    *
-   * @param editorService the editor service
+   * @param wopiService the wopi service
    */
   public WOPIResource(WOPIService wopiService) {
     this.wopiService = wopiService;
+  }
+
+  /**
+   * Files.
+   *
+   * @param uriInfo the uri info
+   * @param request the request
+   * @param context the context
+   * @param operation the operation
+   * @param fileId the file id
+   * @return the response
+   */
+  @POST
+  @Path("/files/{fileId}/contents")
+  @Produces(MediaType.APPLICATION_JSON)
+  public Response putFile(@Context UriInfo uriInfo,
+                          @Context HttpServletRequest request,
+                          @Context ServletContext context,
+                          @HeaderParam(OVERRIDE) Operation operation,
+                          @PathParam("fileId") String fileId) {
+
+    verifyProofKey(request);
+    if (operation == Operation.PUT) {
+      try {
+        EditorConfig config = getEditorConfig(context);
+        String lockId = request.getHeader(LOCK);
+        wopiService.putFile(config, lockId, request.getInputStream());
+        return Response.status(Status.OK).header(LOCK, lockId).type(MediaType.APPLICATION_JSON).build();
+      } catch (FileNotFoundException e) {
+        return Response.status(Status.NOT_FOUND)
+                       .entity("{\"error\": \"" + e.getMessage() + "\"}")
+                       .type(MediaType.APPLICATION_JSON)
+                       .build();
+      } catch (LockMismatchException | SizeMismatchException e) {
+        return Response.status(Status.CONFLICT)
+                       .entity("{\"error\": \"" + e.getMessage() + "\"}")
+                       .header(LOCK, e.getLockId())
+                       .type(MediaType.APPLICATION_JSON)
+                       .build();
+      } catch (PermissionDeniedException e) {
+        return Response.status(Status.FORBIDDEN)
+                       .entity("{\"error\": \"Permission denied\"}")
+                       .type(MediaType.APPLICATION_JSON)
+                       .build();
+      } catch (AuthenticationFailedException e) {
+        return Response.status(Status.UNAUTHORIZED)
+                       .entity("{\"error\": \"" + e.getMessage() + "\"}")
+                       .type(MediaType.APPLICATION_JSON)
+                       .build();
+      } catch (OfficeOnlineException e) {
+        return Response.status(Status.INTERNAL_SERVER_ERROR)
+                       .entity("{\"error\": \"" + e.getMessage() + "\"}")
+                       .type(MediaType.APPLICATION_JSON)
+                       .build();
+      } catch (RepositoryException e) {
+        return Response.status(Status.INTERNAL_SERVER_ERROR)
+                       .entity("{\"error\": \"Internal error while saving content\"}")
+                       .type(MediaType.APPLICATION_JSON)
+                       .build();
+      } catch (IOException e) {
+        return Response.status(Status.INTERNAL_SERVER_ERROR)
+                       .entity("{\"error\": \"Cannot get request body\"}")
+                       .type(MediaType.APPLICATION_JSON)
+                       .build();
+      }
+    } else {
+      return Response.status(Status.BAD_REQUEST)
+                     .entity("{\"error\": \"Wrong operation\"}")
+                     .type(MediaType.APPLICATION_JSON)
+                     .build();
+    }
+  }
+
+  /**
+   * Files.
+   *
+   * @param uriInfo the uri info
+   * @param request the request
+   * @param context the context
+   * @param fileId the file id
+   * @return the response
+   */
+  @GET
+  @Path("/files/{fileId}/contents")
+  @Produces(MediaType.APPLICATION_JSON)
+  public Response getFile(@Context UriInfo uriInfo,
+                          @Context HttpServletRequest request,
+                          @Context ServletContext context,
+                          @PathParam("fileId") String fileId) {
+
+    verifyProofKey(request);
+    try {
+      EditorConfig config = getEditorConfig(context);
+      DocumentContent content = wopiService.getContent(fileId, config);
+      String version = null;
+      try {
+        version = content.getVersion();
+      } catch (RepositoryException e) {
+        LOG.error("Cannot get node version", e);
+      }
+      return Response.ok()
+                     .header(ITEM_VERSION, version != null ? version : "")
+                     .entity(content.getData())
+                     .type(content.getType())
+                     .build();
+    } catch (BadParameterException e) {
+      return Response.status(Status.BAD_REQUEST)
+                     .entity("{\"error\": \"" + e.getMessage() + "\"}")
+                     .type(MediaType.APPLICATION_JSON)
+                     .build();
+    } catch (FileNotFoundException e) {
+      return Response.status(Status.NOT_FOUND)
+                     .entity("{\"error\": \"" + e.getMessage() + "\"}")
+                     .type(MediaType.APPLICATION_JSON)
+                     .build();
+    } catch (AuthenticationFailedException e) {
+      return Response.status(Status.UNAUTHORIZED)
+                     .entity("{\"error\": \"" + e.getMessage() + "\"}")
+                     .type(MediaType.APPLICATION_JSON)
+                     .build();
+    } catch (OfficeOnlineException e) {
+      return Response.status(Status.INTERNAL_SERVER_ERROR)
+                     .entity("{\"error\": \"" + e.getMessage() + "\"}")
+                     .type(MediaType.APPLICATION_JSON)
+                     .build();
+    }
   }
 
   /**
@@ -160,6 +319,7 @@ public class WOPIResource implements ResourceContainer {
    *
    * @param uriInfo the uri info
    * @param request the request
+   * @param context the context
    * @return the response
    */
   @GET
@@ -167,17 +327,22 @@ public class WOPIResource implements ResourceContainer {
   @Produces(MediaType.APPLICATION_JSON)
   public Response checkFileInfo(@Context UriInfo uriInfo, @Context HttpServletRequest request, @Context ServletContext context) {
     verifyProofKey(request);
-    EditorConfig config = (EditorConfig) context.getAttribute(EDITOR_CONFIG_PARAM);
-    URI requestUri = uriInfo.getRequestUri();
 
+    URI requestUri = uriInfo.getRequestUri();
     try {
+      EditorConfig config = getEditorConfig(context);
       Map<String, Serializable> fileInfo = wopiService.checkFileInfo(requestUri.getScheme(),
                                                                      requestUri.getHost(),
                                                                      requestUri.getPort(),
                                                                      config);
       return Response.ok(fileInfo).type(MediaType.APPLICATION_JSON).build();
+    } catch (AuthenticationFailedException e) {
+      return Response.status(Status.UNAUTHORIZED)
+                     .entity("{\"error\": \"" + e.getMessage() + "\"}")
+                     .type(MediaType.APPLICATION_JSON)
+                     .build();
     } catch (OfficeOnlineException e) {
-      return Response.status(Status.BAD_REQUEST)
+      return Response.status(Status.INTERNAL_SERVER_ERROR)
                      .entity("{\"error\": \"" + e.getMessage() + "\"}")
                      .type(MediaType.APPLICATION_JSON)
                      .build();
@@ -271,6 +436,29 @@ public class WOPIResource implements ResourceContainer {
     }
   }
 
+  /**
+   * Gets the editor config.
+   *
+   * @param context the context
+   * @return the editor config
+   * @throws AuthenticationFailedException the authentication failed exception
+   * @throws EditorConfigNotFoundException the editor config not found exception
+   */
+  protected EditorConfig getEditorConfig(ServletContext context) throws AuthenticationFailedException,
+                                                                 EditorConfigNotFoundException {
+    EditorConfig config = (EditorConfig) context.getAttribute(EDITOR_CONFIG_ATTRIBUTE);
+    if (config != null) {
+      return config;
+    } else {
+      Boolean authFailed = (Boolean) context.getAttribute(WRONG_TOKEN_ATTRIBUTE);
+      if (authFailed != null && authFailed.booleanValue()) {
+        throw new AuthenticationFailedException("Access token authentication failed");
+      } else {
+        throw new EditorConfigNotFoundException("Cannot get editor config from context");
+      }
+    }
+  }
+  
   /**
    * Return Office Online REST API version.
    *

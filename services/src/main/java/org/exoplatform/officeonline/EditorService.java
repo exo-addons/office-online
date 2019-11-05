@@ -1,6 +1,5 @@
 package org.exoplatform.officeonline;
 
-import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -8,9 +7,6 @@ import java.util.List;
 import javax.jcr.Node;
 import javax.jcr.RepositoryException;
 
-import org.apache.commons.io.input.AutoCloseInputStream;
-
-import org.exoplatform.officeonline.exception.BadParameterException;
 import org.exoplatform.officeonline.exception.OfficeOnlineException;
 import org.exoplatform.portal.config.UserACL;
 import org.exoplatform.services.cache.CacheService;
@@ -78,42 +74,6 @@ public class EditorService extends AbstractOfficeOnlineService {
     return configBuilder.build();
   }
 
-  /**
-   * Gets the content.
-   *
-   * @param fileId the fileId
-   * @param config the config
-   * @return the content
-   * @throws OfficeOnlineException the office online exception
-   */
-  public DocumentContent getContent(String fileId, EditorConfig config) throws OfficeOnlineException {
-    if (!fileId.equals(config.getFileId())) {
-      throw new BadParameterException("FileId doesn't match fileId specified in token");
-    }
-    try {
-      Node node = nodeByUUID(config.getFileId(), config.getWorkspace());
-      Node content = nodeContent(node);
-
-      final String mimeType = content.getProperty("jcr:mimeType").getString();
-      // data stream will be closed when EoF will be reached
-      final InputStream data = new AutoCloseInputStream(content.getProperty("jcr:data").getStream());
-      return new DocumentContent() {
-        @Override
-        public String getType() {
-          return mimeType;
-        }
-
-        @Override
-        public InputStream getData() {
-          return data;
-        }
-      };
-    } catch (RepositoryException e) {
-      LOG.error("Cannot get content of node. FileId: " + config.getFileId(), e.getMessage());
-      throw new OfficeOnlineException("Cannot get file content. FileId: " + config.getFileId());
-    }
-
-  }
 
   /**
    * Start.
@@ -158,7 +118,6 @@ public class EditorService extends AbstractOfficeOnlineService {
     } catch (OfficeOnlineException e) {
       LOG.error(e);
     }
-
   }
 
   /**

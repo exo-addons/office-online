@@ -3,6 +3,7 @@
  */
 package org.exoplatform.officeonline;
 
+import java.io.InputStream;
 import java.net.URI;
 import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
@@ -18,11 +19,13 @@ import javax.jcr.Node;
 import javax.jcr.RepositoryException;
 import javax.jcr.Session;
 
+import org.apache.commons.io.input.AutoCloseInputStream;
 import org.picocontainer.Startable;
 
 import org.exoplatform.container.PortalContainer;
 import org.exoplatform.ecm.webui.utils.PermissionUtil;
 import org.exoplatform.ecm.webui.utils.Utils;
+import org.exoplatform.officeonline.exception.BadParameterException;
 import org.exoplatform.officeonline.exception.FileNotFoundException;
 import org.exoplatform.officeonline.exception.OfficeOnlineException;
 import org.exoplatform.portal.config.UserACL;
@@ -44,26 +47,56 @@ import org.exoplatform.services.wcm.core.NodetypeConstant;
  */
 public abstract class AbstractOfficeOnlineService implements Startable {
 
+  /** The Constant JCR_MIME_TYPE. */
+  protected static final String          JCR_MIME_TYPE          = "jcr:mimeType";
+
   /** The Constant LOG. */
-  protected static final Log             LOG                  = ExoLogger.getLogger(AbstractOfficeOnlineService.class);
+  protected static final Log             LOG                    = ExoLogger.getLogger(AbstractOfficeOnlineService.class);
 
   /** The Constant CACHE_NAME. */
-  public static final String             CACHE_NAME           = "officeonline.Cache".intern();
+  public static final String             CACHE_NAME             = "officeonline.Cache".intern();
 
   /** The Constant SECRET_KEY. */
-  protected static final String          SECRET_KEY           = "secret-key";
+  protected static final String          SECRET_KEY             = "secret-key";
 
   /** The Constant ALGORITHM. */
-  protected static final String          ALGORITHM            = "AES";
+  protected static final String          ALGORITHM              = "AES";
 
   /** The Constant TOKEN_DELIMITER. */
-  protected static final String          TOKEN_DELIMITER      = "+";
+  protected static final String          TOKEN_DELIMITER        = "+";
 
   /** The Constant TOKEN_DELIMITER_SPLIT. */
-  protected static final String          TOKEN_DELIMITE_SPLIT = "\\+";
+  protected static final String          TOKEN_DELIMITE_SPLIT   = "\\+";
 
   /** The Constant TOKEN_EXPIRES. */
-  protected static final long            TOKEN_EXPIRES        = 30 * 60000;
+  protected static final long            TOKEN_EXPIRES          = 30 * 60000;
+
+  /** The Constant JCR_CONTENT. */
+  protected static final String          JCR_CONTENT            = "jcr:content";
+
+  /** The Constant JCR_DATA. */
+  protected static final String          JCR_DATA               = "jcr:data";
+
+  /** The Constant EXO_LAST_MODIFIER. */
+  protected static final String          EXO_LAST_MODIFIER      = "exo:lastModifier";
+
+  /** The Constant EXO_LAST_MODIFIED_DATE. */
+  protected static final String          EXO_LAST_MODIFIED_DATE = "exo:lastModifiedDate";
+
+  /** The Constant EXO_DATE_MODIFIED. */
+  protected static final String          EXO_DATE_MODIFIED      = "exo:dateModified";
+
+  /** The Constant JCR_LAST_MODIFIED. */
+  protected static final String          JCR_LAST_MODIFIED      = "jcr:lastModified";
+
+  /** The Constant MIX_VERSIONABLE. */
+  protected static final String          MIX_VERSIONABLE        = "mix:versionable";
+
+  /** The Constant EXO_OWNER. */
+  protected static final String          EXO_OWNER              = "exo:owner";
+
+  /** The Constant EXO_TITLE. */
+  protected static final String          EXO_TITLE              = "exo:title";
 
   /** Cache of Editing documents. */
   protected final ExoCache<String, Key>  activeCache;
@@ -113,6 +146,8 @@ public abstract class AbstractOfficeOnlineService implements Startable {
    * @param uuid the uuid
    * @param workspace the workspace
    * @return the node
+   * @throws FileNotFoundException the file not found exception
+   * @throws RepositoryException the repository exception
    */
   protected Node nodeByUUID(String uuid, String workspace) throws FileNotFoundException, RepositoryException {
     try {
@@ -126,7 +161,6 @@ public abstract class AbstractOfficeOnlineService implements Startable {
       LOG.warn("Cannot find node by UUID: {}, workspace: {}. Error: {}", uuid, workspace, e.getMessage());
       throw new FileNotFoundException("File not found. FileId: " + uuid + ", workspace: " + workspace);
     }
-
   }
 
   /**
@@ -145,6 +179,7 @@ public abstract class AbstractOfficeOnlineService implements Startable {
    *
    * @param node the node
    * @return true, if successful
+   * @throws RepositoryException the repository exception
    */
   protected boolean canEditDocument(Node node) throws RepositoryException {
     boolean res = false;
@@ -161,6 +196,47 @@ public abstract class AbstractOfficeOnlineService implements Startable {
       LOG.debug("Cannot edit: {}", node != null ? node.getPath() : null);
     }
     return res;
+  }
+
+  /**
+   * Gets the content.
+   *
+   * @param fileId the fileId
+   * @param config the config
+   * @return the content
+   * @throws OfficeOnlineException the office online exception
+   */
+  public DocumentContent getContent(String fileId, EditorConfig config) throws OfficeOnlineException {
+    if (!fileId.equals(config.getFileId())) {
+      throw new BadParameterException("FileId doesn't match fileId specified in token");
+    }
+    try {
+      Node node = nodeByUUID(config.getFileId(), config.getWorkspace());
+      Node content = nodeContent(node);
+
+      final String mimeType = content.getProperty(JCR_MIME_TYPE).getString();
+      // data stream will be closed when EoF will be reached
+      final InputStream data = new AutoCloseInputStream(content.getProperty(JCR_DATA).getStream());
+      return new DocumentContent() {
+        @Override
+        public String getType() {
+          return mimeType;
+        }
+
+        @Override
+        public InputStream getData() {
+          return data;
+        }
+
+        @Override
+        public String getVersion() throws RepositoryException {
+          return node.isNodeType(MIX_VERSIONABLE) ? node.getBaseVersion().getName() : null;
+        }
+      };
+    } catch (RepositoryException e) {
+      LOG.error("Cannot get content of node. FileId: " + config.getFileId(), e.getMessage());
+      throw new OfficeOnlineException("Cannot get file content. FileId: " + config.getFileId());
+    }
 
   }
 
@@ -297,7 +373,7 @@ public abstract class AbstractOfficeOnlineService implements Startable {
   /**
    * Generate access token.
    *
-   * @param config the config
+   * @param configBuilder the config builder
    * @return the string
    * @throws OfficeOnlineException the office online exception
    */

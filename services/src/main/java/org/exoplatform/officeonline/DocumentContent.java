@@ -2,11 +2,10 @@ package org.exoplatform.officeonline;
 
 import java.io.InputStream;
 
+import javax.jcr.RepositoryException;
+
 /**
- * Created by The eXo Platform SAS.
- *
- * @author <a href="mailto:pnedonosko@exoplatform.com">Peter Nedonosko</a>
- * @version $Id: DocumentContent.java 00000 Feb 19, 2016 pnedonosko $
+ * The Class DocumentContent.
  */
 public abstract class DocumentContent {
 
@@ -22,12 +21,21 @@ public abstract class DocumentContent {
    * @return {@link InputStream}
    */
   public abstract InputStream getData();
-  
+
   /**
    * Document MIME type.
    * 
    * @return {@link String}
    */
   public abstract String getType();
-  
+
+
+  /**
+   * Gets the version.
+   *
+   * @return the version
+   * @throws RepositoryException the repository exception
+   */
+  public abstract String getVersion() throws RepositoryException ;
+
 }

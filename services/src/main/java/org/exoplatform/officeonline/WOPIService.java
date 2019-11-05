@@ -1,11 +1,14 @@
 package org.exoplatform.officeonline;
 
+import java.io.IOException;
+import java.io.InputStream;
 import java.io.Serializable;
 import java.net.URI;
 import java.security.Key;
 import java.security.NoSuchAlgorithmException;
 import java.util.Arrays;
 import java.util.Base64;
+import java.util.Calendar;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -14,7 +17,6 @@ import javax.crypto.SecretKey;
 import javax.crypto.spec.SecretKeySpec;
 import javax.jcr.Node;
 import javax.jcr.RepositoryException;
-import javax.jcr.UnsupportedRepositoryOperationException;
 
 import org.apache.commons.lang.StringUtils;
 
@@ -26,7 +28,10 @@ import org.exoplatform.container.xml.PropertiesParam;
 import org.exoplatform.ecm.webui.utils.Utils;
 import org.exoplatform.officeonline.exception.ActionNotFoundException;
 import org.exoplatform.officeonline.exception.FileExtensionNotFoundException;
+import org.exoplatform.officeonline.exception.LockMismatchException;
 import org.exoplatform.officeonline.exception.OfficeOnlineException;
+import org.exoplatform.officeonline.exception.PermissionDeniedException;
+import org.exoplatform.officeonline.exception.SizeMismatchException;
 import org.exoplatform.officeonline.exception.WopiDiscoveryNotFoundException;
 import org.exoplatform.portal.config.UserACL;
 import org.exoplatform.services.cache.CacheService;
@@ -39,7 +44,6 @@ import org.exoplatform.services.organization.OrganizationService;
 import org.exoplatform.services.organization.User;
 import org.exoplatform.services.security.ConversationState;
 
-// TODO: Auto-generated Javadoc
 /**
  * The Class WOPIService.
  */
@@ -201,6 +205,73 @@ public class WOPIService extends AbstractOfficeOnlineService {
     fileExtensions.put("application/vnd.ms-powerpoint.presentation.macroEnabled.12", "pptm");
     fileExtensions.put("application/vnd.ms-powerpoint.template.macroEnabled.12", "potm");
     fileExtensions.put("application/vnd.ms-powerpoint.slideshow.macroEnabled.12", "ppsm");
+  }
+
+  /**
+   * Put file.
+   *
+   * @param config the config
+   * @param lockId the lock id
+   * @param data the data
+   * @throws OfficeOnlineException the office online exception
+   * @throws LockMismatchException the lock mismatch exception
+   * @throws SizeMismatchException the size mismatch exception
+   * @throws RepositoryException the repository exception
+   */
+  public void putFile(EditorConfig config, String lockId, InputStream data) throws OfficeOnlineException,
+                                                                            LockMismatchException,
+                                                                            SizeMismatchException,
+                                                                            RepositoryException {
+    Node node = nodeByUUID(config.getFileId(), config.getWorkspace());
+    try {
+      if (canEditDocument(node)) {
+        Node content = node.getNode(JCR_CONTENT);
+        if (!node.isLocked()) {
+          long size = content.getProperty(JCR_DATA).getLength();
+          if (size != 0) {
+            throw new SizeMismatchException("File is unlocked and size isn't equal to 0.", "");
+          }
+        } else {
+          String lockToken = node.getLock().getLockToken();
+          if (!lockToken.equals(lockId)) {
+            throw new LockMismatchException("Given lock is different from the file lock", lockToken);
+          }
+        }
+
+        content.setProperty(JCR_DATA, data);
+        Calendar editedTime = Calendar.getInstance();
+        content.setProperty(JCR_LAST_MODIFIED, editedTime);
+        if (content.hasProperty(EXO_DATE_MODIFIED)) {
+          content.setProperty(EXO_DATE_MODIFIED, editedTime);
+        }
+        if (content.hasProperty(EXO_LAST_MODIFIED_DATE)) {
+          content.setProperty(EXO_LAST_MODIFIED_DATE, editedTime);
+        }
+        if (node.hasProperty(EXO_LAST_MODIFIED_DATE)) {
+          node.setProperty(EXO_LAST_MODIFIED_DATE, editedTime);
+        }
+        if (node.hasProperty(EXO_DATE_MODIFIED)) {
+          node.setProperty(EXO_DATE_MODIFIED, editedTime);
+        }
+        if (node.hasProperty(EXO_LAST_MODIFIER)) {
+          node.setProperty(EXO_LAST_MODIFIER, config.getUserId());
+        }
+        if (data != null) {
+          try {
+            data.close();
+          } catch (IOException e) {
+            LOG.error("Error closing data stream. FileID:" + config.getFileId());
+          }
+        }
+      } else {
+        throw new PermissionDeniedException("Cannnot update file. Permission denied");
+      }
+    } catch (RepositoryException e) {
+      LOG.error("Cannot save document content.", e);
+      throw new OfficeOnlineException("Cannot perform putFile operation. FileId: " + config.getFileId() + ", workspace: "
+          + config.getWorkspace());
+    }
+
   }
 
   /**
@@ -395,17 +466,16 @@ public class WOPIService extends AbstractOfficeOnlineService {
    *
    * @param map the map
    * @param node the node
-   * @throws UnsupportedRepositoryOperationException the unsupported repository operation exception
    * @throws RepositoryException the repository exception
    */
-  protected void addRequiredProperties(Map<String, Serializable> map, Node node) throws UnsupportedRepositoryOperationException,
-                                                                                 RepositoryException {
-    map.put(BASE_FILE_NAME, node.getProperty("exo:title").getString());
-    map.put(OWNER_ID, node.getProperty("exo:owner").getString());
+  protected void addRequiredProperties(Map<String, Serializable> map, Node node) throws RepositoryException {
+    map.put(BASE_FILE_NAME, node.getProperty(EXO_TITLE).getString());
+    map.put(OWNER_ID, node.getProperty(EXO_OWNER).getString());
     map.put(SIZE, getSize(node));
     map.put(USER_ID, ConversationState.getCurrent().getIdentity().getUserId());
-    String version = node.isNodeType("mix:versionable") ? node.getBaseVersion().getName() : "1";
-    map.put(VERSION, version);
+    if (node.isNodeType(MIX_VERSIONABLE)) {
+      map.put(VERSION, node.getBaseVersion().getName());
+    }
   }
 
   /**
@@ -508,7 +578,7 @@ public class WOPIService extends AbstractOfficeOnlineService {
     try {
       Node parent = node.getParent();
       String url = explorerUri(schema, host, port, explorerLink(parent.getPath())).toString();
-      map.put(BREADCRUMB_FOLDER_NAME, parent.getProperty("exo:title").getString());
+      map.put(BREADCRUMB_FOLDER_NAME, parent.getProperty(EXO_TITLE).getString());
       map.put(BREADCRUMB_FOLDER_URL, url);
     } catch (Exception e) {
       LOG.error("Couldn't add breadcrump properties:", e);
@@ -532,4 +602,5 @@ public class WOPIService extends AbstractOfficeOnlineService {
       return null;
     }
   }
+
 }
