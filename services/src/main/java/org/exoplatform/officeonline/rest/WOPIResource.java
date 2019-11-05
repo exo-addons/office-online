@@ -495,7 +495,7 @@ public class WOPIResource implements ResourceContainer {
       }
     }
   }
-
+  
   /**
    * Return Office Online REST API version.
    *
