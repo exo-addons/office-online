@@ -6,7 +6,7 @@
 
   /** For debug logging. */
   var log = function(msg, err) {
-    var logPrefix = "[onlyoffice] ";
+    var logPrefix = "[officeonline] ";
     if (typeof console != "undefined" && typeof console.log != "undefined") {
       var isoTime = " -- " + new Date().toISOString();
       var msgLine = msg;

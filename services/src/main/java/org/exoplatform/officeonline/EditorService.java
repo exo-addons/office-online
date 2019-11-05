@@ -1,6 +1,5 @@
 package org.exoplatform.officeonline;
 
-import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -8,9 +7,6 @@ import java.util.List;
 import javax.jcr.Node;
 import javax.jcr.RepositoryException;
 
-import org.apache.commons.io.input.AutoCloseInputStream;
-
-import org.exoplatform.officeonline.exception.BadParameterException;
 import org.exoplatform.officeonline.exception.OfficeOnlineException;
 import org.exoplatform.portal.config.UserACL;
 import org.exoplatform.services.cache.CacheService;

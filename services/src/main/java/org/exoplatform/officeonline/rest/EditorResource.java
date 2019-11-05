@@ -50,7 +50,7 @@ public class EditorResource implements ResourceContainer {
                           @Context HttpServletRequest request,
                           @Context ServletContext context,
                           @PathParam("fileId") String fileId) {
-    EditorConfig config = (EditorConfig) context.getAttribute(WOPIResource.EDITOR_CONFIG_PARAM);
+    EditorConfig config = (EditorConfig) context.getAttribute(WOPIResource.EDITOR_CONFIG_ATTRIBUTE);
     
     if(config == null) {
       return Response.status(Status.BAD_REQUEST)
