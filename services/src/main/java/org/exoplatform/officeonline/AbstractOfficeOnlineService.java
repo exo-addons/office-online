@@ -47,29 +47,56 @@ import org.exoplatform.services.wcm.core.NodetypeConstant;
  */
 public abstract class AbstractOfficeOnlineService implements Startable {
 
-  /** The Constant FIRST_VERSION_LABEL. */
-  protected static final String          JCR_FIRST_VERSION  = "1";
+  /** The Constant JCR_MIME_TYPE. */
+  protected static final String          JCR_MIME_TYPE          = "jcr:mimeType";
 
   /** The Constant LOG. */
-  protected static final Log             LOG                  = ExoLogger.getLogger(AbstractOfficeOnlineService.class);
+  protected static final Log             LOG                    = ExoLogger.getLogger(AbstractOfficeOnlineService.class);
 
   /** The Constant CACHE_NAME. */
-  public static final String             CACHE_NAME           = "officeonline.Cache".intern();
+  public static final String             CACHE_NAME             = "officeonline.Cache".intern();
 
   /** The Constant SECRET_KEY. */
-  protected static final String          SECRET_KEY           = "secret-key";
+  protected static final String          SECRET_KEY             = "secret-key";
 
   /** The Constant ALGORITHM. */
-  protected static final String          ALGORITHM            = "AES";
+  protected static final String          ALGORITHM              = "AES";
 
   /** The Constant TOKEN_DELIMITER. */
-  protected static final String          TOKEN_DELIMITER      = "+";
+  protected static final String          TOKEN_DELIMITER        = "+";
 
   /** The Constant TOKEN_DELIMITER_SPLIT. */
-  protected static final String          TOKEN_DELIMITE_SPLIT = "\\+";
+  protected static final String          TOKEN_DELIMITE_SPLIT   = "\\+";
 
   /** The Constant TOKEN_EXPIRES. */
-  protected static final long            TOKEN_EXPIRES        = 30 * 60000;
+  protected static final long            TOKEN_EXPIRES          = 30 * 60000;
+
+  /** The Constant JCR_CONTENT. */
+  protected static final String          JCR_CONTENT            = "jcr:content";
+
+  /** The Constant JCR_DATA. */
+  protected static final String          JCR_DATA               = "jcr:data";
+
+  /** The Constant EXO_LAST_MODIFIER. */
+  protected static final String          EXO_LAST_MODIFIER      = "exo:lastModifier";
+
+  /** The Constant EXO_LAST_MODIFIED_DATE. */
+  protected static final String          EXO_LAST_MODIFIED_DATE = "exo:lastModifiedDate";
+
+  /** The Constant EXO_DATE_MODIFIED. */
+  protected static final String          EXO_DATE_MODIFIED      = "exo:dateModified";
+
+  /** The Constant JCR_LAST_MODIFIED. */
+  protected static final String          JCR_LAST_MODIFIED      = "jcr:lastModified";
+
+  /** The Constant MIX_VERSIONABLE. */
+  protected static final String          MIX_VERSIONABLE        = "mix:versionable";
+
+  /** The Constant EXO_OWNER. */
+  protected static final String          EXO_OWNER              = "exo:owner";
+
+  /** The Constant EXO_TITLE. */
+  protected static final String          EXO_TITLE              = "exo:title";
 
   /** Cache of Editing documents. */
   protected final ExoCache<String, Key>  activeCache;
@@ -187,9 +214,9 @@ public abstract class AbstractOfficeOnlineService implements Startable {
       Node node = nodeByUUID(config.getFileId(), config.getWorkspace());
       Node content = nodeContent(node);
 
-      final String mimeType = content.getProperty("jcr:mimeType").getString();
+      final String mimeType = content.getProperty(JCR_MIME_TYPE).getString();
       // data stream will be closed when EoF will be reached
-      final InputStream data = new AutoCloseInputStream(content.getProperty("jcr:data").getStream());
+      final InputStream data = new AutoCloseInputStream(content.getProperty(JCR_DATA).getStream());
       return new DocumentContent() {
         @Override
         public String getType() {
@@ -202,14 +229,8 @@ public abstract class AbstractOfficeOnlineService implements Startable {
         }
 
         @Override
-        public String getVersion() {
-          try {
-            return node.isNodeType("mix:versionable") ? node.getBaseVersion().getName() : JCR_FIRST_VERSION;
-          } catch (RepositoryException e) {
-            LOG.error("Cannot get node version. UUID: {}", fileId, e);
-            // First version by default
-            return JCR_FIRST_VERSION;
-          }
+        public String getVersion() throws RepositoryException {
+          return node.isNodeType(MIX_VERSIONABLE) ? node.getBaseVersion().getName() : null;
         }
       };
     } catch (RepositoryException e) {

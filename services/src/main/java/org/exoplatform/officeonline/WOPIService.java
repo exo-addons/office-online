@@ -29,7 +29,6 @@ import org.exoplatform.ecm.webui.utils.Utils;
 import org.exoplatform.officeonline.exception.ActionNotFoundException;
 import org.exoplatform.officeonline.exception.BadParameterException;
 import org.exoplatform.officeonline.exception.FileExtensionNotFoundException;
-import org.exoplatform.officeonline.exception.FileNotFoundException;
 import org.exoplatform.officeonline.exception.LockMismatchException;
 import org.exoplatform.officeonline.exception.OfficeOnlineException;
 import org.exoplatform.officeonline.exception.PermissionDeniedException;
@@ -46,7 +45,6 @@ import org.exoplatform.services.organization.OrganizationService;
 import org.exoplatform.services.organization.User;
 import org.exoplatform.services.security.ConversationState;
 
-// TODO: Auto-generated Javadoc
 /**
  * The Class WOPIService.
  */
@@ -144,24 +142,6 @@ public class WOPIService extends AbstractOfficeOnlineService {
 
   /** The Constant TOKEN_CONFIGURATION_PROPERTIES. */
   protected static final String TOKEN_CONFIGURATION_PROPERTIES    = "token-configuration";
-
-  /** The Constant JCR_CONTENT. */
-  protected static final String JCR_CONTENT                       = "jcr:content";
-
-  /** The Constant JCR_DATA. */
-  protected static final String JCR_DATA                          = "jcr:data";
-
-  /** The Constant EXO_LAST_MODIFIER. */
-  protected static final String EXO_LAST_MODIFIER                 = "exo:lastModifier";
-
-  /** The Constant EXO_LAST_MODIFIED_DATE. */
-  protected static final String EXO_LAST_MODIFIED_DATE            = "exo:lastModifiedDate";
-
-  /** The Constant EXO_DATE_MODIFIED. */
-  protected static final String EXO_DATE_MODIFIED                 = "exo:dateModified";
-
-  /** The Constant JCR_LAST_MODIFIED. */
-  protected static final String JCR_LAST_MODIFIED                 = "jcr:lastModified";
 
   /** The discovery plugin. */
   protected WOPIDiscoveryPlugin discoveryPlugin;
@@ -288,7 +268,7 @@ public class WOPIService extends AbstractOfficeOnlineService {
         throw new PermissionDeniedException("Cannnot update file. Permission denied");
       }
     } catch (RepositoryException e) {
-      LOG.error("Error while putFile. {}", e.getMessage());
+      LOG.error("Cannot save document content.", e);
       throw new OfficeOnlineException("Cannot perform putFile operation. FileId: " + config.getFileId() + ", workspace: "
           + config.getWorkspace());
     }
@@ -507,12 +487,13 @@ public class WOPIService extends AbstractOfficeOnlineService {
    * @throws RepositoryException the repository exception
    */
   protected void addRequiredProperties(Map<String, Serializable> map, Node node) throws RepositoryException {
-    map.put(BASE_FILE_NAME, node.getProperty("exo:title").getString());
-    map.put(OWNER_ID, node.getProperty("exo:owner").getString());
+    map.put(BASE_FILE_NAME, node.getProperty(EXO_TITLE).getString());
+    map.put(OWNER_ID, node.getProperty(EXO_OWNER).getString());
     map.put(SIZE, getSize(node));
     map.put(USER_ID, ConversationState.getCurrent().getIdentity().getUserId());
-    String version = node.isNodeType("mix:versionable") ? node.getBaseVersion().getName() : "1";
-    map.put(VERSION, version);
+    if (node.isNodeType(MIX_VERSIONABLE)) {
+      map.put(VERSION, node.getBaseVersion().getName());
+    }
   }
 
   /**
@@ -615,7 +596,7 @@ public class WOPIService extends AbstractOfficeOnlineService {
     try {
       Node parent = node.getParent();
       String url = explorerUri(schema, host, port, explorerLink(parent.getPath())).toString();
-      map.put(BREADCRUMB_FOLDER_NAME, parent.getProperty("exo:title").getString());
+      map.put(BREADCRUMB_FOLDER_NAME, parent.getProperty(EXO_TITLE).getString());
       map.put(BREADCRUMB_FOLDER_URL, url);
     } catch (Exception e) {
       LOG.error("Couldn't add breadcrump properties:", e);
