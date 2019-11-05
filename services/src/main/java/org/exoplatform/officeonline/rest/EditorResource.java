@@ -3,6 +3,7 @@
  */
 package org.exoplatform.officeonline.rest;
 
+import javax.servlet.ServletContext;
 import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
@@ -15,6 +16,7 @@ import javax.ws.rs.core.Response.Status;
 import javax.ws.rs.core.UriInfo;
 
 import org.exoplatform.officeonline.DocumentContent;
+import org.exoplatform.officeonline.EditorConfig;
 import org.exoplatform.officeonline.EditorService;
 import org.exoplatform.officeonline.exception.OfficeOnlineException;
 import org.exoplatform.services.rest.resource.ResourceContainer;
@@ -42,26 +44,31 @@ public class EditorResource implements ResourceContainer {
    * @return the response
    */
   @GET
-  @Path("/content/{accessToken}")
+  @Path("/content/{fileId}")
   @Produces(MediaType.APPLICATION_JSON)
   public Response content(@Context UriInfo uriInfo,
                           @Context HttpServletRequest request,
-                          @PathParam("accessToken") String accessToken) {
-    if (accessToken != null) {
-      try {
-        DocumentContent content = editorService.getContent(accessToken);
-        return Response.ok().entity(content.getData()).type(content.getType()).build();
-      } catch (OfficeOnlineException e) {
-        return Response.status(Status.BAD_REQUEST)
-                       .entity("{\"error\": \"" + e.getMessage() + "\"}")
-                       .type(MediaType.APPLICATION_JSON)
-                       .build();
-      }
-    } else {
+                          @Context ServletContext context,
+                          @PathParam("fileId") String fileId) {
+    EditorConfig config = (EditorConfig) context.getAttribute(WOPIResource.EDITOR_CONFIG_PARAM);
+    
+    if(config == null) {
       return Response.status(Status.BAD_REQUEST)
-                     .entity("{\"error\": \"Access token is not provided\"}")
+          .entity("{\"error\": \"Couldn't obtain editor config from access token\"}")
+          .type(MediaType.APPLICATION_JSON)
+          .build();
+    }
+    
+    try {
+      DocumentContent content = editorService.getContent(fileId, config);
+      return Response.ok().entity(content.getData()).type(content.getType()).build();
+    } 
+    catch (OfficeOnlineException e) {
+      return Response.status(Status.BAD_REQUEST)
+                     .entity("{\"error\": \"" + e.getMessage() + "\"}")
                      .type(MediaType.APPLICATION_JSON)
                      .build();
     }
+
   }
 }

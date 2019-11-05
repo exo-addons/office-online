@@ -1,6 +1,7 @@
 package org.exoplatform.officeonline;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 /**
@@ -9,36 +10,20 @@ import java.util.List;
 public class EditorConfig {
 
   /** The access token. */
-  protected String            accessToken;
+  protected final AccessToken       accessToken;
 
   /** The user id. */
-  protected String            userId;
+  protected final String            userId;
 
   /** The file id. */
-  protected String            fileId;
+  protected final String            fileId;
 
   /** The workspace. */
-  protected String            workspace;
+  protected final String            workspace;
 
   /** The permissions. */
-  protected List<Permissions> permissions = new ArrayList<>();
+  protected final List<Permissions> permissions;
 
-
-  /**
-   * Instantiates a new editor config.
-   *
-   * @param userId the user id
-   * @param fileId the file id
-   * @param workspace the workspace
-   * @param permissions the permissions
-   */
-  public EditorConfig(String userId, String fileId, String workspace, List<Permissions> permissions) {
-    this.userId = userId;
-    this.fileId = fileId;
-    this.workspace = workspace;
-    this.permissions = permissions;
-  }
-  
   /**
    * Instantiates a new editor config.
    *
@@ -47,12 +32,13 @@ public class EditorConfig {
    * @param workspace the workspace
    * @param permissions the permissions
    * @param accessToken the access token
+   * @param tokenExpires the token ttl
    */
-  public EditorConfig(String userId, String fileId, String workspace, List<Permissions> permissions, String accessToken) {
+  public EditorConfig(String userId, String fileId, String workspace, List<Permissions> permissions, AccessToken accessToken) {
     this.userId = userId;
     this.fileId = fileId;
     this.workspace = workspace;
-    this.permissions = permissions;
+    this.permissions = permissions != null ? permissions : Collections.emptyList();
     this.accessToken = accessToken;
   }
 
@@ -88,17 +74,8 @@ public class EditorConfig {
    *
    * @return the access token
    */
-  protected String getAccessToken() {
+  public AccessToken getAccessToken() {
     return accessToken;
-  }
-
-  /**
-   * Sets the access token.
-   *
-   * @param accessToken the new access token
-   */
-  protected void setAccessToken(String accessToken) {
-    this.accessToken = accessToken;
   }
 
   /**
@@ -109,5 +86,73 @@ public class EditorConfig {
   protected String getWorkspace() {
     return workspace;
   }
-  
+
+  public static class Builder {
+
+    /** The access token. */
+    private AccessToken       accessToken;
+
+    /** The user id. */
+    private String            userId;
+
+    /** The file id. */
+    private String            fileId;
+
+    /** The workspace. */
+    private String            workspace;
+
+    /** The permissions. */
+    private List<Permissions> permissions = new ArrayList<>();
+
+    protected Builder accessToken(AccessToken accessToken) {
+      this.accessToken = accessToken;
+      return this;
+    }
+
+    protected Builder userId(String userId) {
+      this.userId = userId;
+      return this;
+    }
+
+    protected Builder fileId(String fileId) {
+      this.fileId = fileId;
+      return this;
+    }
+
+    protected Builder workspace(String workspace) {
+      this.workspace = workspace;
+      return this;
+    }
+
+    protected Builder permissions(List<Permissions> permissions) {
+      this.permissions = permissions;
+      return this;
+    }
+
+    protected String userId() {
+      return userId;
+    }
+
+    protected String fileId() {
+      return fileId;
+    }
+
+    protected String workspace() {
+      return workspace;
+    }
+
+    protected List<Permissions> permissions() {
+      return permissions;
+    }
+
+    protected AccessToken accessToken() {
+      return accessToken;
+    }
+
+    protected EditorConfig build() {
+      return new EditorConfig(userId, fileId, workspace, permissions, accessToken);
+    }
+
+  }
+
 }

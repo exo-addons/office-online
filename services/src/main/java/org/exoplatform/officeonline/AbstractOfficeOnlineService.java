@@ -13,6 +13,7 @@ import java.util.Base64;
 import java.util.List;
 
 import javax.crypto.Cipher;
+import javax.jcr.ItemNotFoundException;
 import javax.jcr.Node;
 import javax.jcr.RepositoryException;
 import javax.jcr.Session;
@@ -22,6 +23,7 @@ import org.picocontainer.Startable;
 import org.exoplatform.container.PortalContainer;
 import org.exoplatform.ecm.webui.utils.PermissionUtil;
 import org.exoplatform.ecm.webui.utils.Utils;
+import org.exoplatform.officeonline.exception.FileNotFoundException;
 import org.exoplatform.officeonline.exception.OfficeOnlineException;
 import org.exoplatform.portal.config.UserACL;
 import org.exoplatform.services.cache.CacheService;
@@ -37,7 +39,6 @@ import org.exoplatform.services.organization.User;
 import org.exoplatform.services.security.ConversationState;
 import org.exoplatform.services.wcm.core.NodetypeConstant;
 
-// TODO: Auto-generated Javadoc
 /**
  * The Class AbstractOfficeOnlineService.
  */
@@ -61,6 +62,9 @@ public abstract class AbstractOfficeOnlineService implements Startable {
   /** The Constant TOKEN_DELIMITER_SPLIT. */
   protected static final String          TOKEN_DELIMITE_SPLIT = "\\+";
 
+  /** The Constant TOKEN_EXPIRES. */
+  protected static final long            TOKEN_EXPIRES        = 30 * 60000;
+
   /** Cache of Editing documents. */
   protected final ExoCache<String, Key>  activeCache;
 
@@ -82,10 +86,12 @@ public abstract class AbstractOfficeOnlineService implements Startable {
   /**
    * Instantiates a new office online editor service.
    *
+   * @param sessionProviders the session providers
    * @param jcrService the jcr service
    * @param organization the organization
    * @param documentService the document service
    * @param cacheService the cache service
+   * @param userACL the user ACL
    */
   public AbstractOfficeOnlineService(SessionProviderService sessionProviders,
                                      RepositoryService jcrService,
@@ -105,26 +111,22 @@ public abstract class AbstractOfficeOnlineService implements Startable {
    * Node by UUID.
    *
    * @param uuid the uuid
-   * @return the node
-   * @throws RepositoryException the repository exception
-   */
-  protected Node nodeByUUID(String uuid) throws RepositoryException {
-    String workspace = jcrService.getCurrentRepository().getConfiguration().getDefaultWorkspaceName();
-    return nodeByUUID(uuid, workspace);
-  }
-
-  /**
-   * Node by UUID.
-   *
-   * @param uuid the uuid
    * @param workspace the workspace
    * @return the node
-   * @throws RepositoryException the repository exception
    */
-  protected Node nodeByUUID(String uuid, String workspace) throws RepositoryException {
-    SessionProvider sp = sessionProviders.getSessionProvider(null);
-    Session userSession = sp.getSession(workspace, jcrService.getCurrentRepository());
-    return userSession.getNodeByUUID(uuid);
+  protected Node nodeByUUID(String uuid, String workspace) throws FileNotFoundException, RepositoryException {
+    try {
+      if (workspace == null) {
+        workspace = jcrService.getCurrentRepository().getConfiguration().getDefaultWorkspaceName();
+      }
+      SessionProvider sp = sessionProviders.getSessionProvider(null);
+      Session userSession = sp.getSession(workspace, jcrService.getCurrentRepository());
+      return userSession.getNodeByUUID(uuid);
+    } catch (ItemNotFoundException e) {
+      LOG.warn("Cannot find node by UUID: {}, workspace: {}. Error: {}", uuid, workspace, e.getMessage());
+      throw new FileNotFoundException("File not found. FileId: " + uuid + ", workspace: " + workspace);
+    }
+
   }
 
   /**
@@ -143,7 +145,6 @@ public abstract class AbstractOfficeOnlineService implements Startable {
    *
    * @param node the node
    * @return true, if successful
-   * @throws RepositoryException the repository exception
    */
   protected boolean canEditDocument(Node node) throws RepositoryException {
     boolean res = false;
@@ -160,6 +161,7 @@ public abstract class AbstractOfficeOnlineService implements Startable {
       LOG.debug("Cannot edit: {}", node != null ? node.getPath() : null);
     }
     return res;
+
   }
 
   /**
@@ -183,6 +185,20 @@ public abstract class AbstractOfficeOnlineService implements Startable {
     platformUrl.append(PortalContainer.getCurrentPortalContainerName());
 
     return platformUrl;
+  }
+
+  /**
+   * Platform REST URL.
+   *
+   * @param platformUrl the platform URL
+   * @return the string builder
+   */
+  protected StringBuilder platformRestUrl(CharSequence platformUrl) {
+    StringBuilder restUrl = new StringBuilder(platformUrl);
+    restUrl.append('/');
+    restUrl.append(PortalContainer.getCurrentRestContextName());
+
+    return restUrl;
   }
 
   /**
@@ -285,21 +301,27 @@ public abstract class AbstractOfficeOnlineService implements Startable {
    * @return the string
    * @throws OfficeOnlineException the office online exception
    */
-  protected String generateAccessToken(EditorConfig config) throws OfficeOnlineException {
+  protected AccessToken generateAccessToken(EditorConfig.Builder configBuilder) throws OfficeOnlineException {
     try {
       Key key = activeCache.get(SECRET_KEY);
       Cipher chiper = Cipher.getInstance(ALGORITHM);
       chiper.init(Cipher.ENCRYPT_MODE, key);
-      StringBuilder builder = new StringBuilder().append(config.getWorkspace())
+
+      long expires = System.currentTimeMillis() + TOKEN_EXPIRES;
+
+      StringBuilder builder = new StringBuilder().append(configBuilder.workspace())
                                                  .append(TOKEN_DELIMITER)
-                                                 .append(config.getUserId())
+                                                 .append(configBuilder.userId())
                                                  .append(TOKEN_DELIMITER)
-                                                 .append(config.getFileId());
-      config.getPermissions().forEach(permission -> {
+                                                 .append(configBuilder.fileId())
+                                                 .append(TOKEN_DELIMITER)
+                                                 .append(expires);
+      configBuilder.permissions().forEach(permission -> {
         builder.append(TOKEN_DELIMITER).append(permission.getShortName());
       });
       byte[] encrypted = chiper.doFinal(builder.toString().getBytes());
-      return new String(Base64.getUrlEncoder().encode(encrypted));
+      String token = new String(Base64.getUrlEncoder().encode(encrypted));
+      return new AccessToken(token, expires);
     } catch (Exception e) {
       LOG.error("Error occured while generating token. {}", e.getMessage());
       throw new OfficeOnlineException("Couldn't generate token from editor config.");
@@ -309,17 +331,17 @@ public abstract class AbstractOfficeOnlineService implements Startable {
   /**
    * Builds the editor config.
    *
-   * @param accessToken the access token
+   * @param token the access token
    * @return the editor config
    * @throws OfficeOnlineException the office online exception
    */
-  public EditorConfig buildEditorConfig(String accessToken) throws OfficeOnlineException {
+  public EditorConfig buildEditorConfig(String token) throws OfficeOnlineException {
     String decryptedToken = "";
     try {
       Key key = activeCache.get(SECRET_KEY);
       Cipher chiper = Cipher.getInstance(ALGORITHM);
       chiper.init(Cipher.DECRYPT_MODE, key);
-      byte[] decoded = Base64.getUrlDecoder().decode(accessToken.getBytes());
+      byte[] decoded = Base64.getUrlDecoder().decode(token.getBytes());
       decryptedToken = new String(chiper.doFinal(decoded));
     } catch (Exception e) {
       LOG.error("Error occured while decoding/decrypting accessToken. {}", e.getMessage());
@@ -332,8 +354,9 @@ public abstract class AbstractOfficeOnlineService implements Startable {
       String workspace = values.get(0);
       String userId = values.get(1);
       String fileId = values.get(2);
-      values.stream().skip(3).forEach(value -> permissions.add(Permissions.fromShortName(value)));
-      return new EditorConfig(userId, fileId, workspace, permissions, accessToken);
+      long expires = Long.parseLong(values.get(3));
+      values.stream().skip(4).forEach(value -> permissions.add(Permissions.fromShortName(value)));
+      return new EditorConfig(userId, fileId, workspace, permissions, new AccessToken(token, expires));
     } else {
       throw new OfficeOnlineException("Decrypted token doesn't contain all required parameters");
     }

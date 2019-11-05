@@ -8,7 +8,6 @@ public class OfficeOnlineException extends Exception {
   /** The Constant serialVersionUID. */
   private static final long serialVersionUID = -8981933520830552416L;
 
-
   /**
    * Instantiates a new office online exception.
    *

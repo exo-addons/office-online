@@ -18,26 +18,26 @@ import javax.jcr.UnsupportedRepositoryOperationException;
 
 import org.apache.commons.lang.StringUtils;
 
+import org.exoplatform.commons.utils.MimeTypeResolver;
 import org.exoplatform.container.PortalContainer;
 import org.exoplatform.container.component.ComponentPlugin;
 import org.exoplatform.container.xml.InitParams;
 import org.exoplatform.container.xml.PropertiesParam;
+import org.exoplatform.ecm.webui.utils.Utils;
+import org.exoplatform.officeonline.exception.ActionNotFoundException;
+import org.exoplatform.officeonline.exception.FileExtensionNotFoundException;
 import org.exoplatform.officeonline.exception.OfficeOnlineException;
 import org.exoplatform.officeonline.exception.WopiDiscoveryNotFoundException;
 import org.exoplatform.portal.config.UserACL;
 import org.exoplatform.services.cache.CacheService;
 import org.exoplatform.services.cms.documents.DocumentService;
-import org.exoplatform.services.idgenerator.IDGeneratorService;
 import org.exoplatform.services.jcr.RepositoryService;
 import org.exoplatform.services.jcr.ext.app.SessionProviderService;
-import org.exoplatform.services.jcr.ext.common.SessionProvider;
 import org.exoplatform.services.log.ExoLogger;
 import org.exoplatform.services.log.Log;
 import org.exoplatform.services.organization.OrganizationService;
 import org.exoplatform.services.organization.User;
-import org.exoplatform.services.security.Authenticator;
 import org.exoplatform.services.security.ConversationState;
-import org.exoplatform.services.security.IdentityRegistry;
 
 // TODO: Auto-generated Javadoc
 /**
@@ -53,6 +53,9 @@ public class WOPIService extends AbstractOfficeOnlineService {
 
   /** The Constant OWNER_ID. */
   protected static final String OWNER_ID                          = "OwnerId";
+
+  /** The Constant FILES_ENDPOINT. */
+  protected static final String FILES_ENDPOINT                    = "/wopi/files/";
 
   /** The Constant SIZE. */
   protected static final String SIZE                              = "Size";
@@ -120,6 +123,9 @@ public class WOPIService extends AbstractOfficeOnlineService {
   /** The Constant USER_FRIENDLY_NAME. */
   protected static final String USER_FRIENDLY_NAME                = "UserFriendlyName";
 
+  /** The Constant PLACEHOLDER_WOPISRC. */
+  protected static final String PLACEHOLDER_WOPISRC               = "wopisrc";
+
   /** The Constant SHARE_URL. */
   protected static final String SHARE_URL                         = "ShareUrl";
 
@@ -134,6 +140,9 @@ public class WOPIService extends AbstractOfficeOnlineService {
 
   /** The discovery plugin. */
   protected WOPIDiscoveryPlugin discoveryPlugin;
+
+  /** The file extensions. */
+  protected Map<String, String> fileExtensions                    = new HashMap<>();
 
   /**
    * Instantiates a new WOPI service.
@@ -163,7 +172,35 @@ public class WOPIService extends AbstractOfficeOnlineService {
     } else {
       activeCache.put(SECRET_KEY, generateSecretKey());
     }
+    initFileExtensions();
+  }
 
+  /**
+   * Inits the file extensions.
+   */
+  protected void initFileExtensions() {
+    fileExtensions.put("application/msword", "doc");
+    fileExtensions.put("application/vnd.openxmlformats-officedocument.wordprocessingml.document", "docx");
+    fileExtensions.put("application/vnd.openxmlformats-officedocument.wordprocessingml.template", "dotx");
+    fileExtensions.put("application/vnd.ms-word.document.macroEnabled.1", "docm");
+    fileExtensions.put("application/vnd.ms-word.template.macroEnabled.12", "dotm");
+
+    fileExtensions.put("application/vnd.ms-excel", "xls");
+    fileExtensions.put("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", "xlsx");
+    fileExtensions.put("application/vnd.openxmlformats-officedocument.spreadsheetml.template", "xltx");
+    fileExtensions.put("application/vnd.ms-excel.sheet.macroEnabled.12", "xlsm");
+    fileExtensions.put("application/vnd.ms-excel.template.macroEnabled.12", "xltm");
+    fileExtensions.put("application/vnd.ms-excel.addin.macroEnabled.12", "xlam");
+    fileExtensions.put("application/vnd.ms-excel.sheet.binary.macroEnabled.12", "xlsb");
+
+    fileExtensions.put("application/vnd.ms-powerpoint", "ppt");
+    fileExtensions.put("application/vnd.openxmlformats-officedocument.presentationml.presentation", "pptx");
+    fileExtensions.put("application/vnd.openxmlformats-officedocument.presentationml.template", "potx");
+    fileExtensions.put("application/vnd.openxmlformats-officedocument.presentationml.slideshow", "ppsx");
+    fileExtensions.put("application/vnd.ms-powerpoint.addin.macroEnabled.12", "ppam");
+    fileExtensions.put("application/vnd.ms-powerpoint.presentation.macroEnabled.12", "pptm");
+    fileExtensions.put("application/vnd.ms-powerpoint.template.macroEnabled.12", "potm");
+    fileExtensions.put("application/vnd.ms-powerpoint.slideshow.macroEnabled.12", "ppsm");
   }
 
   /**
@@ -181,10 +218,6 @@ public class WOPIService extends AbstractOfficeOnlineService {
                                                  int userPort,
                                                  EditorConfig config) throws OfficeOnlineException {
 
-    if (config == null) {
-      throw new OfficeOnlineException("Cannot check file info: config is null");
-    }
-
     try {
       Node node = nodeByUUID(config.getFileId(), config.getWorkspace());
       Map<String, Serializable> map = new HashMap<>();
@@ -200,7 +233,6 @@ public class WOPIService extends AbstractOfficeOnlineService {
       throw new OfficeOnlineException("Cannot check file info for fileId: " + config.getFileId() + ", workspace: "
           + config.getWorkspace());
     }
-
   }
 
   /**
@@ -252,6 +284,73 @@ public class WOPIService extends AbstractOfficeOnlineService {
     } else {
       throw new WopiDiscoveryNotFoundException("WopiDiscoveryPlugin is not an instance of " + pclass.getName());
     }
+  }
+
+  /**
+   * Gets the action url.
+   *
+   * @param requestInfo the request info
+   * @param fileId the file id
+   * @param workspace the workspace
+   * @param action the action
+   * @return the action url
+   * @throws RepositoryException the repository exception
+   * @throws OfficeOnlineException the office online exception
+   */
+  public String getActionUrl(RequestInfo requestInfo, String fileId, String workspace, String action) throws RepositoryException,
+                                                                                                      OfficeOnlineException {
+    Node node = nodeByUUID(fileId, workspace);
+    String extension = getFileExtension(node);
+    String actionURL = discoveryPlugin.getActionUrl(extension, action);
+    if (actionURL != null) {
+      return String.format("%s%s=%s&", actionURL, PLACEHOLDER_WOPISRC, getWOPISrc(requestInfo, fileId));
+    } else {
+      throw new ActionNotFoundException("Cannot find actionURL for file extension " + extension + " and action: " + action);
+    }
+  }
+
+  /**
+   * Gets the file extension.
+   *
+   * @param node the node
+   * @return the file extension
+   * @throws RepositoryException the repository exception
+   * @throws FileExtensionNotFoundException the file extension not found exception
+   */
+  protected String getFileExtension(Node node) throws RepositoryException, FileExtensionNotFoundException {
+    String title = node.getProperty(Utils.EXO_TITLE).getString();
+    if (title.contains(".")) {
+      return title.substring(title.lastIndexOf(".") + 1);
+    }
+
+    String mimeType;
+    if (node.isNodeType(Utils.NT_FILE)) {
+      mimeType = node.getNode(Utils.JCR_CONTENT).getProperty(Utils.JCR_MIMETYPE).getString();
+    } else {
+      mimeType = new MimeTypeResolver().getMimeType(node.getName());
+    }
+
+    String extension = fileExtensions.get(mimeType);
+    if (extension != null) {
+      return extension;
+    } else {
+      throw new FileExtensionNotFoundException("Cannot get file extension. FileId: " + node.getUUID() + ". Title: " + title);
+    }
+  }
+
+  /**
+   * Gets the WOPI src.
+   *
+   * @param requestInfo the request info
+   * @param fileId the file id
+   * @return the WOPI src
+   */
+  protected Object getWOPISrc(RequestInfo requestInfo, String fileId) {
+    StringBuilder builder = new StringBuilder();
+    builder.append(platformRestUrl(platformUrl(requestInfo.getScheme(), requestInfo.getServerName(), requestInfo.getPort())));
+    builder.append(FILES_ENDPOINT);
+    builder.append(fileId);
+    return builder.toString();
   }
 
   /**
@@ -329,14 +428,12 @@ public class WOPIService extends AbstractOfficeOnlineService {
    * @param map the map
    */
   protected void addUserMetadataProperties(Map<String, Serializable> map) {
-    String user = ConversationState.getCurrent().getIdentity().getUserId();
-    User exoUser = getUser(user);
-    if (user != null) {
-      user = exoUser.getDisplayName();
-    }
+    String userId = ConversationState.getCurrent().getIdentity().getUserId();
+    User user = getUser(userId);
+    String displayName = user != null ? user.getDisplayName() : userId;
     map.put(IS_ANONYMOUS_USER, false);
     map.put(LICENSE_CHECK_FOR_EDIT_IS_ENABLED, true);
-    map.put(USER_FRIENDLY_NAME, user);
+    map.put(USER_FRIENDLY_NAME, displayName);
   }
 
   /**
@@ -368,7 +465,7 @@ public class WOPIService extends AbstractOfficeOnlineService {
    */
   protected void addFileURLProperties(Map<String, Serializable> map,
                                       Node node,
-                                      String accessToken,
+                                      AccessToken accessToken,
                                       String schema,
                                       String host,
                                       int port) throws RepositoryException {
@@ -383,8 +480,11 @@ public class WOPIService extends AbstractOfficeOnlineService {
                                                            .append(PortalContainer.getCurrentRestContextName())
                                                            .toString();
 
-    String downloadURL =
-                       new StringBuilder(platformRestURL).append("/officeonline/editor/content/").append(accessToken).toString();
+    String downloadURL = new StringBuilder(platformRestURL).append("/officeonline/editor/content/")
+                                                           .append(node.getUUID())
+                                                           .append("?accessToken=")
+                                                           .append(accessToken.getToken())
+                                                           .toString();
     map.put(DOWNLOAD_URL, downloadURL);
     // TODO: set url to the portlet
     map.put(HOST_EDIT_URL, null);
