@@ -281,6 +281,7 @@ public class WOPIResource implements ResourceContainer {
    *
    * @param uriInfo the uri info
    * @param request the request
+   * @param context the context
    * @param operation the operation
    * @param fileId the file id
    * @return the response
@@ -295,14 +296,21 @@ public class WOPIResource implements ResourceContainer {
                         @PathParam("fileId") String fileId) {
 
     verifyProofKey(request);
-
-    EditorConfig config = (EditorConfig) context.getAttribute(EDITOR_CONFIG_PARAM);
-    if (config == null) {
+    EditorConfig config;
+    try {
+      config = getEditorConfig(context);
+    } catch (AuthenticationFailedException e) {
       return Response.status(Status.UNAUTHORIZED)
-                     .entity("{\"error\": \"Couldn't build config from access token\"}")
+                     .entity("{\"error\": \"" + e.getMessage() + "\"}")
+                     .type(MediaType.APPLICATION_JSON)
+                     .build();
+    } catch (EditorConfigNotFoundException e) {
+      return Response.status(Status.INTERNAL_SERVER_ERROR)
+                     .entity("{\"error\": \"" + e.getMessage() + "\"}")
                      .type(MediaType.APPLICATION_JSON)
                      .build();
     }
+
     switch (operation) {
     case GET_LOCK:
       return getLock(fileId, config);
@@ -422,6 +430,7 @@ public class WOPIResource implements ResourceContainer {
    * Gets the lock.
    *
    * @param fileId the file id
+   * @param config the config
    * @return the lock
    */
   private Response getLock(String fileId, EditorConfig config) {
@@ -463,14 +472,17 @@ public class WOPIResource implements ResourceContainer {
     }
   }
 
+
   /**
    * Gets the editor config.
    *
    * @param context the context
    * @return the editor config
-   * @throws OfficeOnlineException the office online exception
+   * @throws AuthenticationFailedException the authentication failed exception
+   * @throws EditorConfigNotFoundException the editor config not found exception
    */
-  protected EditorConfig getEditorConfig(ServletContext context) throws OfficeOnlineException {
+  protected EditorConfig getEditorConfig(ServletContext context) throws AuthenticationFailedException,
+                                                                 EditorConfigNotFoundException {
     EditorConfig config = (EditorConfig) context.getAttribute(EDITOR_CONFIG_ATTRIBUTE);
     if (config != null) {
       return config;
