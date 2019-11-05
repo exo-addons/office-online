@@ -98,6 +98,12 @@ public abstract class AbstractOfficeOnlineService implements Startable {
   /** The Constant EXO_TITLE. */
   protected static final String          EXO_TITLE              = "exo:title";
 
+  /** The Constant EXO_PRIVILEGEABLE. */
+  protected static final String EXO_PRIVILEGEABLE = "exo:privilegeable";
+
+  /** The Constant EXO_NAME. */
+  protected static final String          EXO_NAME               = "exo:name";
+
   /** Cache of Editing documents. */
   protected final ExoCache<String, Key>  activeCache;
 
