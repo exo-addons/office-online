@@ -441,9 +441,11 @@ public class WOPIResource implements ResourceContainer {
    *
    * @param context the context
    * @return the editor config
-   * @throws OfficeOnlineException the office online exception
+   * @throws AuthenticationFailedException the authentication failed exception
+   * @throws EditorConfigNotFoundException the editor config not found exception
    */
-  protected EditorConfig getEditorConfig(ServletContext context) throws OfficeOnlineException {
+  protected EditorConfig getEditorConfig(ServletContext context) throws AuthenticationFailedException,
+                                                                 EditorConfigNotFoundException {
     EditorConfig config = (EditorConfig) context.getAttribute(EDITOR_CONFIG_ATTRIBUTE);
     if (config != null) {
       return config;
@@ -456,7 +458,7 @@ public class WOPIResource implements ResourceContainer {
       }
     }
   }
-
+  
   /**
    * Return Office Online REST API version.
    *
