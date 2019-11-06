@@ -202,14 +202,14 @@ public class WOPIResource implements ResourceContainer {
                        .entity("{\"error\": \"" + e.getMessage() + "\"}")
                        .type(MediaType.APPLICATION_JSON)
                        .build();
-      } catch (RepositoryException e) {
-        return Response.status(Status.INTERNAL_SERVER_ERROR)
-                       .entity("{\"error\": \"Internal error while saving content\"}")
-                       .type(MediaType.APPLICATION_JSON)
-                       .build();
       } catch (IOException e) {
         return Response.status(Status.INTERNAL_SERVER_ERROR)
                        .entity("{\"error\": \"Cannot get request body\"}")
+                       .type(MediaType.APPLICATION_JSON)
+                       .build();
+      } catch (Exception e) {
+        return Response.status(Status.INTERNAL_SERVER_ERROR)
+                       .entity("{\"error\": \"Internal error while saving content\"}")
                        .type(MediaType.APPLICATION_JSON)
                        .build();
       }
@@ -316,8 +316,11 @@ public class WOPIResource implements ResourceContainer {
       return getLock(fileId, config);
     case GET_SHARE_URL:
       return getShareUrl();
-    case LOCK:
-      return lockOrUnlockAndRelock();
+    case LOCK: {
+      String providedLock = request.getHeader(LOCK);
+      return lockOrUnlockAndRelock(fileId, config, providedLock);
+    }
+
     case PUT_RELATIVE:
       return putRelativeFile();
     case REFRESH_LOCK:
@@ -411,9 +414,34 @@ public class WOPIResource implements ResourceContainer {
    *
    * @return the response
    */
-  private Response lockOrUnlockAndRelock() {
-    // TODO lock or unlock and relock
-    return null;
+  private Response lockOrUnlockAndRelock(String fileId, EditorConfig config, String providedLock) {
+    try {
+      wopiService.lock(fileId, config, providedLock);
+      return Response.ok().build();
+    } catch (FileNotFoundException e) {
+      return Response.status(Status.NOT_FOUND)
+                     .entity("{\"error\": \"" + e.getMessage() + "\"}")
+                     .type(MediaType.APPLICATION_JSON)
+                     .build();
+    } catch (BadParameterException e) {
+      return Response.status(Status.BAD_REQUEST)
+                     .entity("{\"error\": \"" + e.getMessage() + "\"}")
+                     .type(MediaType.APPLICATION_JSON)
+                     .build();
+    } catch (LockMismatchException e) {
+      return Response.status(Status.CONFLICT)
+                     .entity("{\"error\": \"" + e.getMessage() + "\"}")
+                     .header(LOCK, e.getLockId())
+                     .type(MediaType.APPLICATION_JSON)
+                     .build();
+    } catch (Exception e) {
+      LOG.error("Cannot lock file. ", e);
+      return Response.status(Status.INTERNAL_SERVER_ERROR)
+                     .entity("{\"error\": \"Cannot lock file\"}")
+                     .type(MediaType.APPLICATION_JSON)
+                     .build();
+    }
+
   }
 
   /**
@@ -447,7 +475,7 @@ public class WOPIResource implements ResourceContainer {
                      .entity("{\"error\": \"" + e.getMessage() + "\"}")
                      .type(MediaType.APPLICATION_JSON)
                      .build();
-    } catch (RepositoryException e) {
+    } catch (Exception e) {
       return Response.status(Status.INTERNAL_SERVER_ERROR)
                      .entity("{\"error\": \"" + e.getMessage() + "\"}")
                      .type(MediaType.APPLICATION_JSON)
@@ -472,7 +500,6 @@ public class WOPIResource implements ResourceContainer {
     }
   }
 
-
   /**
    * Gets the editor config.
    *
@@ -495,7 +522,7 @@ public class WOPIResource implements ResourceContainer {
       }
     }
   }
-  
+
   /**
    * Return Office Online REST API version.
    *

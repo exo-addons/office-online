@@ -17,6 +17,7 @@ import javax.crypto.SecretKey;
 import javax.crypto.spec.SecretKeySpec;
 import javax.jcr.Node;
 import javax.jcr.RepositoryException;
+import javax.jcr.lock.Lock;
 
 import org.apache.commons.lang.StringUtils;
 
@@ -25,6 +26,7 @@ import org.exoplatform.container.PortalContainer;
 import org.exoplatform.container.component.ComponentPlugin;
 import org.exoplatform.container.xml.InitParams;
 import org.exoplatform.container.xml.PropertiesParam;
+import org.exoplatform.ecm.utils.lock.LockUtil;
 import org.exoplatform.ecm.webui.utils.Utils;
 import org.exoplatform.officeonline.exception.ActionNotFoundException;
 import org.exoplatform.officeonline.exception.BadParameterException;
@@ -220,10 +222,7 @@ public class WOPIService extends AbstractOfficeOnlineService {
    * @throws SizeMismatchException the size mismatch exception
    * @throws RepositoryException the repository exception
    */
-  public void putFile(EditorConfig config, String lockId, InputStream data) throws OfficeOnlineException,
-                                                                            LockMismatchException,
-                                                                            SizeMismatchException,
-                                                                            RepositoryException {
+  public void putFile(EditorConfig config, String lockId, InputStream data) throws Exception {
     Node node = nodeByUUID(config.getFileId(), config.getWorkspace());
     try {
       if (canEditDocument(node)) {
@@ -234,9 +233,9 @@ public class WOPIService extends AbstractOfficeOnlineService {
             throw new SizeMismatchException("File is unlocked and size isn't equal to 0.", "");
           }
         } else {
-          String lockToken = node.getLock().getLockToken();
-          if (!lockToken.equals(lockId)) {
-            throw new LockMismatchException("Given lock is different from the file lock", lockToken);
+          getUserSession(config.getWorkspace()).addLockToken(lockId);
+          if (!lockId.equals(node.getLock().getLockToken())) {
+            throw new LockMismatchException("Given lock is different from the file lock", LockUtil.getLockToken(node));
           }
         }
 
@@ -471,13 +470,12 @@ public class WOPIService extends AbstractOfficeOnlineService {
    * @return the lock
    * @throws RepositoryException 
    */
-  public String getLock(String fileId,
-                        EditorConfig config) throws FileNotFoundException, BadParameterException, RepositoryException {
+  public String getLock(String fileId, EditorConfig config) throws Exception {
     if (!fileId.equals(config.getFileId())) {
       throw new BadParameterException("FileId doesn't match fileId specified in token");
     }
     Node node = nodeByUUID(config.getFileId(), config.getWorkspace());
-    return node.isLocked() ? node.getLock().getLockToken() : null;
+    return node.isLocked() ? LockUtil.getLockToken(node) : null;
   }
 
   /**
@@ -619,6 +617,27 @@ public class WOPIService extends AbstractOfficeOnlineService {
     } catch (NoSuchAlgorithmException e) {
       LOG.error("Cannot generate secret key {}", e.getMessage());
       return null;
+    }
+  }
+
+  public void lock(String fileId, EditorConfig config, String providedLock) throws Exception {
+    if (!fileId.equals(config.getFileId())) {
+      throw new BadParameterException("FileId doesn't match fileId specified in token");
+    }
+
+    Node node = nodeByUUID(config.getFileId(), config.getWorkspace());
+    if (!node.isLocked()) {
+      LockUtil.keepLock(node.lock(true, false));
+    } else {
+      if (providedLock.equals(LockUtil.getLockToken(node))) {
+        getUserSession(config.getWorkspace()).addLockToken(providedLock);
+        // Refresh lock
+        LockUtil.removeLock(node);
+        node.unlock();
+        LockUtil.keepLock(node.lock(true, false));
+      } else {
+        throw new LockMismatchException("File is locked and provided lock token is wrong", LockUtil.getLockToken(node));
+      }
     }
   }
 

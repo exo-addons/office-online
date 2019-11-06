@@ -151,16 +151,20 @@ public abstract class AbstractOfficeOnlineService implements Startable {
    */
   protected Node nodeByUUID(String uuid, String workspace) throws FileNotFoundException, RepositoryException {
     try {
-      if (workspace == null) {
-        workspace = jcrService.getCurrentRepository().getConfiguration().getDefaultWorkspaceName();
-      }
-      SessionProvider sp = sessionProviders.getSessionProvider(null);
-      Session userSession = sp.getSession(workspace, jcrService.getCurrentRepository());
+      Session userSession = getUserSession(workspace);
       return userSession.getNodeByUUID(uuid);
     } catch (ItemNotFoundException e) {
       LOG.warn("Cannot find node by UUID: {}, workspace: {}. Error: {}", uuid, workspace, e.getMessage());
       throw new FileNotFoundException("File not found. FileId: " + uuid + ", workspace: " + workspace);
     }
+  }
+  
+  protected Session getUserSession(String workspace) throws RepositoryException {
+    if (workspace == null) {
+      workspace = jcrService.getCurrentRepository().getConfiguration().getDefaultWorkspaceName();
+    }
+    SessionProvider sp = sessionProviders.getSessionProvider(null);
+    return sp.getSession(workspace, jcrService.getCurrentRepository());
   }
 
   /**
