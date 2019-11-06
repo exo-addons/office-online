@@ -402,7 +402,7 @@ public class WOPIResource implements ResourceContainer {
                      .header(INVALID_FILE_NAME_ERROR, e.getMessage())
                      .type(MediaType.APPLICATION_JSON)
                      .build();
-    } catch (RepositoryException e) {
+    } catch (OfficeOnlineException | RepositoryException e) {
       LOG.error("Cannot rename file", e);
       return Response.status(Status.INTERNAL_SERVER_ERROR)
                      .entity("{\"error\": \"" + e.getMessage() + "\"}")

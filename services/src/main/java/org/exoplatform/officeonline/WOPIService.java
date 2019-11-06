@@ -388,7 +388,6 @@ public class WOPIService extends AbstractOfficeOnlineService {
     }
   }
 
-
   /**
    * Rename file.
    *
@@ -403,10 +402,9 @@ public class WOPIService extends AbstractOfficeOnlineService {
    * @throws RepositoryException the repository exception
    * @throws LockMismatchException the lock mismatch exception
    */
-  public String renameFile(String fileId, EditorConfig config, String newTitle, String lock) throws BadParameterException,
-                                                                                             FileNotFoundException,
-                                                                                             InvalidFileNameException,
-                                                                                             RepositoryException, LockMismatchException {
+  public String renameFile(String fileId, EditorConfig config, String newTitle, String lock) throws RepositoryException,
+                                                                                             OfficeOnlineException,
+                                                                                             LockMismatchException {
     if (!fileId.equals(config.getFileId())) {
       throw new BadParameterException("FileId doesn't match fileId specified in token");
     }
@@ -414,15 +412,18 @@ public class WOPIService extends AbstractOfficeOnlineService {
     newTitle = Text.escapeIllegalJcrChars(newTitle);
     // Check and escape newTitle
     if (StringUtils.isBlank(newTitle)) {
-      throw new InvalidFileNameException("Requested title is not allowed due to illegal JCR chars");
+      throw new InvalidFileNameException("Requested title is not allowed due to using illegal JCR chars");
     }
 
     NodeImpl node = (NodeImpl) nodeByUUID(config.getFileId(), config.getWorkspace());
-    
-    if(node.isLocked() && !node.getLock().getLockToken().equals(lock)) {
+
+    if (!canRenameDocument(node)) {
+      throw new PermissionDeniedException("Cannot rename document. Permission denied");
+    }
+    if (node.isLocked() && !node.getLock().getLockToken().equals(lock)) {
       throw new LockMismatchException("Given lock is different from the file lock", node.getLock().getLockToken());
     }
-    
+
     Node parentNode = node.getParent();
     if (parentNode.canAddMixin(NodetypeConstant.MIX_REFERENCEABLE)) {
       parentNode.addMixin(NodetypeConstant.MIX_REFERENCEABLE);
@@ -459,6 +460,18 @@ public class WOPIService extends AbstractOfficeOnlineService {
     parentNode.getSession().save();
     // Return title without file extension
     return newTitle;
+  }
+
+  /**
+   * Checks if current user can rename the document.
+   *
+   * @param node the node
+   * @return true if user can rename 
+   */
+  protected boolean canRenameDocument(Node node) throws RepositoryException {
+    NodeImpl parent = (NodeImpl) node.getParent();
+    return parent.hasPermission(PermissionType.READ) && parent.hasPermission(PermissionType.ADD_NODE)
+        && parent.hasPermission(PermissionType.SET_PROPERTY);
   }
 
   /**
@@ -659,9 +672,13 @@ public class WOPIService extends AbstractOfficeOnlineService {
     try {
       Node parent = node.getParent();
       String url = explorerUri(schema, host, port, explorerLink(parent.getPath())).toString();
-      map.put(BREADCRUMB_FOLDER_NAME, parent.getProperty(EXO_TITLE).getString());
+      if (parent.hasProperty(EXO_TITLE)) {
+        map.put(BREADCRUMB_FOLDER_NAME, parent.getProperty(EXO_TITLE).getString());
+      } else if (parent.hasProperty(EXO_NAME)) {
+        map.put(BREADCRUMB_FOLDER_NAME, parent.getProperty(EXO_NAME).getString());
+      }
       map.put(BREADCRUMB_FOLDER_URL, url);
-    } catch (Exception e) {
+    } catch (RepositoryException e) {
       LOG.error("Couldn't add breadcrump properties:", e);
     }
 
