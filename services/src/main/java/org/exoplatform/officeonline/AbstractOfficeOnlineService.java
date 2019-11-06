@@ -47,9 +47,6 @@ import org.exoplatform.services.wcm.core.NodetypeConstant;
  */
 public abstract class AbstractOfficeOnlineService implements Startable {
 
-  /** The Constant JCR_MIME_TYPE. */
-  protected static final String          JCR_MIME_TYPE          = "jcr:mimeType";
-
   /** The Constant LOG. */
   protected static final Log             LOG                    = ExoLogger.getLogger(AbstractOfficeOnlineService.class);
 
@@ -99,7 +96,10 @@ public abstract class AbstractOfficeOnlineService implements Startable {
   protected static final String          EXO_TITLE              = "exo:title";
 
   /** The Constant EXO_PRIVILEGEABLE. */
-  protected static final String EXO_PRIVILEGEABLE = "exo:privilegeable";
+  protected static final String          EXO_PRIVILEGEABLE      = "exo:privilegeable";
+
+  /** The Constant JCR_MIME_TYPE. */
+  protected static final String          JCR_MIME_TYPE          = "jcr:mimeType";
 
   /** The Constant EXO_NAME. */
   protected static final String          EXO_NAME               = "exo:name";
