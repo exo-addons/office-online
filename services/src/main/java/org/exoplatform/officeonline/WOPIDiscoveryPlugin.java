@@ -48,7 +48,7 @@ public class WOPIDiscoveryPlugin extends BaseComponentPlugin {
   protected static final String                   PLACEHOLDER_IS_LICENSED_USER_VALUE = "1";
 
   /** The Constant CACHE_NAME. */
-  protected static final String                   CACHE_NAME                         = "officeonline.discovery.Cache";
+  protected static final String                   CACHE_NAME                         = "officeonline.discovery.Cache".intern();
 
   /** The supported app names. */
   protected final List<String>                    supportedAppNames                  =

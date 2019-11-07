@@ -17,7 +17,6 @@ import javax.crypto.SecretKey;
 import javax.crypto.spec.SecretKeySpec;
 import javax.jcr.Node;
 import javax.jcr.RepositoryException;
-import javax.jcr.lock.Lock;
 
 import org.apache.commons.lang.StringUtils;
 
@@ -31,7 +30,6 @@ import org.exoplatform.ecm.webui.utils.Utils;
 import org.exoplatform.officeonline.exception.ActionNotFoundException;
 import org.exoplatform.officeonline.exception.BadParameterException;
 import org.exoplatform.officeonline.exception.FileExtensionNotFoundException;
-import org.exoplatform.officeonline.exception.FileNotFoundException;
 import org.exoplatform.officeonline.exception.LockMismatchException;
 import org.exoplatform.officeonline.exception.OfficeOnlineException;
 import org.exoplatform.officeonline.exception.PermissionDeniedException;
@@ -48,6 +46,7 @@ import org.exoplatform.services.organization.OrganizationService;
 import org.exoplatform.services.organization.User;
 import org.exoplatform.services.security.ConversationState;
 
+// TODO: Auto-generated Javadoc
 /**
  * The Class WOPIService.
  */
@@ -148,6 +147,9 @@ public class WOPIService extends AbstractOfficeOnlineService {
 
   /** The discovery plugin. */
   protected WOPIDiscoveryPlugin discoveryPlugin;
+  
+  /** The lock manager. */
+  protected WOPILockManagerPlugin lockManager;
 
   /** The file extensions. */
   protected Map<String, String> fileExtensions                    = new HashMap<>();
@@ -217,10 +219,7 @@ public class WOPIService extends AbstractOfficeOnlineService {
    * @param config the config
    * @param lockId the lock id
    * @param data the data
-   * @throws OfficeOnlineException the office online exception
-   * @throws LockMismatchException the lock mismatch exception
-   * @throws SizeMismatchException the size mismatch exception
-   * @throws RepositoryException the repository exception
+   * @throws Exception the exception
    */
   public void putFile(EditorConfig config, String lockId, InputStream data) throws Exception {
     Node node = nodeByUUID(config.getFileId(), config.getWorkspace());
@@ -357,6 +356,22 @@ public class WOPIService extends AbstractOfficeOnlineService {
       throw new WopiDiscoveryNotFoundException("WopiDiscoveryPlugin is not an instance of " + pclass.getName());
     }
   }
+  
+  /**
+   * Sets the plugin.
+   *
+   * @param plugin the plugin
+   */
+  public void setWOPILockManagerPlugin(ComponentPlugin plugin) {
+    Class<WOPILockManagerPlugin> pclass = WOPILockManagerPlugin.class;
+    if (pclass.isAssignableFrom(plugin.getClass())) {
+      lockManager = pclass.cast(plugin);
+      LOG.info("Set WOPILockManagerPlugin instance of " + plugin.getClass().getName());
+    } else {
+      throw new WopiDiscoveryNotFoundException("WOPILockManagerPlugin is not an instance of " + pclass.getName());
+    }
+  }
+
 
   /**
    * Gets the action url.
@@ -468,7 +483,7 @@ public class WOPIService extends AbstractOfficeOnlineService {
    * @param fileId the file id
    * @param config the config
    * @return the lock
-   * @throws RepositoryException 
+   * @throws Exception the exception
    */
   public String getLock(String fileId, EditorConfig config) throws Exception {
     if (!fileId.equals(config.getFileId())) {
@@ -620,6 +635,14 @@ public class WOPIService extends AbstractOfficeOnlineService {
     }
   }
 
+  /**
+   * Lock.
+   *
+   * @param fileId the file id
+   * @param config the config
+   * @param providedLock the provided lock
+   * @throws Exception the exception
+   */
   public void lock(String fileId, EditorConfig config, String providedLock) throws Exception {
     if (!fileId.equals(config.getFileId())) {
       throw new BadParameterException("FileId doesn't match fileId specified in token");

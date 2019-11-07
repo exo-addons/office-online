@@ -96,7 +96,7 @@ public class EditorService extends AbstractOfficeOnlineService {
 
       // Only for testing purposes
       EditorConfig.Builder configBuilder2 = new EditorConfig.Builder().userId("peter")
-                                                                      .fileId("133001737f00010116b5fe3a8dfdc07c")
+                                                                      .fileId("463c327d7f0001012d305152520ad938")
                                                                       .workspace("collaboration")
                                                                       .permissions(Arrays.asList(Permissions.USER_CAN_WRITE));
       AccessToken accessToken2 = generateAccessToken(configBuilder2);
