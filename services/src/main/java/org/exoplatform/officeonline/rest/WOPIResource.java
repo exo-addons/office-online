@@ -390,6 +390,11 @@ public class WOPIResource implements ResourceContainer {
                      .entity("{\"error\": \"" + e.getMessage() + "\"}")
                      .type(MediaType.APPLICATION_JSON)
                      .build();
+    } catch (PermissionDeniedException e) {
+      return Response.status(Status.FORBIDDEN)
+                     .entity("{\"error\": \"" + e.getMessage() + "\"}")
+                     .type(MediaType.APPLICATION_JSON)
+                     .build();
     } catch (LockMismatchException e) {
       return Response.status(Status.CONFLICT)
                      .entity("{\"error\": \"" + e.getMessage() + "\"}")
