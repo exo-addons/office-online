@@ -77,17 +77,17 @@
       <description>Cache configuration for officeonline service</description>
       <init-params>
         <object-param>
-          <name>officeonline.Cache</name>
+          <name>officeonline.discovery.Cache</name>
           <description></description>
           <object type="org.exoplatform.services.cache.ExoCacheConfig">
             <field name="name">
-              <string>officeonline.Cache</string>
+              <string>officeonline.discovery.Cache</string>
             </field>
             <field name="maxSize">
-              <int>${officeonline.Cache.Capacity:5000}</int>
+              <int>${officeonline.discovery.Cache.Capacity:5000}</int>
             </field>
             <field name="liveTime">
-              <long>${officeonline.Cache.TimeToLive:-1}</long>
+              <long>${officeonline.discovery.Cache.TimeToLive:-1}</long>
             </field>
             <field name="implementation">
               <string>org.exoplatform.services.cache.concurrent.ConcurrentFIFOExoCache</string>
@@ -95,23 +95,23 @@
           </object>
         </object-param>
         <object-param profiles="cluster">
-          <name>officeonline.Cache</name>
+          <name>officeonline.discovery.Cache</name>
           <description></description>
           <object type="org.exoplatform.services.cache.impl.infinispan.generic.GenericExoCacheConfig">
             <field name="name">
-              <string>officeonline.Cache</string>
+              <string>officeonline.discovery.Cache</string>
             </field>
             <field name="strategy">
-              <string>${officeonline.Cache.strategy:NONE}</string>
+              <string>${officeonline.discovery.Cache.strategy:NONE}</string>
             </field>
             <field name="maxEntries">
-              <int>${officeonline.Cache.Capacity:5000}</int>
+              <int>${officeonline.discovery.Cache.Capacity:5000}</int>
             </field>
             <field name="lifespan">
-              <long>${officeonline.Cache.TimeToLive:-1}</long>
+              <long>${officeonline.discovery.Cache.TimeToLive:-1}</long>
             </field>
             <field name="cacheMode">
-              <string>${officeonline.Cache.cacheMode:replication}</string>
+              <string>${officeonline.discovery.Cache.cacheMode:replication}</string>
             </field>
           </object>
         </object-param>
@@ -124,12 +124,12 @@
   <external-component-plugins>
     <target-component>org.exoplatform.web.filter.ExtensibleFilter</target-component>
     <component-plugin>
-      <name>Onlyoffice Editor integration filter plugin</name>
+      <name>officeonline Editor integration filter plugin</name>
       <set-method>addFilterDefinitions</set-method>
       <type>org.exoplatform.web.filter.FilterDefinitionPlugin</type>
       <init-params>
         <object-param>
-          <name>Onlyoffice Editor integration filter</name>
+          <name>officeonline Editor integration filter</name>
           <object type="org.exoplatform.web.filter.FilterDefinition">
             <field name="filter">
               <object type="org.exoplatform.officeonline.TokenAuthenticationFilter" />
@@ -157,13 +157,13 @@
         <values-param>
           <name>init.resources</name>
           <description>Store the following resources into the db for the first launch</description>
-          <value>locale.onlyoffice.OfficeonlineClient</value>
+          <value>locale.officeonline.OfficeonlineClient</value>
           <value>locale.navigation.portal.intranet</value>
         </values-param>
         <values-param>
           <name>portal.resource.names</name>
           <description>The properties files of the portal , those file will be merged into one ResoruceBundle properties</description>
-          <value>locale.onlyoffice.OfficeonlineClient</value>
+          <value>locale.officeonline.OfficeonlineClient</value>
           <value>locale.navigation.portal.intranet</value>
         </values-param>
       </init-params>
