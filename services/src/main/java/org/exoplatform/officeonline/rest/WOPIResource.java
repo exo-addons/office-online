@@ -318,17 +318,21 @@ public class WOPIResource implements ResourceContainer {
       return getShareUrl();
     case LOCK: {
       String providedLock = request.getHeader(LOCK);
-      return lockOrUnlockAndRelock(fileId, config, providedLock);
+      String oldLock = request.getHeader(OLD_LOCK);
+      return lockOrUnlockAndRelock(fileId, config, providedLock, oldLock);
     }
-
     case PUT_RELATIVE:
       return putRelativeFile();
-    case REFRESH_LOCK:
-      return refreshLock();
+    case REFRESH_LOCK: {
+      String providedLock = request.getHeader(LOCK);
+      return refreshLock(fileId, config, providedLock);
+    }
     case RENAME_FILE:
       return renameFile();
-    case UNLOCK:
-      return unlock();
+    case UNLOCK: {
+      String providedLock = request.getHeader(LOCK);
+      return unlock(fileId, config, providedLock);
+    }
     default:
       return Response.status(Status.BAD_REQUEST).build();
     }
@@ -380,43 +384,21 @@ public class WOPIResource implements ResourceContainer {
   }
 
   /**
-   * Unlock.
-   *
-   * @return the response
-   */
-  private Response unlock() {
-    // TODO unlock file
-    return null;
-  }
-
-  /**
-   * Refresh lock.
-   *
-   * @return the response
-   */
-  private Response refreshLock() {
-    // TODO refresh token
-    return null;
-  }
-
-  /**
-   * Put relative file.
-   *
-   * @return the response
-   */
-  private Response putRelativeFile() {
-    // TODO put relative file
-    return null;
-  }
-
-  /**
    * Lock or unlock and relock.
    *
+   * @param fileId the file id
+   * @param config the config
+   * @param providedLock the provided lock
+   * @param oldLock the old lock
    * @return the response
    */
-  private Response lockOrUnlockAndRelock(String fileId, EditorConfig config, String providedLock) {
+  private Response lockOrUnlockAndRelock(String fileId, EditorConfig config, String providedLock, String oldLock) {
     try {
-      wopiService.lock(fileId, config, providedLock);
+      if (oldLock != null) {
+        wopiService.relock(fileId, config, providedLock, oldLock);
+      } else {
+        wopiService.lock(fileId, config, providedLock);
+      }
       return Response.ok().build();
     } catch (FileNotFoundException e) {
       return Response.status(Status.NOT_FOUND)
@@ -434,10 +416,10 @@ public class WOPIResource implements ResourceContainer {
                      .header(LOCK, e.getLockId())
                      .type(MediaType.APPLICATION_JSON)
                      .build();
-    } catch (Exception e) {
-      LOG.error("Cannot lock file. ", e);
+    } catch (RepositoryException e) {
+      LOG.error("Cannot lock or relock file.", e);
       return Response.status(Status.INTERNAL_SERVER_ERROR)
-                     .entity("{\"error\": \"Cannot lock file\"}")
+                     .entity("{\"error\": \"Cannot lock or relock file.\"}")
                      .type(MediaType.APPLICATION_JSON)
                      .build();
     }
@@ -445,13 +427,40 @@ public class WOPIResource implements ResourceContainer {
   }
 
   /**
-   * Gets the share url.
+   * Unlock.
    *
-   * @return the share url
+   * @param fileId the file id
+   * @param config the config
+   * @param providedLock the provided lock
+   * @return the response
    */
-  private Response getShareUrl() {
-    // TODO get share url
-    return null;
+  private Response unlock(String fileId, EditorConfig config, String providedLock) {
+    try {
+      wopiService.unlock(fileId, config, providedLock);
+      return Response.ok().build();
+    } catch (FileNotFoundException e) {
+      return Response.status(Status.NOT_FOUND)
+                     .entity("{\"error\": \"" + e.getMessage() + "\"}")
+                     .type(MediaType.APPLICATION_JSON)
+                     .build();
+    } catch (BadParameterException e) {
+      return Response.status(Status.BAD_REQUEST)
+                     .entity("{\"error\": \"" + e.getMessage() + "\"}")
+                     .type(MediaType.APPLICATION_JSON)
+                     .build();
+    } catch (LockMismatchException e) {
+      return Response.status(Status.CONFLICT)
+                     .entity("{\"error\": \"" + e.getMessage() + "\"}")
+                     .header(LOCK, e.getLockId())
+                     .type(MediaType.APPLICATION_JSON)
+                     .build();
+    } catch (RepositoryException e) {
+      LOG.error("Cannot lock or relock file.", e);
+      return Response.status(Status.INTERNAL_SERVER_ERROR)
+                     .entity("{\"error\": \"Cannot lock or relock file.\"}")
+                     .type(MediaType.APPLICATION_JSON)
+                     .build();
+    }
   }
 
   /**
@@ -459,7 +468,7 @@ public class WOPIResource implements ResourceContainer {
    *
    * @param fileId the file id
    * @param config the config
-   * @return the lock
+   * @return the response
    */
   private Response getLock(String fileId, EditorConfig config) {
     try {
@@ -475,12 +484,71 @@ public class WOPIResource implements ResourceContainer {
                      .entity("{\"error\": \"" + e.getMessage() + "\"}")
                      .type(MediaType.APPLICATION_JSON)
                      .build();
-    } catch (Exception e) {
+    } catch (RepositoryException e) {
+      LOG.error("Cannot get lock of file.", e);
       return Response.status(Status.INTERNAL_SERVER_ERROR)
                      .entity("{\"error\": \"" + e.getMessage() + "\"}")
                      .type(MediaType.APPLICATION_JSON)
                      .build();
     }
+  }
+
+  
+  /**
+   * Refresh lock.
+   *
+   * @param fileId the file id
+   * @param config the config
+   * @param lockId the lock id
+   * @return the response
+   */
+  private Response refreshLock(String fileId, EditorConfig config, String lockId) {
+    try {
+      wopiService.refreshLock(fileId, config, lockId);
+      return Response.ok().build();
+    } catch (FileNotFoundException e) {
+      return Response.status(Status.NOT_FOUND)
+                     .entity("{\"error\": \"" + e.getMessage() + "\"}")
+                     .type(MediaType.APPLICATION_JSON)
+                     .build();
+    } catch (BadParameterException e) {
+      return Response.status(Status.BAD_REQUEST)
+                     .entity("{\"error\": \"" + e.getMessage() + "\"}")
+                     .type(MediaType.APPLICATION_JSON)
+                     .build();
+    } catch (LockMismatchException e) {
+      return Response.status(Status.CONFLICT)
+                     .entity("{\"error\": \"" + e.getMessage() + "\"}")
+                     .header(LOCK, e.getLockId())
+                     .type(MediaType.APPLICATION_JSON)
+                     .build();
+    } catch (RepositoryException e) {
+      LOG.error("Cannot refresh lock.", e);
+      return Response.status(Status.INTERNAL_SERVER_ERROR)
+                     .entity("{\"error\": \"Cannot lock or relock file.\"}")
+                     .type(MediaType.APPLICATION_JSON)
+                     .build();
+    }
+  }
+
+  /**
+   * Put relative file.
+   *
+   * @return the response
+   */
+  private Response putRelativeFile() {
+    // TODO put relative file
+    return null;
+  }
+
+  /**
+   * Gets the share url.
+   *
+   * @return the share url
+   */
+  private Response getShareUrl() {
+    // TODO get share url
+    return null;
   }
 
   /**

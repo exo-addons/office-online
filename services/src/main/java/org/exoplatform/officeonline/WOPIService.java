@@ -30,6 +30,7 @@ import org.exoplatform.ecm.webui.utils.Utils;
 import org.exoplatform.officeonline.exception.ActionNotFoundException;
 import org.exoplatform.officeonline.exception.BadParameterException;
 import org.exoplatform.officeonline.exception.FileExtensionNotFoundException;
+import org.exoplatform.officeonline.exception.FileNotFoundException;
 import org.exoplatform.officeonline.exception.LockMismatchException;
 import org.exoplatform.officeonline.exception.OfficeOnlineException;
 import org.exoplatform.officeonline.exception.PermissionDeniedException;
@@ -53,106 +54,106 @@ import org.exoplatform.services.security.ConversationState;
 public class WOPIService extends AbstractOfficeOnlineService {
 
   /** The Constant LOG. */
-  protected static final Log    LOG                               = ExoLogger.getLogger(WOPIService.class);
+  protected static final Log      LOG                               = ExoLogger.getLogger(WOPIService.class);
 
   /** The Constant BASE_FILE_NAME. */
-  protected static final String BASE_FILE_NAME                    = "BaseFileName";
+  protected static final String   BASE_FILE_NAME                    = "BaseFileName";
 
   /** The Constant OWNER_ID. */
-  protected static final String OWNER_ID                          = "OwnerId";
+  protected static final String   OWNER_ID                          = "OwnerId";
 
   /** The Constant FILES_ENDPOINT. */
-  protected static final String FILES_ENDPOINT                    = "/wopi/files/";
+  protected static final String   FILES_ENDPOINT                    = "/wopi/files/";
 
   /** The Constant SIZE. */
-  protected static final String SIZE                              = "Size";
+  protected static final String   SIZE                              = "Size";
 
   /** The Constant USER_ID. */
-  protected static final String USER_ID                           = "UserId";
+  protected static final String   USER_ID                           = "UserId";
 
   /** The Constant VERSION. */
-  protected static final String VERSION                           = "Version";
+  protected static final String   VERSION                           = "Version";
 
   /** The Constant BREADCRUMB_BRAND_NAME. */
-  protected static final String BREADCRUMB_BRAND_NAME             = "BreadcrumbBrandName";
+  protected static final String   BREADCRUMB_BRAND_NAME             = "BreadcrumbBrandName";
 
   /** The Constant BREADCRUMB_BRAND_URL. */
-  protected static final String BREADCRUMB_BRAND_URL              = "BreadcrumbBrandUrl";
+  protected static final String   BREADCRUMB_BRAND_URL              = "BreadcrumbBrandUrl";
 
   /** The Constant BREADCRUMB_FOLDER_NAME. */
-  protected static final String BREADCRUMB_FOLDER_NAME            = "BreadcrumbFolderName";
+  protected static final String   BREADCRUMB_FOLDER_NAME            = "BreadcrumbFolderName";
 
   /** The Constant BREADCRUMB_FOLDER_URL. */
-  protected static final String BREADCRUMB_FOLDER_URL             = "BreadcrumbFolderUrl";
+  protected static final String   BREADCRUMB_FOLDER_URL             = "BreadcrumbFolderUrl";
 
   /** The Constant CLOSE_URL. */
-  protected static final String CLOSE_URL                         = "CloseUrl";
+  protected static final String   CLOSE_URL                         = "CloseUrl";
 
   /** The Constant DOWNLOAD_URL. */
-  protected static final String DOWNLOAD_URL                      = "DownloadUrl";
+  protected static final String   DOWNLOAD_URL                      = "DownloadUrl";
 
   /** The Constant FILE_VERSION_URL. */
-  protected static final String FILE_VERSION_URL                  = "FileVersionUrl";
+  protected static final String   FILE_VERSION_URL                  = "FileVersionUrl";
 
   /** The Constant HOST_EDIT_URL. */
-  protected static final String HOST_EDIT_URL                     = "HostEditUrl";
+  protected static final String   HOST_EDIT_URL                     = "HostEditUrl";
 
   /** The Constant HOST_VIEW_URL. */
-  protected static final String HOST_VIEW_URL                     = "HostViewUrl";
+  protected static final String   HOST_VIEW_URL                     = "HostViewUrl";
 
   /** The Constant SIGNOUT_URL. */
-  protected static final String SIGNOUT_URL                       = "SignoutUrl";
+  protected static final String   SIGNOUT_URL                       = "SignoutUrl";
 
   /** The Constant SUPPORTS_EXTENDED_LOCK_LENGTH. */
-  protected static final String SUPPORTS_EXTENDED_LOCK_LENGTH     = "SupportsExtendedLockLength";
+  protected static final String   SUPPORTS_EXTENDED_LOCK_LENGTH     = "SupportsExtendedLockLength";
 
   /** The Constant SUPPORTS_GET_LOCK. */
-  protected static final String SUPPORTS_GET_LOCK                 = "SupportsGetLock";
+  protected static final String   SUPPORTS_GET_LOCK                 = "SupportsGetLock";
 
   /** The Constant SUPPORTS_LOCKS. */
-  protected static final String SUPPORTS_LOCKS                    = "SupportsLocks";
+  protected static final String   SUPPORTS_LOCKS                    = "SupportsLocks";
 
   /** The Constant SUPPORTS_RENAME. */
-  protected static final String SUPPORTS_RENAME                   = "SupportsRename";
+  protected static final String   SUPPORTS_RENAME                   = "SupportsRename";
 
   /** The Constant SUPPORTS_UPDATE. */
-  protected static final String SUPPORTS_UPDATE                   = "SupportsUpdate";
+  protected static final String   SUPPORTS_UPDATE                   = "SupportsUpdate";
 
   /** The Constant SUPPORTED_SHARE_URL_TYPES. */
-  protected static final String SUPPORTED_SHARE_URL_TYPES         = "SupportedShareUrlTypes";
+  protected static final String   SUPPORTED_SHARE_URL_TYPES         = "SupportedShareUrlTypes";
 
   /** The Constant IS_ANONYMOUS_USER. */
-  protected static final String IS_ANONYMOUS_USER                 = "IsAnonymousUser";
+  protected static final String   IS_ANONYMOUS_USER                 = "IsAnonymousUser";
 
   /** The Constant LICENSE_CHECK_FOR_EDIT_IS_ENABLED. */
-  protected static final String LICENSE_CHECK_FOR_EDIT_IS_ENABLED = "LicenseCheckForEditIsEnabled";
+  protected static final String   LICENSE_CHECK_FOR_EDIT_IS_ENABLED = "LicenseCheckForEditIsEnabled";
 
   /** The Constant USER_FRIENDLY_NAME. */
-  protected static final String USER_FRIENDLY_NAME                = "UserFriendlyName";
+  protected static final String   USER_FRIENDLY_NAME                = "UserFriendlyName";
 
   /** The Constant PLACEHOLDER_WOPISRC. */
-  protected static final String PLACEHOLDER_WOPISRC               = "wopisrc";
+  protected static final String   PLACEHOLDER_WOPISRC               = "wopisrc";
 
   /** The Constant SHARE_URL. */
-  protected static final String SHARE_URL                         = "ShareUrl";
+  protected static final String   SHARE_URL                         = "ShareUrl";
 
   /** The Constant SHARE_URL_READ_ONLY. */
-  protected static final String SHARE_URL_READ_ONLY               = "ReadOnly";
+  protected static final String   SHARE_URL_READ_ONLY               = "ReadOnly";
 
   /** The Constant SHARE_URL_READ_WRITE. */
-  protected static final String SHARE_URL_READ_WRITE              = "ReadWrite";
+  protected static final String   SHARE_URL_READ_WRITE              = "ReadWrite";
 
   /** The Constant TOKEN_CONFIGURATION_PROPERTIES. */
-  protected static final String TOKEN_CONFIGURATION_PROPERTIES    = "token-configuration";
+  protected static final String   TOKEN_CONFIGURATION_PROPERTIES    = "token-configuration";
 
   /** The discovery plugin. */
-  protected WOPIDiscoveryPlugin discoveryPlugin;
-  
+  protected WOPIDiscoveryPlugin   discoveryPlugin;
+
   /** The lock manager. */
   protected WOPILockManagerPlugin lockManager;
 
   /** The file extensions. */
-  protected Map<String, String> fileExtensions                    = new HashMap<>();
+  protected Map<String, String>   fileExtensions                    = new HashMap<>();
 
   /**
    * Instantiates a new WOPI service.
@@ -232,12 +233,13 @@ public class WOPIService extends AbstractOfficeOnlineService {
             throw new SizeMismatchException("File is unlocked and size isn't equal to 0.", "");
           }
         } else {
-          getUserSession(config.getWorkspace()).addLockToken(lockId);
-          if (!lockId.equals(node.getLock().getLockToken())) {
+          FileLock fileLock = lockManager.getLock(node);
+          if (lockId.equals(fileLock.getLockId())) {
+            getUserSession(config.getWorkspace()).addLockToken(fileLock.getLockToken());
+          } else {
             throw new LockMismatchException("Given lock is different from the file lock", LockUtil.getLockToken(node));
           }
         }
-
         content.setProperty(JCR_DATA, data);
         Calendar editedTime = Calendar.getInstance();
         content.setProperty(JCR_LAST_MODIFIED, editedTime);
@@ -356,7 +358,7 @@ public class WOPIService extends AbstractOfficeOnlineService {
       throw new WopiDiscoveryNotFoundException("WopiDiscoveryPlugin is not an instance of " + pclass.getName());
     }
   }
-  
+
   /**
    * Sets the plugin.
    *
@@ -371,7 +373,6 @@ public class WOPIService extends AbstractOfficeOnlineService {
       throw new WopiDiscoveryNotFoundException("WOPILockManagerPlugin is not an instance of " + pclass.getName());
     }
   }
-
 
   /**
    * Gets the action url.
@@ -483,14 +484,18 @@ public class WOPIService extends AbstractOfficeOnlineService {
    * @param fileId the file id
    * @param config the config
    * @return the lock
-   * @throws Exception the exception
+   * @throws BadParameterException the bad parameter exception
+   * @throws FileNotFoundException the file not found exception
+   * @throws RepositoryException the repository exception
    */
-  public String getLock(String fileId, EditorConfig config) throws Exception {
+  public String getLock(String fileId,
+                        EditorConfig config) throws BadParameterException, FileNotFoundException, RepositoryException {
     if (!fileId.equals(config.getFileId())) {
       throw new BadParameterException("FileId doesn't match fileId specified in token");
     }
     Node node = nodeByUUID(config.getFileId(), config.getWorkspace());
-    return node.isLocked() ? LockUtil.getLockToken(node) : null;
+    FileLock lock = lockManager.getLock(node);
+    return lock != null ? lock.getLockId() : null;
   }
 
   /**
@@ -640,28 +645,90 @@ public class WOPIService extends AbstractOfficeOnlineService {
    *
    * @param fileId the file id
    * @param config the config
-   * @param providedLock the provided lock
-   * @throws Exception the exception
+   * @param lockId the lock id
+   * @throws LockMismatchException the lock mismatch exception
+   * @throws RepositoryException the repository exception
+   * @throws FileNotFoundException the file not found exception
+   * @throws BadParameterException the bad parameter exception
    */
-  public void lock(String fileId, EditorConfig config, String providedLock) throws Exception {
+  public void lock(String fileId, EditorConfig config, String lockId) throws LockMismatchException,
+                                                                      RepositoryException,
+                                                                      FileNotFoundException,
+                                                                      BadParameterException {
     if (!fileId.equals(config.getFileId())) {
       throw new BadParameterException("FileId doesn't match fileId specified in token");
     }
-
     Node node = nodeByUUID(config.getFileId(), config.getWorkspace());
-    if (!node.isLocked()) {
-      LockUtil.keepLock(node.lock(true, false));
-    } else {
-      if (providedLock.equals(LockUtil.getLockToken(node))) {
-        getUserSession(config.getWorkspace()).addLockToken(providedLock);
-        // Refresh lock
-        LockUtil.removeLock(node);
-        node.unlock();
-        LockUtil.keepLock(node.lock(true, false));
-      } else {
-        throw new LockMismatchException("File is locked and provided lock token is wrong", LockUtil.getLockToken(node));
-      }
+    lockManager.lock(node, lockId);
+  }
+
+  /**
+   * Relock.
+   *
+   * @param fileId the file id
+   * @param config the config
+   * @param providedLock the provided lock
+   * @param oldLock the old lock
+   * @throws LockMismatchException the lock mismatch exception
+   * @throws RepositoryException the repository exception
+   * @throws FileNotFoundException the file not found exception
+   * @throws BadParameterException the bad parameter exception
+   */
+  public void relock(String fileId, EditorConfig config, String providedLock, String oldLock) throws LockMismatchException,
+                                                                                              RepositoryException,
+                                                                                              FileNotFoundException,
+                                                                                              BadParameterException {
+    if (!fileId.equals(config.getFileId())) {
+      throw new BadParameterException("FileId doesn't match fileId specified in token");
     }
+    Node node = nodeByUUID(config.getFileId(), config.getWorkspace());
+    lockManager.unlock(node, oldLock, config.getWorkspace());
+    lockManager.lock(node, providedLock);
+  }
+
+  /**
+   * Unlock.
+   *
+   * @param fileId the file id
+   * @param config the config
+   * @param providedLock the provided lock
+   * @throws LockMismatchException the lock mismatch exception
+   * @throws RepositoryException the repository exception
+   * @throws FileNotFoundException the file not found exception
+   * @throws BadParameterException the bad parameter exception
+   */
+  public void unlock(String fileId, EditorConfig config, String providedLock) throws LockMismatchException,
+                                                                              RepositoryException,
+                                                                              FileNotFoundException,
+                                                                              BadParameterException {
+    if (!fileId.equals(config.getFileId())) {
+      throw new BadParameterException("FileId doesn't match fileId specified in token");
+    }
+    Node node = nodeByUUID(config.getFileId(), config.getWorkspace());
+    lockManager.unlock(node, providedLock, config.getWorkspace());
+  }
+
+  /**
+   * Refresh lock.
+   *
+   * @param fileId the file id
+   * @param config the config
+   * @param lockId the lock id
+   * @throws LockMismatchException the lock mismatch exception
+   * @throws RepositoryException the repository exception
+   * @throws FileNotFoundException the file not found exception
+   * @throws BadParameterException the bad parameter exception
+   */
+  public void refreshLock(String fileId, EditorConfig config, String lockId) throws LockMismatchException,
+                                                                             RepositoryException,
+                                                                             FileNotFoundException,
+                                                                             BadParameterException {
+    if (!fileId.equals(config.getFileId())) {
+      throw new BadParameterException("FileId doesn't match fileId specified in token");
+    }
+    Node node = nodeByUUID(config.getFileId(), config.getWorkspace());
+    lockManager.refreshLock(node, lockId);
+
   }
 
 }

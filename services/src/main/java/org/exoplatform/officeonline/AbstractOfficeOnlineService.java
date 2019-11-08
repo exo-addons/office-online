@@ -159,6 +159,13 @@ public abstract class AbstractOfficeOnlineService implements Startable {
     }
   }
   
+  /**
+   * Gets the user session.
+   *
+   * @param workspace the workspace
+   * @return the user session
+   * @throws RepositoryException the repository exception
+   */
   protected Session getUserSession(String workspace) throws RepositoryException {
     if (workspace == null) {
       workspace = jcrService.getCurrentRepository().getConfiguration().getDefaultWorkspaceName();
@@ -241,7 +248,6 @@ public abstract class AbstractOfficeOnlineService implements Startable {
       LOG.error("Cannot get content of node. FileId: " + config.getFileId(), e.getMessage());
       throw new OfficeOnlineException("Cannot get file content. FileId: " + config.getFileId());
     }
-
   }
 
   /**
