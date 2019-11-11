@@ -11,6 +11,8 @@ import javax.jcr.RepositoryException;
 import javax.jcr.Session;
 import javax.jcr.lock.Lock;
 
+import com.sun.star.ui.dialogs.ExecutableDialogException;
+
 import org.exoplatform.container.component.BaseComponentPlugin;
 import org.exoplatform.officeonline.exception.LockMismatchException;
 import org.exoplatform.services.cache.CacheService;
@@ -21,6 +23,7 @@ import org.exoplatform.services.jcr.ext.app.SessionProviderService;
 import org.exoplatform.services.jcr.ext.common.SessionProvider;
 import org.exoplatform.services.log.ExoLogger;
 import org.exoplatform.services.log.Log;
+import org.exoplatform.services.wcm.utils.WCMCoreUtils;
 
 // TODO: Auto-generated Javadoc
 /**
@@ -33,6 +36,9 @@ public class WOPILockManagerPlugin extends BaseComponentPlugin {
 
   /** The Constant CACHE_NAME. */
   protected static final String        CACHE_NAME      = "officeonline.locks.Cache".intern();
+
+  /** The Constant MIX_LOCKABLE. */
+  protected static final String        MIX_LOCKABLE    = "mix:lockable";
 
   /** The Constant LOG. */
   protected static final Log           LOG             = ExoLogger.getLogger(WOPILockManagerPlugin.class);
@@ -83,6 +89,11 @@ public class WOPILockManagerPlugin extends BaseComponentPlugin {
    * @throws LockMismatchException the lock mismatch exception
    */
   public void lock(Node node, String lockId) throws RepositoryException, LockMismatchException {
+    if (!node.isNodeType(MIX_LOCKABLE)) {
+      node.addMixin(MIX_LOCKABLE);
+      node.save();
+    }
+
     if (!node.isLocked()) {
       Lock lock = node.lock(true, false);
       long expires = System.currentTimeMillis() + LOCK_EXPIRES;
@@ -146,7 +157,6 @@ public class WOPILockManagerPlugin extends BaseComponentPlugin {
     }
   }
 
-
   /**
    * Refresh lock.
    *
@@ -185,6 +195,18 @@ public class WOPILockManagerPlugin extends BaseComponentPlugin {
   }
 
   /**
+   * Gets the system session.
+   *
+   * @return the system session
+   * @throws RepositoryException the repository exception
+   */
+  protected Session getSystemSession() throws RepositoryException {
+    String workspace = jcrService.getCurrentRepository().getConfiguration().getDefaultWorkspaceName();
+    SessionProvider sp = SessionProvider.createSystemProvider();
+    return sp.getSession(workspace, jcrService.getCurrentRepository());
+  }
+
+  /**
    * Removes the expired.
    */
   protected void removeExpired() {
@@ -195,11 +217,11 @@ public class WOPILockManagerPlugin extends BaseComponentPlugin {
       LOG.error("Cannot get cached locks from ExoCache", e);
       return;
     }
-
+   
     fileLocks.forEach(lock -> {
       if ((lock.getExpires() - System.currentTimeMillis()) < EXPIRES_DELAY) {
         try {
-          Session session = getUserSession(null);
+          Session session = getSystemSession();
           session.addLockToken(lock.getLockToken());
           Node node = session.getNodeByUUID(lock.getFileId());
           node.unlock();
