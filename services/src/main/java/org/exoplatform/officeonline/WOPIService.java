@@ -430,18 +430,20 @@ public class WOPIService extends AbstractOfficeOnlineService {
       parentNode.save();
     }
 
+    /*
+      We cannot rename file uploaded from Activity Stream
+      PLF issue: https://jira.exoplatform.org/browse/PLF-8596
     if (!node.hasPermission(PermissionType.REMOVE)) {
       Session systemSession = jcrService.getCurrentRepository().getSystemSession(config.getWorkspace());
       NodeImpl systemNode = (NodeImpl) systemSession.getNodeByUUID(config.getFileId());
-      
-      // We cannot rename file uploaded from Activity Stream
-      // PLF issue: https://jira.exoplatform.org/browse/PLF-8596
-      //systemNode.addMixin(EXO_PRIVILEGEABLE);
+         
+      systemNode.addMixin(EXO_PRIVILEGEABLE);
       systemNode.setPermission(config.getUserId(),
                                new String[] { PermissionType.REMOVE, PermissionType.READ, PermissionType.ADD_NODE,
                                    PermissionType.SET_PROPERTY });
       systemNode.save();
-    }
+    } */
+
     // Get current file extension
     String extension = null;
     try {
