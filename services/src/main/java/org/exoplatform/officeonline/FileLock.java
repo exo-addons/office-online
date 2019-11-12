@@ -5,10 +5,10 @@ package org.exoplatform.officeonline;
  */
 public class FileLock {
 
-  /** The lock id. */
+  /** The external lock id that used by WOPI clients */
   private final String lockId;
 
-  /** The lock token. */
+  /** The JCR lock token. */
   private final String lockToken;
 
   /** The expires. */

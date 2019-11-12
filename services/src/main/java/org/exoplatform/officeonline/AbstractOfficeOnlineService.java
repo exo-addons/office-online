@@ -1,6 +1,4 @@
-/*
- * 
- */
+
 package org.exoplatform.officeonline;
 
 import java.io.InputStream;
@@ -25,7 +23,6 @@ import org.picocontainer.Startable;
 import org.exoplatform.container.PortalContainer;
 import org.exoplatform.ecm.webui.utils.PermissionUtil;
 import org.exoplatform.ecm.webui.utils.Utils;
-import org.exoplatform.officeonline.exception.BadParameterException;
 import org.exoplatform.officeonline.exception.FileNotFoundException;
 import org.exoplatform.officeonline.exception.OfficeOnlineException;
 import org.exoplatform.portal.config.UserACL;
@@ -158,7 +155,7 @@ public abstract class AbstractOfficeOnlineService implements Startable {
       throw new FileNotFoundException("File not found. FileId: " + uuid + ", workspace: " + workspace);
     }
   }
-  
+
   /**
    * Gets the user session.
    *
@@ -212,15 +209,11 @@ public abstract class AbstractOfficeOnlineService implements Startable {
   /**
    * Gets the content.
    *
-   * @param fileId the fileId
    * @param config the config
    * @return the content
    * @throws OfficeOnlineException the office online exception
    */
-  public DocumentContent getContent(String fileId, EditorConfig config) throws OfficeOnlineException {
-    if (!fileId.equals(config.getFileId())) {
-      throw new BadParameterException("FileId doesn't match fileId specified in token");
-    }
+  public DocumentContent getContent(EditorConfig config) throws OfficeOnlineException {
     try {
       Node node = nodeByUUID(config.getFileId(), config.getWorkspace());
       Node content = nodeContent(node);

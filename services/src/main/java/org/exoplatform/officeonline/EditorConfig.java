@@ -56,7 +56,7 @@ public class EditorConfig {
    *
    * @return the file id
    */
-  protected String getFileId() {
+  public String getFileId() {
     return fileId;
   }
 

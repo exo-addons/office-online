@@ -28,7 +28,6 @@ import org.exoplatform.container.xml.PropertiesParam;
 import org.exoplatform.ecm.utils.lock.LockUtil;
 import org.exoplatform.ecm.webui.utils.Utils;
 import org.exoplatform.officeonline.exception.ActionNotFoundException;
-import org.exoplatform.officeonline.exception.BadParameterException;
 import org.exoplatform.officeonline.exception.FileExtensionNotFoundException;
 import org.exoplatform.officeonline.exception.FileNotFoundException;
 import org.exoplatform.officeonline.exception.LockMismatchException;
@@ -47,7 +46,6 @@ import org.exoplatform.services.organization.OrganizationService;
 import org.exoplatform.services.organization.User;
 import org.exoplatform.services.security.ConversationState;
 
-// TODO: Auto-generated Javadoc
 /**
  * The Class WOPIService.
  */
@@ -479,26 +477,6 @@ public class WOPIService extends AbstractOfficeOnlineService {
   }
 
   /**
-   * Gets the lock.
-   *
-   * @param fileId the file id
-   * @param config the config
-   * @return the lock
-   * @throws BadParameterException the bad parameter exception
-   * @throws FileNotFoundException the file not found exception
-   * @throws RepositoryException the repository exception
-   */
-  public String getLock(String fileId,
-                        EditorConfig config) throws BadParameterException, FileNotFoundException, RepositoryException {
-    if (!fileId.equals(config.getFileId())) {
-      throw new BadParameterException("FileId doesn't match fileId specified in token");
-    }
-    Node node = nodeByUUID(config.getFileId(), config.getWorkspace());
-    FileLock lock = lockManager.getLock(node);
-    return lock != null ? lock.getLockId() : null;
-  }
-
-  /**
    * Adds the required properties.
    *
    * @param map the map
@@ -643,44 +621,47 @@ public class WOPIService extends AbstractOfficeOnlineService {
   /**
    * Lock.
    *
-   * @param fileId the file id
    * @param config the config
    * @param lockId the lock id
    * @throws LockMismatchException the lock mismatch exception
    * @throws RepositoryException the repository exception
    * @throws FileNotFoundException the file not found exception
-   * @throws BadParameterException the bad parameter exception
    */
-  public void lock(String fileId, EditorConfig config, String lockId) throws LockMismatchException,
-                                                                      RepositoryException,
-                                                                      FileNotFoundException,
-                                                                      BadParameterException {
-    if (!fileId.equals(config.getFileId())) {
-      throw new BadParameterException("FileId doesn't match fileId specified in token");
-    }
+  public void lock(EditorConfig config, String lockId) throws LockMismatchException, RepositoryException, FileNotFoundException {
     Node node = nodeByUUID(config.getFileId(), config.getWorkspace());
     lockManager.lock(node, lockId);
   }
 
   /**
+   * Gets the lock.
+   *
+   * @param config the config
+   * @return the lock
+   * @throws BadParameterException the bad parameter exception
+   * @throws FileNotFoundException the file not found exception
+   * @throws RepositoryException the repository exception
+   */
+  public String getLockId(EditorConfig config) throws FileNotFoundException, RepositoryException {
+
+    Node node = nodeByUUID(config.getFileId(), config.getWorkspace());
+    FileLock lock = lockManager.getLock(node);
+    return lock != null ? lock.getLockId() : null;
+  }
+
+  /**
    * Relock.
    *
-   * @param fileId the file id
    * @param config the config
    * @param providedLock the provided lock
    * @param oldLock the old lock
    * @throws LockMismatchException the lock mismatch exception
    * @throws RepositoryException the repository exception
    * @throws FileNotFoundException the file not found exception
-   * @throws BadParameterException the bad parameter exception
    */
-  public void relock(String fileId, EditorConfig config, String providedLock, String oldLock) throws LockMismatchException,
-                                                                                              RepositoryException,
-                                                                                              FileNotFoundException,
-                                                                                              BadParameterException {
-    if (!fileId.equals(config.getFileId())) {
-      throw new BadParameterException("FileId doesn't match fileId specified in token");
-    }
+  public void relock(EditorConfig config, String providedLock, String oldLock) throws LockMismatchException,
+                                                                               RepositoryException,
+                                                                               FileNotFoundException {
+
     Node node = nodeByUUID(config.getFileId(), config.getWorkspace());
     lockManager.unlock(node, oldLock, config.getWorkspace());
     lockManager.lock(node, providedLock);
@@ -689,21 +670,15 @@ public class WOPIService extends AbstractOfficeOnlineService {
   /**
    * Unlock.
    *
-   * @param fileId the file id
    * @param config the config
    * @param providedLock the provided lock
    * @throws LockMismatchException the lock mismatch exception
    * @throws RepositoryException the repository exception
    * @throws FileNotFoundException the file not found exception
-   * @throws BadParameterException the bad parameter exception
    */
-  public void unlock(String fileId, EditorConfig config, String providedLock) throws LockMismatchException,
-                                                                              RepositoryException,
-                                                                              FileNotFoundException,
-                                                                              BadParameterException {
-    if (!fileId.equals(config.getFileId())) {
-      throw new BadParameterException("FileId doesn't match fileId specified in token");
-    }
+  public void unlock(EditorConfig config,
+                     String providedLock) throws LockMismatchException, RepositoryException, FileNotFoundException {
+
     Node node = nodeByUUID(config.getFileId(), config.getWorkspace());
     lockManager.unlock(node, providedLock, config.getWorkspace());
   }
@@ -711,21 +686,15 @@ public class WOPIService extends AbstractOfficeOnlineService {
   /**
    * Refresh lock.
    *
-   * @param fileId the file id
    * @param config the config
    * @param lockId the lock id
    * @throws LockMismatchException the lock mismatch exception
    * @throws RepositoryException the repository exception
    * @throws FileNotFoundException the file not found exception
-   * @throws BadParameterException the bad parameter exception
    */
-  public void refreshLock(String fileId, EditorConfig config, String lockId) throws LockMismatchException,
-                                                                             RepositoryException,
-                                                                             FileNotFoundException,
-                                                                             BadParameterException {
-    if (!fileId.equals(config.getFileId())) {
-      throw new BadParameterException("FileId doesn't match fileId specified in token");
-    }
+  public void refreshLock(EditorConfig config,
+                          String lockId) throws LockMismatchException, RepositoryException, FileNotFoundException {
+
     Node node = nodeByUUID(config.getFileId(), config.getWorkspace());
     lockManager.refreshLock(node, lockId);
 

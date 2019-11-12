@@ -51,19 +51,24 @@ public class EditorResource implements ResourceContainer {
                           @Context ServletContext context,
                           @PathParam("fileId") String fileId) {
     EditorConfig config = (EditorConfig) context.getAttribute(WOPIResource.EDITOR_CONFIG_ATTRIBUTE);
-    
-    if(config == null) {
+
+    if (config == null) {
       return Response.status(Status.BAD_REQUEST)
-          .entity("{\"error\": \"Couldn't obtain editor config from access token\"}")
-          .type(MediaType.APPLICATION_JSON)
-          .build();
+                     .entity("{\"error\": \"Couldn't obtain editor config from access token\"}")
+                     .type(MediaType.APPLICATION_JSON)
+                     .build();
     }
-    
+    if (!fileId.equals(config.getFileId())) {
+      return Response.status(Status.BAD_REQUEST)
+                     .entity("{\"error\": \"Provided fileId doesn't match fileId from access token\"}")
+                     .type(MediaType.APPLICATION_JSON)
+                     .build();
+    }
+
     try {
-      DocumentContent content = editorService.getContent(fileId, config);
+      DocumentContent content = editorService.getContent(config);
       return Response.ok().entity(content.getData()).type(content.getType()).build();
-    } 
-    catch (OfficeOnlineException e) {
+    } catch (OfficeOnlineException e) {
       return Response.status(Status.BAD_REQUEST)
                      .entity("{\"error\": \"" + e.getMessage() + "\"}")
                      .type(MediaType.APPLICATION_JSON)
