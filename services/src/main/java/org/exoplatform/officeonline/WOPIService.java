@@ -17,6 +17,7 @@ import javax.crypto.SecretKey;
 import javax.crypto.spec.SecretKeySpec;
 import javax.jcr.Node;
 import javax.jcr.RepositoryException;
+import javax.jcr.Session;
 
 import org.apache.commons.lang.StringUtils;
 
@@ -25,9 +26,13 @@ import org.exoplatform.container.PortalContainer;
 import org.exoplatform.container.component.ComponentPlugin;
 import org.exoplatform.container.xml.InitParams;
 import org.exoplatform.container.xml.PropertiesParam;
+import org.exoplatform.ecm.utils.text.Text;
 import org.exoplatform.ecm.webui.utils.Utils;
 import org.exoplatform.officeonline.exception.ActionNotFoundException;
+import org.exoplatform.officeonline.exception.BadParameterException;
 import org.exoplatform.officeonline.exception.FileExtensionNotFoundException;
+import org.exoplatform.officeonline.exception.FileNotFoundException;
+import org.exoplatform.officeonline.exception.InvalidFileNameException;
 import org.exoplatform.officeonline.exception.LockMismatchException;
 import org.exoplatform.officeonline.exception.OfficeOnlineException;
 import org.exoplatform.officeonline.exception.PermissionDeniedException;
@@ -37,12 +42,15 @@ import org.exoplatform.portal.config.UserACL;
 import org.exoplatform.services.cache.CacheService;
 import org.exoplatform.services.cms.documents.DocumentService;
 import org.exoplatform.services.jcr.RepositoryService;
+import org.exoplatform.services.jcr.access.PermissionType;
 import org.exoplatform.services.jcr.ext.app.SessionProviderService;
+import org.exoplatform.services.jcr.impl.core.NodeImpl;
 import org.exoplatform.services.log.ExoLogger;
 import org.exoplatform.services.log.Log;
 import org.exoplatform.services.organization.OrganizationService;
 import org.exoplatform.services.organization.User;
 import org.exoplatform.services.security.ConversationState;
+import org.exoplatform.services.wcm.core.NodetypeConstant;
 
 /**
  * The Class WOPIService.
@@ -381,6 +389,97 @@ public class WOPIService extends AbstractOfficeOnlineService {
   }
 
   /**
+   * Rename file.
+   *
+   * @param fileId the file id
+   * @param config the config
+   * @param newTitle the new title
+   * @param lock the lock
+   * @return the string
+   * @throws BadParameterException the bad parameter exception
+   * @throws FileNotFoundException the file not found exception
+   * @throws InvalidFileNameException the invalid file name exception
+   * @throws RepositoryException the repository exception
+   * @throws LockMismatchException the lock mismatch exception
+   */
+  public String renameFile(String fileId, EditorConfig config, String newTitle, String lock) throws RepositoryException,
+                                                                                             OfficeOnlineException,
+                                                                                             LockMismatchException {
+    if (!fileId.equals(config.getFileId())) {
+      throw new BadParameterException("FileId doesn't match fileId specified in token");
+    }
+
+    newTitle = Text.escapeIllegalJcrChars(newTitle);
+    // Check and escape newTitle
+    if (StringUtils.isBlank(newTitle)) {
+      throw new InvalidFileNameException("Requested title is not allowed due to using illegal JCR chars");
+    }
+
+    NodeImpl node = (NodeImpl) nodeByUUID(config.getFileId(), config.getWorkspace());
+
+    if (!canRenameDocument(node)) {
+      throw new PermissionDeniedException("Cannot rename document. Permission denied");
+    }
+    if (node.isLocked() && !node.getLock().getLockToken().equals(lock)) {
+      throw new LockMismatchException("Given lock is different from the file lock", node.getLock().getLockToken());
+    }
+
+    Node parentNode = node.getParent();
+    if (parentNode.canAddMixin(NodetypeConstant.MIX_REFERENCEABLE)) {
+      parentNode.addMixin(NodetypeConstant.MIX_REFERENCEABLE);
+      parentNode.save();
+    }
+
+    /*
+      We cannot rename file uploaded from Activity Stream
+      PLF issue: https://jira.exoplatform.org/browse/PLF-8596
+    if (!node.hasPermission(PermissionType.REMOVE)) {
+      Session systemSession = jcrService.getCurrentRepository().getSystemSession(config.getWorkspace());
+      NodeImpl systemNode = (NodeImpl) systemSession.getNodeByUUID(config.getFileId());
+         
+      systemNode.addMixin(EXO_PRIVILEGEABLE);
+      systemNode.setPermission(config.getUserId(),
+                               new String[] { PermissionType.REMOVE, PermissionType.READ, PermissionType.ADD_NODE,
+                                   PermissionType.SET_PROPERTY });
+      systemNode.save();
+    } */
+
+    // Get current file extension
+    String extension = null;
+    try {
+      extension = getFileExtension(node);
+    } catch (FileExtensionNotFoundException e) {
+      LOG.warn("Cannot get file extension.", e);
+    }
+
+    String name = newTitle;
+    if (extension != null) {
+      name = new StringBuilder(newTitle).append(".").append(extension).toString();
+    }
+
+    parentNode.getSession().move(node.getPath(), parentNode.getPath() + "/" + name);
+    node.setProperty(EXO_LAST_MODIFIER, config.getUserId());
+    node.setProperty(EXO_NAME, name);
+    node.setProperty(EXO_TITLE, name);
+    node.refresh(true);
+    parentNode.getSession().save();
+    // Return title without file extension
+    return newTitle;
+  }
+
+  /**
+   * Checks if current user can rename the document.
+   *
+   * @param node the node
+   * @return true if user can rename 
+   */
+  protected boolean canRenameDocument(Node node) throws RepositoryException {
+    NodeImpl parent = (NodeImpl) node.getParent();
+    return parent.hasPermission(PermissionType.READ) && parent.hasPermission(PermissionType.ADD_NODE)
+        && parent.hasPermission(PermissionType.SET_PROPERTY);
+  }
+
+  /**
    * Gets the file extension.
    *
    * @param node the node
@@ -578,9 +677,13 @@ public class WOPIService extends AbstractOfficeOnlineService {
     try {
       Node parent = node.getParent();
       String url = explorerUri(schema, host, port, explorerLink(parent.getPath())).toString();
-      map.put(BREADCRUMB_FOLDER_NAME, parent.getProperty(EXO_TITLE).getString());
+      if (parent.hasProperty(EXO_TITLE)) {
+        map.put(BREADCRUMB_FOLDER_NAME, parent.getProperty(EXO_TITLE).getString());
+      } else if (parent.hasProperty(EXO_NAME)) {
+        map.put(BREADCRUMB_FOLDER_NAME, parent.getProperty(EXO_NAME).getString());
+      }
       map.put(BREADCRUMB_FOLDER_URL, url);
-    } catch (Exception e) {
+    } catch (RepositoryException e) {
       LOG.error("Couldn't add breadcrump properties:", e);
     }
 

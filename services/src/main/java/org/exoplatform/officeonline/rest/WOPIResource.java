@@ -46,6 +46,7 @@ import org.exoplatform.officeonline.exception.AuthenticationFailedException;
 import org.exoplatform.officeonline.exception.BadParameterException;
 import org.exoplatform.officeonline.exception.EditorConfigNotFoundException;
 import org.exoplatform.officeonline.exception.FileNotFoundException;
+import org.exoplatform.officeonline.exception.InvalidFileNameException;
 import org.exoplatform.officeonline.exception.LockMismatchException;
 import org.exoplatform.officeonline.exception.OfficeOnlineException;
 import org.exoplatform.officeonline.exception.PermissionDeniedException;
@@ -54,7 +55,6 @@ import org.exoplatform.services.log.ExoLogger;
 import org.exoplatform.services.log.Log;
 import org.exoplatform.services.rest.resource.ResourceContainer;
 
-// TODO: Auto-generated Javadoc
 /**
  * The Class WOPIService.
  */
@@ -94,49 +94,52 @@ public class WOPIResource implements ResourceContainer {
   }
 
   /** The Constant FILE_CONVERSION. */
-  protected static final String FILE_CONVERSION   = "X-WOPI-FileConversion";
+  protected static final String FILE_CONVERSION         = "X-WOPI-FileConversion";
 
   /** The Constant ITEM_VERSION. */
-  protected static final String ITEM_VERSION      = "X-WOPI-ItemVersion";
+  protected static final String ITEM_VERSION            = "X-WOPI-ItemVersion";
 
   /** The Constant LOCK. */
-  protected static final String LOCK              = "X-WOPI-Lock";
+  protected static final String LOCK                    = "X-WOPI-Lock";
 
   /** The Constant MAX_EXPECTED_SIZE. */
-  protected static final String MAX_EXPECTED_SIZE = "X-WOPI-MaxExpectedSize";
+  protected static final String MAX_EXPECTED_SIZE       = "X-WOPI-MaxExpectedSize";
 
   /** The Constant OLD_LOCK. */
-  protected static final String OLD_LOCK          = "X-WOPI-OldLock";
+  protected static final String OLD_LOCK                = "X-WOPI-OldLock";
 
   /** The Constant OVERRIDE. */
-  protected static final String OVERRIDE          = "X-WOPI-Override";
+  protected static final String OVERRIDE                = "X-WOPI-Override";
 
   /** The Constant PROOF. */
-  protected static final String PROOF             = "X-WOPI-Proof";
+  protected static final String PROOF                   = "X-WOPI-Proof";
 
   /** The Constant PROOF_OLD. */
-  protected static final String PROOF_OLD         = "X-WOPI-ProofOld";
+  protected static final String PROOF_OLD               = "X-WOPI-ProofOld";
 
   /** The Constant RELATIVE_TARGET. */
-  protected static final String RELATIVE_TARGET   = "X-WOPI-RelativeTarget";
+  protected static final String RELATIVE_TARGET         = "X-WOPI-RelativeTarget";
 
   /** The Constant REQUESTED_NAME. */
-  protected static final String REQUESTED_NAME    = "X-WOPI-RequestedName";
+  protected static final String REQUESTED_NAME          = "X-WOPI-RequestedName";
 
   /** The Constant SUGGESTED_TARGET. */
-  protected static final String SUGGESTED_TARGET  = "X-WOPI-SuggestedTarget";
+  protected static final String SUGGESTED_TARGET        = "X-WOPI-SuggestedTarget";
+
+  /** The Constant INVALID_FILE_NAME_ERROR. */
+  protected static final String INVALID_FILE_NAME_ERROR = "X-WOPI-InvalidFileNameError";
 
   /** The Constant URL_TYPE. */
-  protected static final String URL_TYPE          = "X-WOPI-UrlType";
+  protected static final String URL_TYPE                = "X-WOPI-UrlType";
 
   /** The Constant TIMESTAMP. */
-  protected static final String TIMESTAMP         = "X-WOPI-TimeStamp";
+  protected static final String TIMESTAMP               = "X-WOPI-TimeStamp";
 
   /** The Constant API_VERSION. */
-  protected static final String API_VERSION       = "1.1";
+  protected static final String API_VERSION             = "1.1";
 
   /** The Constant LOG. */
-  protected static final Log    LOG               = ExoLogger.getLogger(WOPIService.class);
+  protected static final Log    LOG                     = ExoLogger.getLogger(WOPIService.class);
 
   /** The editor service. */
   protected final WOPIService   wopiService;
@@ -290,10 +293,26 @@ public class WOPIResource implements ResourceContainer {
   @Produces(MediaType.APPLICATION_JSON)
   public Response files(@Context UriInfo uriInfo,
                         @Context HttpServletRequest request,
+                        @Context ServletContext context,
                         @HeaderParam(OVERRIDE) Operation operation,
                         @PathParam("fileId") String fileId) {
 
     verifyProofKey(request);
+    EditorConfig config;
+    try {
+      config = getEditorConfig(context);
+    } catch (AuthenticationFailedException e) {
+      return Response.status(Status.UNAUTHORIZED)
+                     .entity("{\"error\": \"" + e.getMessage() + "\"}")
+                     .type(MediaType.APPLICATION_JSON)
+                     .build();
+    } catch (EditorConfigNotFoundException e) {
+      return Response.status(Status.INTERNAL_SERVER_ERROR)
+                     .entity("{\"error\": \"" + e.getMessage() + "\"}")
+                     .type(MediaType.APPLICATION_JSON)
+                     .build();
+    }
+
     switch (operation) {
     case GET_LOCK:
       return getLock();
@@ -305,8 +324,11 @@ public class WOPIResource implements ResourceContainer {
       return putRelativeFile();
     case REFRESH_LOCK:
       return refreshLock();
-    case RENAME_FILE:
-      return renameFile();
+    case RENAME_FILE: {
+      String name = request.getHeader(REQUESTED_NAME);
+      String lock = request.getHeader(LOCK);
+      return renameFile(fileId, config, name, lock);
+    }
     case UNLOCK:
       return unlock();
     default:
@@ -354,9 +376,45 @@ public class WOPIResource implements ResourceContainer {
    *
    * @return the response
    */
-  private Response renameFile() {
-    // TODO rename file
-    return null;
+  private Response renameFile(String fileId, EditorConfig config, String name, String lock) {
+    try {
+      String title = wopiService.renameFile(fileId, config, name, lock);
+      return Response.ok().entity("{\"Name\": \"" + title + "\"}").type(MediaType.APPLICATION_JSON).build();
+    } catch (BadParameterException e) {
+      return Response.status(Status.BAD_REQUEST)
+                     .entity("{\"error\": \"" + e.getMessage() + "\"}")
+                     .type(MediaType.APPLICATION_JSON)
+                     .build();
+    } catch (FileNotFoundException e) {
+      return Response.status(Status.NOT_FOUND)
+                     .entity("{\"error\": \"" + e.getMessage() + "\"}")
+                     .type(MediaType.APPLICATION_JSON)
+                     .build();
+    } catch (PermissionDeniedException e) {
+      return Response.status(Status.FORBIDDEN)
+                     .entity("{\"error\": \"" + e.getMessage() + "\"}")
+                     .type(MediaType.APPLICATION_JSON)
+                     .build();
+    } catch (LockMismatchException e) {
+      return Response.status(Status.CONFLICT)
+                     .entity("{\"error\": \"" + e.getMessage() + "\"}")
+                     .header(LOCK, e.getLockId())
+                     .type(MediaType.APPLICATION_JSON)
+                     .build();
+    } catch (InvalidFileNameException e) {
+      return Response.status(Status.BAD_REQUEST)
+                     .entity("{\"error\": \"" + e.getMessage() + "\"}")
+                     .header(INVALID_FILE_NAME_ERROR, e.getMessage())
+                     .type(MediaType.APPLICATION_JSON)
+                     .build();
+    } catch (OfficeOnlineException | RepositoryException e) {
+      LOG.error("Cannot rename file", e);
+      return Response.status(Status.INTERNAL_SERVER_ERROR)
+                     .entity("{\"error\": \"" + e.getMessage() + "\"}")
+                     .type(MediaType.APPLICATION_JSON)
+                     .build();
+    }
+
   }
 
   /**
@@ -458,7 +516,7 @@ public class WOPIResource implements ResourceContainer {
       }
     }
   }
-  
+
   /**
    * Return Office Online REST API version.
    *
