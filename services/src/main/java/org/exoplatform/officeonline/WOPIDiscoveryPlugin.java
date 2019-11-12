@@ -24,6 +24,8 @@ import org.exoplatform.container.component.BaseComponentPlugin;
 import org.exoplatform.container.xml.InitParams;
 import org.exoplatform.container.xml.ValueParam;
 import org.exoplatform.officeonline.WOPIDiscovery.NetZone;
+import org.exoplatform.services.cache.CacheService;
+import org.exoplatform.services.cache.ExoCache;
 import org.exoplatform.services.log.ExoLogger;
 import org.exoplatform.services.log.Log;
 
@@ -33,43 +35,48 @@ import org.exoplatform.services.log.Log;
 public class WOPIDiscoveryPlugin extends BaseComponentPlugin {
 
   /** The Constant LOG. */
-  protected static final Log                 LOG                                = ExoLogger.getLogger(WOPIDiscoveryPlugin.class);
+  protected static final Log                      LOG                                =
+                                                      ExoLogger.getLogger(WOPIDiscoveryPlugin.class);
 
   /** The Constant DISCOVERY_URL. */
-  protected static final String              DISCOVERY_URL                      = "discovery-url";
+  protected static final String                   DISCOVERY_URL                      = "discovery-url";
 
   /** The Constant PLACEHOLDER_IS_LICENSED_USER. */
-  protected static final String              PLACEHOLDER_IS_LICENSED_USER       = "IsLicensedUser";
+  protected static final String                   PLACEHOLDER_IS_LICENSED_USER       = "IsLicensedUser";
 
   /** The Constant PLACEHOLDER_IS_LICENSED_USER_VALUE. */
-  protected static final String              PLACEHOLDER_IS_LICENSED_USER_VALUE = "1";
+  protected static final String                   PLACEHOLDER_IS_LICENSED_USER_VALUE = "1";
+
+  /** The Constant CACHE_NAME. */
+  protected static final String                   CACHE_NAME                         = "officeonline.discovery.Cache".intern();
 
   /** The supported app names. */
-  protected final List<String>               supportedAppNames                  = Arrays.asList("Word", "Excel", "PowerPoint");
+  protected final List<String>                    supportedAppNames                  =
+                                                                    Arrays.asList("Word", "Excel", "PowerPoint");
 
   /** The proof key. */
-  protected PublicKey                        proofKey;
+  protected PublicKey                             proofKey;
 
   /** The old proof key. */
-  protected PublicKey                        oldProofKey;
+  protected PublicKey                             oldProofKey;
 
   /** The discovery url. */
-  protected String                           discoveryUrl;
+  protected String                                discoveryUrl;
 
   /** The extension action UR ls. */
   // extension => wopi action => wopi action url
-  // Should it be ExoCache?
-  protected Map<String, Map<String, String>> extensionActionURLs                = new HashMap<>();
+  protected ExoCache<String, Map<String, String>> extensionActionURLs;
 
   /** The executor for refreshing. */
-  protected ScheduledExecutorService         refreshExecutor                    = Executors.newScheduledThreadPool(1);
+  protected ScheduledExecutorService              refreshExecutor                    = Executors.newScheduledThreadPool(1);
 
   /**
    * Instantiates a new WOPI discovery service.
    *
+   * @param cacheService the cache service
    * @param params the params
    */
-  public WOPIDiscoveryPlugin(InitParams params) {
+  public WOPIDiscoveryPlugin(CacheService cacheService, InitParams params) {
     ValueParam discoveryURLParam = params.getValueParam(DISCOVERY_URL);
     String val = discoveryURLParam != null ? discoveryURLParam.getValue() : null;
     if (val == null || (val = val.trim()).isEmpty()) {
@@ -77,6 +84,7 @@ public class WOPIDiscoveryPlugin extends BaseComponentPlugin {
     } else {
       this.discoveryUrl = val;
     }
+    this.extensionActionURLs = cacheService.getCacheInstance(CACHE_NAME);
   }
 
   /**
@@ -87,7 +95,7 @@ public class WOPIDiscoveryPlugin extends BaseComponentPlugin {
    * @return the action url
    */
   public String getActionUrl(String extension, String action) {
-    if (extensionActionURLs.isEmpty()) {
+    if (extensionActionURLs.getCacheSize() == 0) {
       loadDiscovery();
     }
 
@@ -99,6 +107,11 @@ public class WOPIDiscoveryPlugin extends BaseComponentPlugin {
     return null;
   }
 
+  /**
+   * Gets the proof key.
+   *
+   * @return the proof key
+   */
   public PublicKey getProofKey() {
     return proofKey;
   }
@@ -112,12 +125,18 @@ public class WOPIDiscoveryPlugin extends BaseComponentPlugin {
     return oldProofKey;
   }
 
+  /**
+   * Start.
+   */
   public void start() {
     loadDiscovery();
     // Refresh discovery every 5 minutes (for testing only). 12-24 hours is recommended
     refreshExecutor.scheduleAtFixedRate(() -> loadDiscovery(), 5, 5, TimeUnit.MINUTES);
   }
 
+  /**
+   * Stop.
+   */
   public void stop() {
     refreshExecutor.shutdown();
   }
@@ -197,7 +216,12 @@ public class WOPIDiscoveryPlugin extends BaseComponentPlugin {
                                      PLACEHOLDER_IS_LICENSED_USER_VALUE));
       });
     });
-    extensionActionURLs = actionURLs;
+    extensionActionURLs.clearCache();
+    actionURLs.forEach((key, value) -> {
+      if (key != null) {
+        extensionActionURLs.put(key, value);
+      }
+    });
   }
 
 }

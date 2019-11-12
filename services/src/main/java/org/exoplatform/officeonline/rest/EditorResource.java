@@ -58,9 +58,15 @@ public class EditorResource implements ResourceContainer {
                      .type(MediaType.APPLICATION_JSON)
                      .build();
     }
+    if (!fileId.equals(config.getFileId())) {
+      return Response.status(Status.BAD_REQUEST)
+                     .entity("{\"error\": \"Provided fileId doesn't match fileId from access token\"}")
+                     .type(MediaType.APPLICATION_JSON)
+                     .build();
+    }
 
     try {
-      DocumentContent content = editorService.getContent(fileId, config);
+      DocumentContent content = editorService.getContent(config);
       return Response.ok().entity(content.getData()).type(content.getType()).build();
     } catch (OfficeOnlineException e) {
       return Response.status(Status.BAD_REQUEST)

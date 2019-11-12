@@ -1,6 +1,4 @@
-/*
- * 
- */
+
 package org.exoplatform.officeonline;
 
 import java.io.InputStream;
@@ -25,7 +23,6 @@ import org.picocontainer.Startable;
 import org.exoplatform.container.PortalContainer;
 import org.exoplatform.ecm.webui.utils.PermissionUtil;
 import org.exoplatform.ecm.webui.utils.Utils;
-import org.exoplatform.officeonline.exception.BadParameterException;
 import org.exoplatform.officeonline.exception.FileNotFoundException;
 import org.exoplatform.officeonline.exception.OfficeOnlineException;
 import org.exoplatform.portal.config.UserACL;
@@ -157,16 +154,27 @@ public abstract class AbstractOfficeOnlineService implements Startable {
    */
   protected Node nodeByUUID(String uuid, String workspace) throws FileNotFoundException, RepositoryException {
     try {
-      if (workspace == null) {
-        workspace = jcrService.getCurrentRepository().getConfiguration().getDefaultWorkspaceName();
-      }
-      SessionProvider sp = sessionProviders.getSessionProvider(null);
-      Session userSession = sp.getSession(workspace, jcrService.getCurrentRepository());
+      Session userSession = getUserSession(workspace);
       return userSession.getNodeByUUID(uuid);
     } catch (ItemNotFoundException e) {
       LOG.warn("Cannot find node by UUID: {}, workspace: {}. Error: {}", uuid, workspace, e.getMessage());
       throw new FileNotFoundException("File not found. FileId: " + uuid + ", workspace: " + workspace);
     }
+  }
+
+  /**
+   * Gets the user session.
+   *
+   * @param workspace the workspace
+   * @return the user session
+   * @throws RepositoryException the repository exception
+   */
+  protected Session getUserSession(String workspace) throws RepositoryException {
+    if (workspace == null) {
+      workspace = jcrService.getCurrentRepository().getConfiguration().getDefaultWorkspaceName();
+    }
+    SessionProvider sp = sessionProviders.getSessionProvider(null);
+    return sp.getSession(workspace, jcrService.getCurrentRepository());
   }
 
   /**
@@ -207,15 +215,11 @@ public abstract class AbstractOfficeOnlineService implements Startable {
   /**
    * Gets the content.
    *
-   * @param fileId the fileId
    * @param config the config
    * @return the content
    * @throws OfficeOnlineException the office online exception
    */
-  public DocumentContent getContent(String fileId, EditorConfig config) throws OfficeOnlineException {
-    if (!fileId.equals(config.getFileId())) {
-      throw new BadParameterException("FileId doesn't match fileId specified in token");
-    }
+  public DocumentContent getContent(EditorConfig config) throws OfficeOnlineException {
     try {
       Node node = nodeByUUID(config.getFileId(), config.getWorkspace());
       Node content = nodeContent(node);
@@ -243,7 +247,6 @@ public abstract class AbstractOfficeOnlineService implements Startable {
       LOG.error("Cannot get content of node. FileId: " + config.getFileId(), e.getMessage());
       throw new OfficeOnlineException("Cannot get file content. FileId: " + config.getFileId());
     }
-
   }
 
   /**
