@@ -1,7 +1,5 @@
 package org.exoplatform.officeonline;
 
-import java.util.ArrayList;
-import java.util.List;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
@@ -11,21 +9,20 @@ import javax.jcr.RepositoryException;
 import javax.jcr.Session;
 import javax.jcr.lock.Lock;
 
-import com.sun.star.ui.dialogs.ExecutableDialogException;
-
 import org.exoplatform.container.component.BaseComponentPlugin;
 import org.exoplatform.officeonline.exception.LockMismatchException;
 import org.exoplatform.services.cache.CacheService;
+import org.exoplatform.services.cache.CachedObjectSelector;
 import org.exoplatform.services.cache.ExoCache;
+import org.exoplatform.services.cache.ObjectCacheInfo;
 import org.exoplatform.services.cms.lock.LockService;
 import org.exoplatform.services.jcr.RepositoryService;
 import org.exoplatform.services.jcr.ext.app.SessionProviderService;
 import org.exoplatform.services.jcr.ext.common.SessionProvider;
 import org.exoplatform.services.log.ExoLogger;
 import org.exoplatform.services.log.Log;
-import org.exoplatform.services.wcm.utils.WCMCoreUtils;
 
-// TODO: Auto-generated Javadoc
+
 /**
  * The Class WOPILockManagerPlugin.
  */
@@ -97,9 +94,11 @@ public class WOPILockManagerPlugin extends BaseComponentPlugin {
     if (!node.isLocked()) {
       Lock lock = node.lock(true, false);
       long expires = System.currentTimeMillis() + LOCK_EXPIRES;
-      FileLock fileLock = new FileLock(node.getUUID(), lockId, lock.getLockToken(), expires);
+      FileLock fileLock = new FileLock(lockId, lock.getLockToken(), expires);
       locks.put(node.getUUID(), fileLock);
-      LOG.debug("Node successfully locked. UUID: {}, lockId: {}", node.getUUID(), lockId);
+      if (LOG.isDebugEnabled()) {
+        LOG.debug("Node successfully locked. UUID: {}, lockId: {}", node.getUUID(), lockId);
+      }
     } else {
       FileLock fileLock = locks.get(node.getUUID());
       // File locked by someone else
@@ -114,7 +113,9 @@ public class WOPILockManagerPlugin extends BaseComponentPlugin {
       }
       if (lockId.equals(fileLock.getLockId())) {
         fileLock.setExpires(System.currentTimeMillis() + LOCK_EXPIRES);
-        LOG.debug("Lock refreshed. UUID: {}, lockId: {}", node.getUUID(), lockId);
+        if (LOG.isDebugEnabled()) {
+          LOG.debug("Lock refreshed. UUID: {}, lockId: {}", node.getUUID(), lockId);
+        }
       } else {
         throw new LockMismatchException("Provided lock doesn't match lock on file", fileLock.getLockId());
       }
@@ -148,7 +149,9 @@ public class WOPILockManagerPlugin extends BaseComponentPlugin {
         getUserSession(workspace).addLockToken(fileLock.getLockToken());
         node.unlock();
         locks.remove(node.getUUID());
-        LOG.debug("Lock removed from node UUID: {}, lockId: {}", node.getUUID(), lockId);
+        if (LOG.isDebugEnabled()) {
+          LOG.debug("Lock removed from node UUID: {}, lockId: {}", node.getUUID(), lockId);
+        }
       } else {
         throw new LockMismatchException("Provided lockId doesn't match lock on the file", fileLock.getLockToken());
       }
@@ -170,7 +173,9 @@ public class WOPILockManagerPlugin extends BaseComponentPlugin {
     if (fileLock != null) {
       if (lockId.equals(fileLock.getLockId())) {
         fileLock.setExpires(System.currentTimeMillis() + LOCK_EXPIRES);
-        LOG.debug("Lock refreshed. UUID: {}, lockId: {}", node.getUUID(), lockId);
+        if (LOG.isDebugEnabled()) {
+          LOG.debug("Lock refreshed. UUID: {}, lockId: {}", node.getUUID(), lockId);
+        }
       } else {
         throw new LockMismatchException("Provided lockId doesn't match lock on the file", fileLock.getLockToken());
       }
@@ -208,29 +213,39 @@ public class WOPILockManagerPlugin extends BaseComponentPlugin {
 
   /**
    * Removes the expired.
+   * @throws Exception 
    */
   protected void removeExpired() {
-    List<? extends FileLock> fileLocks = new ArrayList<FileLock>();
     try {
-      fileLocks = locks.getCachedObjects();
-    } catch (Exception e) {
-      LOG.error("Cannot get cached locks from ExoCache", e);
-      return;
-    }
-   
-    fileLocks.forEach(lock -> {
-      if ((lock.getExpires() - System.currentTimeMillis()) < EXPIRES_DELAY) {
-        try {
-          Session session = getSystemSession();
-          session.addLockToken(lock.getLockToken());
-          Node node = session.getNodeByUUID(lock.getFileId());
-          node.unlock();
-          locks.remove(lock.getFileId());
-          LOG.debug("Node unlocked (lock expired). UUID: {}", lock.getFileId());
-        } catch (RepositoryException e) {
-          LOG.warn("Cannot unlock node. UUID {}, {}", lock.getFileId(), e.getMessage());
+      locks.select(new CachedObjectSelector<String, FileLock>() {
+
+        @Override
+        public boolean select(String key, ObjectCacheInfo<? extends FileLock> ocinfo) {
+          FileLock lock = ocinfo.get();
+          return lock != null ? (lock.getExpires() - System.currentTimeMillis() < EXPIRES_DELAY) : false;
         }
-      }
-    });
+
+        @Override
+        public void onSelect(ExoCache<? extends String, ? extends FileLock> cache,
+                             String fileId,
+                             ObjectCacheInfo<? extends FileLock> ocinfo) throws Exception {
+          FileLock lock = ocinfo.get();
+          try {
+            Session session = getSystemSession();
+            session.addLockToken(lock.getLockToken());
+            Node node = session.getNodeByUUID(fileId);
+            node.unlock();
+            locks.remove(fileId);
+            if (LOG.isDebugEnabled()) {
+              LOG.debug("Node unlocked (lock expired). UUID: {}", fileId);
+            }
+          } catch (RepositoryException e) {
+            LOG.warn("Cannot unlock node. UUID {}, {}", fileId, e.getMessage());
+          }
+        }
+      });
+    } catch (Exception e) {
+      LOG.error("Cannot unlock expired nodes", e);
+    }
   }
 }

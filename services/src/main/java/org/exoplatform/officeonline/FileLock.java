@@ -5,9 +5,6 @@ package org.exoplatform.officeonline;
  */
 public class FileLock {
 
-  /**  The fileId. */
-  private final String fileId;
-
   /** The lock id. */
   private final String lockId;
 
@@ -20,13 +17,11 @@ public class FileLock {
   /**
    * Instantiates a new file lock.
    *
-   * @param fileId the file id
    * @param lockId the lock id
    * @param lockToken the lock token
    * @param expires the expires
    */
-  protected FileLock(String fileId, String lockId, String lockToken, long expires) {
-    this.fileId = fileId;
+  protected FileLock(String lockId, String lockToken, long expires) {
     this.lockId = lockId;
     this.lockToken = lockToken;
     this.expires = expires;
@@ -66,15 +61,6 @@ public class FileLock {
    */
   protected String getLockToken() {
     return lockToken;
-  }
-
-  /**
-   * Gets the file id.
-   *
-   * @return the file id
-   */
-  protected String getFileId() {
-    return fileId;
   }
 
 }
