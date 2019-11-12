@@ -88,7 +88,9 @@ public class WOPIResource implements ResourceContainer {
     /** The rename file. */
     RENAME_FILE,
     /** The unlock. */
-    UNLOCK
+    UNLOCK,
+    /** The delete. */
+    DELETE
   }
 
   /** The Constant FILE_CONVERSION. */
@@ -340,6 +342,9 @@ public class WOPIResource implements ResourceContainer {
       String providedLock = request.getHeader(LOCK);
       return unlock(config, providedLock);
     }
+    case DELETE: {
+      return delete(config);
+    }
     default:
       return Response.status(Status.BAD_REQUEST).build();
     }
@@ -494,6 +499,31 @@ public class WOPIResource implements ResourceContainer {
   private Response refreshLock(EditorConfig config, String lockId) {
     try {
       wopiService.refreshLock(config, lockId);
+      return Response.ok().build();
+    } catch (FileNotFoundException e) {
+      return Response.status(Status.NOT_FOUND)
+                     .entity("{\"error\": \"" + e.getMessage() + "\"}")
+                     .type(MediaType.APPLICATION_JSON)
+                     .build();
+    } catch (LockMismatchException e) {
+      return Response.status(Status.CONFLICT)
+                     .entity("{\"error\": \"" + e.getMessage() + "\"}")
+                     .header(LOCK, e.getLockId())
+                     .type(MediaType.APPLICATION_JSON)
+                     .build();
+    } catch (RepositoryException e) {
+      LOG.error("Cannot refresh lock.", e);
+      return Response.status(Status.INTERNAL_SERVER_ERROR)
+                     .entity("{\"error\": \"Cannot lock or relock file.\"}")
+                     .type(MediaType.APPLICATION_JSON)
+                     .build();
+    }
+  }
+  
+
+  private Response delete(EditorConfig config) {
+    try {
+      wopiService.deleteFile(config);
       return Response.ok().build();
     } catch (FileNotFoundException e) {
       return Response.status(Status.NOT_FOUND)

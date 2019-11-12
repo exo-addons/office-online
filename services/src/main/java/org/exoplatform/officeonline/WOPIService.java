@@ -637,7 +637,6 @@ public class WOPIService extends AbstractOfficeOnlineService {
    *
    * @param config the config
    * @return the lock
-   * @throws BadParameterException the bad parameter exception
    * @throws FileNotFoundException the file not found exception
    * @throws RepositoryException the repository exception
    */
@@ -697,7 +696,29 @@ public class WOPIService extends AbstractOfficeOnlineService {
 
     Node node = nodeByUUID(config.getFileId(), config.getWorkspace());
     lockManager.refreshLock(node, lockId);
+  }
 
+  /**
+   * Delete file.
+   *
+   * @param config the config
+   * @throws FileNotFoundException the file not found exception
+   * @throws RepositoryException the repository exception
+   * @throws LockMismatchException 
+   */
+  public void deleteFile(EditorConfig config) throws FileNotFoundException, RepositoryException, LockMismatchException {
+    Node node = nodeByUUID(config.getFileId(), config.getWorkspace());
+    if(node.isLocked()) {
+      FileLock fileLock = lockManager.getLock(node);
+      if(fileLock != null) {
+        throw new LockMismatchException("File is locked", fileLock.getLockId());
+      } 
+      throw new LockMismatchException("File is locked by another service", "");
+    }
+    
+    Node parent = node.getParent();
+    node.remove();
+    parent.save();
   }
 
 }
