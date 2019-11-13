@@ -425,7 +425,7 @@ public class WOPIResource implements ResourceContainer {
     } catch (OfficeOnlineException | RepositoryException e) {
       LOG.error("Cannot rename file", e);
       return Response.status(Status.INTERNAL_SERVER_ERROR)
-                     .entity("{\"error\": \"" + e.getMessage() + "\"}")
+                     .entity("{\"error\": \"Cannot rename file\"}")
                      .type(MediaType.APPLICATION_JSON)
                      .build();
     }
@@ -493,9 +493,9 @@ public class WOPIResource implements ResourceContainer {
                      .type(MediaType.APPLICATION_JSON)
                      .build();
     } catch (RepositoryException e) {
-      LOG.error("Cannot lock or relock file.", e);
+      LOG.error("Cannot unlock file.", e);
       return Response.status(Status.INTERNAL_SERVER_ERROR)
-                     .entity("{\"error\": \"Cannot lock or relock file.\"}")
+                     .entity("{\"error\": \"Cannot unlock file.\"}")
                      .type(MediaType.APPLICATION_JSON)
                      .build();
     }
@@ -519,7 +519,7 @@ public class WOPIResource implements ResourceContainer {
     } catch (RepositoryException e) {
       LOG.error("Cannot get lock of file.", e);
       return Response.status(Status.INTERNAL_SERVER_ERROR)
-                     .entity("{\"error\": \"" + e.getMessage() + "\"}")
+                     .entity("{\"error\": \"Cannot get lock of file\"}")
                      .type(MediaType.APPLICATION_JSON)
                      .build();
     }
@@ -551,7 +551,7 @@ public class WOPIResource implements ResourceContainer {
     } catch (RepositoryException e) {
       LOG.error("Cannot refresh lock.", e);
       return Response.status(Status.INTERNAL_SERVER_ERROR)
-                     .entity("{\"error\": \"Cannot lock or relock file.\"}")
+                     .entity("{\"error\": \"Cannot refresh lock.\"}")
                      .type(MediaType.APPLICATION_JSON)
                      .build();
     }
@@ -573,9 +573,9 @@ public class WOPIResource implements ResourceContainer {
                      .type(MediaType.APPLICATION_JSON)
                      .build();
     } catch (RepositoryException e) {
-      LOG.error("Cannot refresh lock.", e);
+      LOG.error("Cannot delete file.", e);
       return Response.status(Status.INTERNAL_SERVER_ERROR)
-                     .entity("{\"error\": \"" + e.getMessage() + "\"}")
+                     .entity("{\"error\": \"Cannot delete file\"}")
                      .type(MediaType.APPLICATION_JSON)
                      .build();
     }
