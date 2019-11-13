@@ -19,6 +19,7 @@
 package org.exoplatform.officeonline.rest;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.Serializable;
 import java.net.InetAddress;
 import java.net.URI;
@@ -54,6 +55,7 @@ import org.exoplatform.services.log.ExoLogger;
 import org.exoplatform.services.log.Log;
 import org.exoplatform.services.rest.resource.ResourceContainer;
 
+// TODO: Auto-generated Javadoc
 /**
  * The Class WOPIService.
  */
@@ -322,7 +324,6 @@ public class WOPIResource implements ResourceContainer {
                      .build();
     }
 
-
     switch (operation) {
     case GET_LOCK:
       return getLock(config);
@@ -333,8 +334,21 @@ public class WOPIResource implements ResourceContainer {
       String oldLock = request.getHeader(OLD_LOCK);
       return lockOrUnlockAndRelock(config, providedLock, oldLock);
     }
-    case PUT_RELATIVE:
-      return putRelativeFile();
+    case PUT_RELATIVE: {
+      try {
+        if (request.getHeader(RELATIVE_TARGET) != null) {
+          return putRelativeFile(config, request.getHeader(RELATIVE_TARGET), request.getInputStream());
+        }
+        if (request.getHeader(SUGGESTED_TARGET) != null) {
+          return putSuggestedFile(config, request.getHeader(SUGGESTED_TARGET), request.getInputStream());
+        }
+      } catch (IOException e) {
+        return Response.status(Status.INTERNAL_SERVER_ERROR)
+                       .entity("{\"error\": \"Cannot get request body\"}")
+                       .type(MediaType.APPLICATION_JSON)
+                       .build();
+      }
+    }
     case REFRESH_LOCK: {
       String providedLock = request.getHeader(LOCK);
       return refreshLock(config, providedLock);
@@ -390,6 +404,10 @@ public class WOPIResource implements ResourceContainer {
   /**
    * Rename file.
    *
+   * @param fileId the file id
+   * @param config the config
+   * @param name the name
+   * @param lock the lock
    * @return the response
    */
   private Response renameFile(String fileId, EditorConfig config, String name, String lock) {
@@ -468,7 +486,6 @@ public class WOPIResource implements ResourceContainer {
   /**
    * Unlock.
    *
-   * @param fileId the file id
    * @param config the config
    * @param providedLock the provided lock
    * @return the response
@@ -524,7 +541,6 @@ public class WOPIResource implements ResourceContainer {
   /**
    * Refresh lock.
    *
-   * @param fileId the file id
    * @param config the config
    * @param lockId the lock id
    * @return the response
@@ -556,9 +572,25 @@ public class WOPIResource implements ResourceContainer {
   /**
    * Put relative file.
    *
+   * @param config the config
+   * @param target the target
+   * @param data the data
    * @return the response
    */
-  private Response putRelativeFile() {
+  private Response putRelativeFile(EditorConfig config, String target, InputStream data) {
+    // TODO put relative file
+    return null;
+  }
+
+  /**
+   * Put suggested file.
+   *
+   * @param config the config
+   * @param target the target
+   * @param data the data
+   * @return the response
+   */
+  private Response putSuggestedFile(EditorConfig config, String target, InputStream data) {
     // TODO put relative file
     return null;
   }

@@ -62,6 +62,9 @@ public class WOPIService extends AbstractOfficeOnlineService {
   /** The Constant BASE_FILE_NAME. */
   protected static final String   BASE_FILE_NAME                    = "BaseFileName";
 
+  /** The Constant DEFAULT_FILENAME. */
+  protected static final String   DEFAULT_FILENAME                  = "Untitled";
+
   /** The Constant OWNER_ID. */
   protected static final String   OWNER_ID                          = "OwnerId";
 
@@ -408,9 +411,8 @@ public class WOPIService extends AbstractOfficeOnlineService {
    * @param newTitle the new title
    * @param lock the lock
    * @return the string
-   * @throws FileNotFoundException the file not found exception
-   * @throws InvalidFileNameException the invalid file name exception
    * @throws RepositoryException the repository exception
+   * @throws OfficeOnlineException the office online exception
    * @throws LockMismatchException the lock mismatch exception
    */
   public String renameFile(String fileId, EditorConfig config, String newTitle, String lock) throws RepositoryException,
@@ -479,7 +481,8 @@ public class WOPIService extends AbstractOfficeOnlineService {
    * Checks if current user can rename the document.
    *
    * @param node the node
-   * @return true if user can rename 
+   * @return true if user can rename
+   * @throws RepositoryException the repository exception
    */
   protected boolean canRenameDocument(Node node) throws RepositoryException {
     NodeImpl parent = (NodeImpl) node.getParent();
@@ -792,6 +795,33 @@ public class WOPIService extends AbstractOfficeOnlineService {
 
     Node node = nodeByUUID(config.getFileId(), config.getWorkspace());
     lockManager.refreshLock(node, lockId);
+
+  }
+
+  /**
+   * Put relative file in suggested mode.
+   *
+   * @param config the config
+   * @param target the target
+   * @param data the data
+   * @throws RepositoryException the repository exception
+   * @throws FileNotFoundException the file not found exception
+   */
+  public void putSuggestedFile(EditorConfig config, String target, InputStream data) throws RepositoryException,
+                                                                                     FileNotFoundException {
+    Node node = nodeByUUID(config.getFileId(), config.getWorkspace());
+    String filename = target;
+    // Target is an extension
+    if (target.startsWith(".")) {
+      String oldName = node.getName().substring(0, node.getName().lastIndexOf("."));
+      filename = oldName + target;
+    }
+
+    filename = Text.escapeIllegalJcrChars(filename);
+    // Check and escape newTitle
+    if (StringUtils.isBlank(filename)) {
+      filename = DEFAULT_FILENAME;
+    }
 
   }
 
