@@ -89,7 +89,9 @@ public class WOPIResource implements ResourceContainer {
     /** The rename file. */
     RENAME_FILE,
     /** The unlock. */
-    UNLOCK
+    UNLOCK,
+    /** The delete. */
+    DELETE
   }
 
   /** The Constant FILE_CONVERSION. */
@@ -322,7 +324,6 @@ public class WOPIResource implements ResourceContainer {
                      .build();
     }
 
-
     switch (operation) {
     case GET_LOCK:
       return getLock(config);
@@ -346,6 +347,9 @@ public class WOPIResource implements ResourceContainer {
     case UNLOCK: {
       String providedLock = request.getHeader(LOCK);
       return unlock(config, providedLock);
+    }
+    case DELETE: {
+      return delete(config);
     }
     default:
       return Response.status(Status.BAD_REQUEST).build();
@@ -421,7 +425,7 @@ public class WOPIResource implements ResourceContainer {
     } catch (OfficeOnlineException | RepositoryException e) {
       LOG.error("Cannot rename file", e);
       return Response.status(Status.INTERNAL_SERVER_ERROR)
-                     .entity("{\"error\": \"" + e.getMessage() + "\"}")
+                     .entity("{\"error\": \"Cannot rename file\"}")
                      .type(MediaType.APPLICATION_JSON)
                      .build();
     }
@@ -489,9 +493,9 @@ public class WOPIResource implements ResourceContainer {
                      .type(MediaType.APPLICATION_JSON)
                      .build();
     } catch (RepositoryException e) {
-      LOG.error("Cannot lock or relock file.", e);
+      LOG.error("Cannot unlock file.", e);
       return Response.status(Status.INTERNAL_SERVER_ERROR)
-                     .entity("{\"error\": \"Cannot lock or relock file.\"}")
+                     .entity("{\"error\": \"Cannot unlock file.\"}")
                      .type(MediaType.APPLICATION_JSON)
                      .build();
     }
@@ -515,7 +519,7 @@ public class WOPIResource implements ResourceContainer {
     } catch (RepositoryException e) {
       LOG.error("Cannot get lock of file.", e);
       return Response.status(Status.INTERNAL_SERVER_ERROR)
-                     .entity("{\"error\": \"" + e.getMessage() + "\"}")
+                     .entity("{\"error\": \"Cannot get lock of file\"}")
                      .type(MediaType.APPLICATION_JSON)
                      .build();
     }
@@ -547,10 +551,15 @@ public class WOPIResource implements ResourceContainer {
     } catch (RepositoryException e) {
       LOG.error("Cannot refresh lock.", e);
       return Response.status(Status.INTERNAL_SERVER_ERROR)
-                     .entity("{\"error\": \"Cannot lock or relock file.\"}")
+                     .entity("{\"error\": \"Cannot refresh lock.\"}")
                      .type(MediaType.APPLICATION_JSON)
                      .build();
     }
+  }
+
+  private Response delete(EditorConfig config) {
+    LOG.warn("WOPI DELETE is not allowed for Office Online for web");
+    return Response.ok().build();
   }
 
   /**

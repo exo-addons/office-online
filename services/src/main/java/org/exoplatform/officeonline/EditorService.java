@@ -83,8 +83,8 @@ public class EditorService extends AbstractOfficeOnlineService {
     LOG.info("Editor Service started");
 
     // Only for testing purposes
-    EditorConfig.Builder configBuilder = new EditorConfig.Builder().userId("root")
-                                                                   .fileId("133001737f00010116b5fe3a8dfdc07c")
+    EditorConfig.Builder configBuilder = new EditorConfig.Builder().userId("peter")
+                                                                   .fileId("6514eb3d7f00010146ee6a373b04aa64")
                                                                    .workspace("collaboration")
                                                                    .permissions(Arrays.asList(Permissions.USER_CAN_WRITE,
                                                                                               Permissions.USER_CAN_RENAME));
