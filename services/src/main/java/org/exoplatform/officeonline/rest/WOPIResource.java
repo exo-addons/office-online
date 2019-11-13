@@ -558,27 +558,9 @@ public class WOPIResource implements ResourceContainer {
   }
 
   private Response delete(EditorConfig config) {
-    try {
-      wopiService.deleteFile(config);
-      return Response.ok().build();
-    } catch (FileNotFoundException e) {
-      return Response.status(Status.NOT_FOUND)
-                     .entity("{\"error\": \"" + e.getMessage() + "\"}")
-                     .type(MediaType.APPLICATION_JSON)
-                     .build();
-    } catch (LockMismatchException e) {
-      return Response.status(Status.CONFLICT)
-                     .entity("{\"error\": \"" + e.getMessage() + "\"}")
-                     .header(LOCK, e.getLockId())
-                     .type(MediaType.APPLICATION_JSON)
-                     .build();
-    } catch (RepositoryException e) {
-      LOG.error("Cannot delete file.", e);
-      return Response.status(Status.INTERNAL_SERVER_ERROR)
-                     .entity("{\"error\": \"Cannot delete file\"}")
-                     .type(MediaType.APPLICATION_JSON)
-                     .build();
-    }
+    LOG.warn("WOPI DELETE is not allowed for Office Online for web");
+    // wopiService.deleteFile(config);
+    return Response.ok().build();
   }
 
   /**
