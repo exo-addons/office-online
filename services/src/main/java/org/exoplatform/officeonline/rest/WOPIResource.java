@@ -559,7 +559,6 @@ public class WOPIResource implements ResourceContainer {
 
   private Response delete(EditorConfig config) {
     LOG.warn("WOPI DELETE is not allowed for Office Online for web");
-    // wopiService.deleteFile(config);
     return Response.ok().build();
   }
 
