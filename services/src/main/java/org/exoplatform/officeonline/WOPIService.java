@@ -408,7 +408,6 @@ public class WOPIService extends AbstractOfficeOnlineService {
    * @param newTitle the new title
    * @param lock the lock
    * @return the string
-   * @throws BadParameterException the bad parameter exception
    * @throws FileNotFoundException the file not found exception
    * @throws InvalidFileNameException the invalid file name exception
    * @throws RepositoryException the repository exception
@@ -417,6 +416,7 @@ public class WOPIService extends AbstractOfficeOnlineService {
   public String renameFile(String fileId, EditorConfig config, String newTitle, String lock) throws RepositoryException,
                                                                                              OfficeOnlineException,
                                                                                              LockMismatchException {
+
     newTitle = Text.escapeIllegalJcrChars(newTitle);
     // Check and escape newTitle
     if (StringUtils.isBlank(newTitle)) {
