@@ -804,8 +804,8 @@ public class WOPIService extends AbstractOfficeOnlineService {
 
     Node node = nodeByUUID(config.getFileId(), config.getWorkspace());
     lockManager.refreshLock(node, lockId);
-
   }
+
 
   /**
    * Put relative file in suggested mode.
