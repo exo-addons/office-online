@@ -4,7 +4,7 @@ package org.exoplatform.officeonline.exception;
 /**
  * The Class UpdateConflictException.
  */
-public abstract class UpdateConflictException extends Exception {
+public class UpdateConflictException extends Exception {
 
   /**
   The Constant serialVersionUID.*/
@@ -23,6 +23,15 @@ public abstract class UpdateConflictException extends Exception {
   public UpdateConflictException(String message, String lockId) {
     super(message);
     this.lockId = lockId;
+  }
+  
+  /**
+   * Instantiates a new UpdateConflictException.
+   *
+   * @param message the message
+   */
+  public UpdateConflictException(String message) {
+    super(message);
   }
 
   /**

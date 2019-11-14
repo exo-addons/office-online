@@ -21,6 +21,10 @@ import org.exoplatform.officeonline.EditorService;
 import org.exoplatform.officeonline.exception.OfficeOnlineException;
 import org.exoplatform.services.rest.resource.ResourceContainer;
 
+// TODO: Auto-generated Javadoc
+/**
+ * The Class EditorResource.
+ */
 @Path("/officeonline/editor")
 public class EditorResource implements ResourceContainer {
 
@@ -41,6 +45,8 @@ public class EditorResource implements ResourceContainer {
    *
    * @param uriInfo the uri info
    * @param request the request
+   * @param context the context
+   * @param fileId the file id
    * @return the response
    */
   @GET
@@ -68,6 +74,38 @@ public class EditorResource implements ResourceContainer {
     try {
       DocumentContent content = editorService.getContent(config);
       return Response.ok().entity(content.getData()).type(content.getType()).build();
+    } catch (OfficeOnlineException e) {
+      return Response.status(Status.BAD_REQUEST)
+                     .entity("{\"error\": \"" + e.getMessage() + "\"}")
+                     .type(MediaType.APPLICATION_JSON)
+                     .build();
+    }
+
+  }
+
+  /**
+   * WARNING: ONLY FOR TESTING PURPOSES. SHOULD BE REMOVED ON PRODUCTION
+   * 
+   * Creates the token.
+   *
+   * @param uriInfo the uri info
+   * @param request the request
+   * @param context the context
+   * @param userId the user id
+   * @param fileId the file id
+   * @return the response
+   */
+  @GET
+  @Path("/test/token/{userId}/{fileId}")
+  @Produces(MediaType.APPLICATION_JSON)
+  public Response createToken(@Context UriInfo uriInfo,
+                              @Context HttpServletRequest request,
+                              @Context ServletContext context,
+                              @PathParam("userId") String userId,
+                              @PathParam("fileId") String fileId) {
+    try {
+      String token = editorService.createToken(userId, fileId);
+      return Response.ok().entity("{\"token\": \"" + token + "\"}").type(MediaType.APPLICATION_JSON).build();
     } catch (OfficeOnlineException e) {
       return Response.status(Status.BAD_REQUEST)
                      .entity("{\"error\": \"" + e.getMessage() + "\"}")

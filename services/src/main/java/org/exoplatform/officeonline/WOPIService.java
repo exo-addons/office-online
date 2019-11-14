@@ -9,14 +9,17 @@ import java.security.NoSuchAlgorithmException;
 import java.util.Arrays;
 import java.util.Base64;
 import java.util.Calendar;
+import java.util.GregorianCalendar;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Map.Entry;
 
 import javax.crypto.KeyGenerator;
 import javax.crypto.SecretKey;
 import javax.crypto.spec.SecretKeySpec;
 import javax.jcr.Node;
 import javax.jcr.RepositoryException;
+import javax.jcr.Session;
 
 import org.apache.commons.lang.StringUtils;
 
@@ -30,26 +33,32 @@ import org.exoplatform.ecm.utils.text.Text;
 import org.exoplatform.ecm.webui.utils.Utils;
 import org.exoplatform.officeonline.exception.ActionNotFoundException;
 import org.exoplatform.officeonline.exception.FileExtensionNotFoundException;
+import org.exoplatform.officeonline.exception.FileLockedException;
 import org.exoplatform.officeonline.exception.FileNotFoundException;
+import org.exoplatform.officeonline.exception.IllegalFileNameException;
 import org.exoplatform.officeonline.exception.InvalidFileNameException;
 import org.exoplatform.officeonline.exception.LockMismatchException;
 import org.exoplatform.officeonline.exception.OfficeOnlineException;
 import org.exoplatform.officeonline.exception.PermissionDeniedException;
 import org.exoplatform.officeonline.exception.SizeMismatchException;
+import org.exoplatform.officeonline.exception.UpdateConflictException;
 import org.exoplatform.officeonline.exception.WopiDiscoveryNotFoundException;
 import org.exoplatform.portal.config.UserACL;
 import org.exoplatform.services.cache.CacheService;
 import org.exoplatform.services.cms.documents.DocumentService;
+import org.exoplatform.services.cms.jcrext.activity.ActivityCommonService;
 import org.exoplatform.services.jcr.RepositoryService;
 import org.exoplatform.services.jcr.access.PermissionType;
 import org.exoplatform.services.jcr.ext.app.SessionProviderService;
 import org.exoplatform.services.jcr.impl.core.NodeImpl;
+import org.exoplatform.services.listener.ListenerService;
 import org.exoplatform.services.log.ExoLogger;
 import org.exoplatform.services.log.Log;
 import org.exoplatform.services.organization.OrganizationService;
 import org.exoplatform.services.organization.User;
 import org.exoplatform.services.security.ConversationState;
 import org.exoplatform.services.wcm.core.NodetypeConstant;
+import org.exoplatform.services.wcm.utils.WCMCoreUtils;
 
 /**
  * The Class WOPIService.
@@ -806,23 +815,165 @@ public class WOPIService extends AbstractOfficeOnlineService {
    * @param data the data
    * @throws RepositoryException the repository exception
    * @throws FileNotFoundException the file not found exception
+   * @throws FileExtensionNotFoundException 
    */
   public void putSuggestedFile(EditorConfig config, String target, InputStream data) throws RepositoryException,
-                                                                                     FileNotFoundException {
+                                                                                     FileNotFoundException,
+                                                                                     FileExtensionNotFoundException {
     Node node = nodeByUUID(config.getFileId(), config.getWorkspace());
+    String oldName = node.getName();
     String filename = target;
     // Target is an extension
     if (target.startsWith(".")) {
-      String oldName = node.getName().substring(0, node.getName().lastIndexOf("."));
-      filename = oldName + target;
+      String name = oldName.substring(0, oldName.lastIndexOf("."));
+      filename = name + target;
     }
 
     filename = Text.escapeIllegalJcrChars(filename);
     // Check and escape newTitle
     if (StringUtils.isBlank(filename)) {
-      filename = DEFAULT_FILENAME;
+      filename = DEFAULT_FILENAME + oldName.substring(oldName.lastIndexOf("."));
     }
 
+    Node parent = node.getParent();
+    createFile(parent, filename, data);
+  }
+
+  /**
+   * Put relative file.
+   *
+   * @param config the config
+   * @param filename the filename
+   * @param overwrite the overwrite
+   * @param data the data
+   * @throws IllegalFileNameException the illegal file name exception
+   * @throws FileNotFoundException the file not found exception
+   * @throws RepositoryException the repository exception
+   * @throws FileLockedException the file locked exception
+   * @throws UpdateConflictException the update conflict exception
+   * @throws FileExtensionNotFoundException the file extension not found exception
+   */
+  public void putRelativeFile(EditorConfig config,
+                              String filename,
+                              boolean overwrite,
+                              InputStream data) throws IllegalFileNameException,
+                                                FileNotFoundException,
+                                                RepositoryException,
+                                                FileLockedException,
+                                                UpdateConflictException,
+                                                FileExtensionNotFoundException {
+    filename = Text.escapeIllegalJcrChars(filename);
+    // Check and escape newTitle
+    if (StringUtils.isBlank(filename)) {
+      throw new IllegalFileNameException("Provided filename is illegal");
+    }
+
+    Node node = nodeByUUID(config.getFileId(), config.getWorkspace());
+    Node parent = node.getParent();
+
+    String path = parent.getPath() + "/" + filename;
+    Session userSession = getUserSession(config.getWorkspace());
+    if (userSession.itemExists(path)) {
+      if (!overwrite) {
+        throw new UpdateConflictException("Overwrite is not allowed");
+      }
+
+      Node targetNode = (Node) userSession.getItem(path);
+      if (targetNode.isLocked()) {
+        FileLock lock = lockManager.getLock(targetNode);
+        throw new FileLockedException("File is locked", lock != null ? lock.getLockId() : null);
+      }
+
+      long editedTime = System.currentTimeMillis();
+      Node content = targetNode.getNode(JCR_CONTENT);
+
+      content.setProperty("jcr:lastModified", editedTime);
+      if (content.hasProperty("exo:dateModified")) {
+        content.setProperty("exo:dateModified", editedTime);
+      }
+      if (content.hasProperty("exo:lastModifiedDate")) {
+        content.setProperty("exo:lastModifiedDate", editedTime);
+      }
+      if (targetNode.hasProperty("exo:lastModifiedDate")) {
+        targetNode.setProperty("exo:lastModifiedDate", editedTime);
+      }
+
+      if (targetNode.hasProperty("exo:dateModified")) {
+        targetNode.setProperty("exo:dateModified", editedTime);
+      }
+      if (targetNode.hasProperty("exo:lastModifier")) {
+        targetNode.setProperty("exo:lastModifier", config.getUserId());
+      }
+      content.setProperty("jcr:data", data);
+      parent.save();
+      try {
+        data.close();
+      } catch (IOException e) {
+        LOG.error("Cannot close data input stream", e);
+      }
+    } else {
+      createFile(parent, filename, data);
+    }
+  }
+
+  /**
+   * Creates the file.
+   *
+   * @param parent the parent
+   * @param filename the filename
+   * @param data the data
+   * @throws RepositoryException the repository exception
+   * @throws FileExtensionNotFoundException the file extension not found exception
+   */
+  protected void createFile(Node parent, String filename, InputStream data) throws RepositoryException,
+                                                                            FileExtensionNotFoundException {
+    // Add node
+    Node addedNode = parent.addNode(filename, Utils.NT_FILE);
+
+    // Set title
+    if (!addedNode.hasProperty(Utils.EXO_TITLE)) {
+      addedNode.addMixin(Utils.EXO_RSS_ENABLE);
+    }
+    // Enable versioning
+    if (addedNode.canAddMixin(MIX_VERSIONABLE)) {
+      addedNode.addMixin(MIX_VERSIONABLE);
+    }
+
+    addedNode.setProperty(Utils.EXO_TITLE, filename);
+    Node content = addedNode.addNode("jcr:content", "nt:resource");
+
+    content.setProperty("jcr:data", data);
+    String extension = filename.substring(filename.lastIndexOf(".") + 1);
+    content.setProperty("jcr:mimeType", getMimeTypeByExtension(extension));
+    content.setProperty("jcr:lastModified", new GregorianCalendar());
+    ListenerService listenerService = WCMCoreUtils.getService(ListenerService.class);
+    try {
+      listenerService.broadcast(ActivityCommonService.FILE_CREATED_ACTIVITY, null, addedNode);
+    } catch (Exception e) {
+      LOG.error("Cannot broadcast FILE_CREATED_ACTIVITY event", e);
+    }
+    parent.save();
+    try {
+      data.close();
+    } catch (IOException e) {
+      LOG.error("Cannot close data input stream", e);
+    }
+  }
+
+  /**
+   * Gets the mime type by extension.
+   *
+   * @param extension the extension
+   * @return the mime type by extension
+   * @throws FileExtensionNotFoundException 
+   */
+  public String getMimeTypeByExtension(String extension) throws FileExtensionNotFoundException {
+    for (Entry<String, String> entry : fileExtensions.entrySet()) {
+      if (entry.getValue().equals(extension)) {
+        return entry.getKey();
+      }
+    }
+    throw new FileExtensionNotFoundException("Cannot find file extension " + extension);
   }
 
 }

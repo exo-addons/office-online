@@ -74,6 +74,24 @@ public class EditorService extends AbstractOfficeOnlineService {
     return configBuilder.build();
   }
 
+  /**
+   * WARNING: ONLY FOR TESTING PURPOSES. SHOULD BE REMOVED ON PRODUCTION
+   * 
+   * Creates the token with write/rename permissions.
+   *
+   * @param userId the user id
+   * @param fileId the file id
+   * @return the string
+   * @throws OfficeOnlineException the office online exception
+   */
+  public String createToken(String userId, String fileId) throws OfficeOnlineException {
+    EditorConfig.Builder configBuilder = new EditorConfig.Builder().userId(userId)
+                                                                   .fileId(fileId)
+                                                                   .workspace("collaboration")
+                                                                   .permissions(Arrays.asList(Permissions.USER_CAN_WRITE,
+                                                                                              Permissions.USER_CAN_RENAME));
+    return generateAccessToken(configBuilder).getToken();
+  }
 
   /**
    * Start.
