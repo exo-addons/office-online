@@ -17,6 +17,7 @@ import java.util.Map.Entry;
 import javax.crypto.KeyGenerator;
 import javax.crypto.SecretKey;
 import javax.crypto.spec.SecretKeySpec;
+import javax.jcr.AccessDeniedException;
 import javax.jcr.Node;
 import javax.jcr.RepositoryException;
 import javax.jcr.Session;
@@ -240,7 +241,7 @@ public class WOPIService extends AbstractOfficeOnlineService {
   public void putFile(EditorConfig config, String lockId, InputStream data) throws Exception {
     Node node = nodeByUUID(config.getFileId(), config.getWorkspace());
     try {
-      if (canEditDocument(node)) {
+      if (canEditDocument(node) && config.permissions.contains(Permissions.USER_CAN_WRITE)) {
         Node content = node.getNode(JCR_CONTENT);
         if (!node.isLocked()) {
           long size = content.getProperty(JCR_DATA).getLength();
@@ -415,7 +416,6 @@ public class WOPIService extends AbstractOfficeOnlineService {
   /**
    * Rename file.
    *
-   * @param fileId the file id
    * @param config the config
    * @param newTitle the new title
    * @param lock the lock
@@ -424,9 +424,9 @@ public class WOPIService extends AbstractOfficeOnlineService {
    * @throws OfficeOnlineException the office online exception
    * @throws LockMismatchException the lock mismatch exception
    */
-  public String renameFile(String fileId, EditorConfig config, String newTitle, String lock) throws RepositoryException,
-                                                                                             OfficeOnlineException,
-                                                                                             LockMismatchException {
+  public String renameFile(EditorConfig config, String newTitle, String lock) throws RepositoryException,
+                                                                              OfficeOnlineException,
+                                                                              LockMismatchException {
 
     newTitle = Text.escapeIllegalJcrChars(newTitle);
     // Check and escape newTitle
@@ -436,7 +436,7 @@ public class WOPIService extends AbstractOfficeOnlineService {
 
     NodeImpl node = (NodeImpl) nodeByUUID(config.getFileId(), config.getWorkspace());
 
-    if (!canRenameDocument(node)) {
+    if (!hasParentPermissions(node) || !config.getPermissions().contains(Permissions.USER_CAN_RENAME)) {
       throw new PermissionDeniedException("Cannot rename document. Permission denied");
     }
     if (node.isLocked() && !node.getLock().getLockToken().equals(lock)) {
@@ -487,14 +487,20 @@ public class WOPIService extends AbstractOfficeOnlineService {
   }
 
   /**
-   * Checks if current user can rename the document.
+   * Checks parent node permissions
    *
    * @param node the node
    * @return true if user can rename
    * @throws RepositoryException the repository exception
    */
-  protected boolean canRenameDocument(Node node) throws RepositoryException {
-    NodeImpl parent = (NodeImpl) node.getParent();
+  protected boolean hasParentPermissions(Node node) throws RepositoryException {
+    NodeImpl parent;
+    try {
+      parent = (NodeImpl) node.getParent();
+    } catch (AccessDeniedException e) {
+      LOG.warn("Cannot get access to the parent node ", e);
+      return false;
+    }
     return parent.hasPermission(PermissionType.READ) && parent.hasPermission(PermissionType.ADD_NODE)
         && parent.hasPermission(PermissionType.SET_PROPERTY);
   }
@@ -634,11 +640,11 @@ public class WOPIService extends AbstractOfficeOnlineService {
    */
   protected void addUserPermissionsProperties(Map<String, Serializable> map, Node node) throws RepositoryException {
     boolean hasWritePermission = canEditDocument(node);
+    boolean hasParentPermissions = hasParentPermissions(node);
     map.put(Permissions.READ_ONLY.toString(), !hasWritePermission);
-    map.put(Permissions.USER_CAN_RENAME.toString(), hasWritePermission);
+    map.put(Permissions.USER_CAN_RENAME.toString(), hasParentPermissions);
     map.put(Permissions.USER_CAN_WRITE.toString(), hasWritePermission);
-    // TODO: Check permissions to parent folder
-    map.put(Permissions.USER_CAN_NOT_WRITE_RELATIVE.toString(), !hasWritePermission);
+    map.put(Permissions.USER_CAN_NOT_WRITE_RELATIVE.toString(), hasParentPermissions);
   }
 
   /**
@@ -693,7 +699,7 @@ public class WOPIService extends AbstractOfficeOnlineService {
   protected void addBreadcrumbProperties(Map<String, Serializable> map, Node node, String schema, String host, int port) {
     // TODO: replace by real values
     map.put(BREADCRUMB_BRAND_NAME, "ExoPlatform");
-    map.put(BREADCRUMB_BRAND_URL, "exoplatform.com");
+    map.put(BREADCRUMB_BRAND_URL, platformUrl(schema, host, port));
     try {
       Node parent = node.getParent();
       String url = explorerUri(schema, host, port, explorerLink(parent.getPath())).toString();
@@ -806,7 +812,6 @@ public class WOPIService extends AbstractOfficeOnlineService {
     lockManager.refreshLock(node, lockId);
   }
 
-
   /**
    * Put relative file in suggested mode.
    *
@@ -816,10 +821,15 @@ public class WOPIService extends AbstractOfficeOnlineService {
    * @throws RepositoryException the repository exception
    * @throws FileNotFoundException the file not found exception
    * @throws FileExtensionNotFoundException 
+   * @throws PermissionDeniedException 
    */
   public void putSuggestedFile(EditorConfig config, String target, InputStream data) throws RepositoryException,
                                                                                      FileNotFoundException,
-                                                                                     FileExtensionNotFoundException {
+                                                                                     FileExtensionNotFoundException,
+                                                                                     PermissionDeniedException {
+    if (config.getPermissions().contains(Permissions.USER_CAN_NOT_WRITE_RELATIVE)) {
+      throw new PermissionDeniedException("User " + config.getUserId() + " cannot write relative");
+    }
     Node node = nodeByUUID(config.getFileId(), config.getWorkspace());
     String oldName = node.getName();
     String filename = target;
@@ -852,6 +862,7 @@ public class WOPIService extends AbstractOfficeOnlineService {
    * @throws FileLockedException the file locked exception
    * @throws UpdateConflictException the update conflict exception
    * @throws FileExtensionNotFoundException the file extension not found exception
+   * @throws PermissionDeniedException the permission denied exception
    */
   public void putRelativeFile(EditorConfig config,
                               String filename,
@@ -861,7 +872,13 @@ public class WOPIService extends AbstractOfficeOnlineService {
                                                 RepositoryException,
                                                 FileLockedException,
                                                 UpdateConflictException,
-                                                FileExtensionNotFoundException {
+                                                FileExtensionNotFoundException,
+                                                PermissionDeniedException {
+
+    if (config.getPermissions().contains(Permissions.USER_CAN_NOT_WRITE_RELATIVE)) {
+      throw new PermissionDeniedException("User " + config.getUserId() + " cannot write relative");
+    }
+
     filename = Text.escapeIllegalJcrChars(filename);
     // Check and escape newTitle
     if (StringUtils.isBlank(filename)) {

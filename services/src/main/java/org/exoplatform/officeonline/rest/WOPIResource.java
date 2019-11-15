@@ -431,8 +431,14 @@ public class WOPIResource implements ResourceContainer {
    * @return the response
    */
   private Response renameFile(String fileId, EditorConfig config, String name, String lock) {
+    if (!fileId.equals(config.getFileId())) {
+      return Response.status(Status.BAD_REQUEST)
+                     .entity("{\"error\": \"Provided fileId doesn't match fileId from access token\"}")
+                     .type(MediaType.APPLICATION_JSON)
+                     .build();
+    }
     try {
-      String title = wopiService.renameFile(fileId, config, name, lock);
+      String title = wopiService.renameFile(config, name, lock);
       return Response.ok().entity("{\"Name\": \"" + title + "\"}").type(MediaType.APPLICATION_JSON).build();
     } catch (FileNotFoundException e) {
       return Response.status(Status.NOT_FOUND)
@@ -633,6 +639,11 @@ public class WOPIResource implements ResourceContainer {
                      .entity("{\"error\": \"" + e.getMessage() + "\"}")
                      .type(MediaType.APPLICATION_JSON)
                      .build();
+    } catch (PermissionDeniedException e) {
+      return Response.status(Status.FORBIDDEN)
+                     .entity("{\"error\": \"" + e.getMessage() + "\"}")
+                     .type(MediaType.APPLICATION_JSON)
+                     .build();
     } catch (RepositoryException e) {
       LOG.error("Cannot create new file based on existing one in specific mode.", e);
       return Response.status(Status.INTERNAL_SERVER_ERROR)
@@ -661,6 +672,11 @@ public class WOPIResource implements ResourceContainer {
                      .build();
     } catch (FileExtensionNotFoundException e) {
       return Response.status(Status.INTERNAL_SERVER_ERROR)
+                     .entity("{\"error\": \"" + e.getMessage() + "\"}")
+                     .type(MediaType.APPLICATION_JSON)
+                     .build();
+    } catch (PermissionDeniedException e) {
+      return Response.status(Status.FORBIDDEN)
                      .entity("{\"error\": \"" + e.getMessage() + "\"}")
                      .type(MediaType.APPLICATION_JSON)
                      .build();
