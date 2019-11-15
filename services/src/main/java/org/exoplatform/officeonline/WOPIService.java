@@ -333,7 +333,7 @@ public class WOPIService extends AbstractOfficeOnlineService {
   }
 
   /**
-   * Verify proof key.
+   * Verify proof key. Runs wopi discovery in case of failure/success with old key
    *
    * @param proofKeyHeader the proof key header
    * @param oldProofKeyHeader the old proof key header
@@ -359,11 +359,18 @@ public class WOPIService extends AbstractOfficeOnlineService {
     byte[] expectedProofBytes = ProofKeyHelper.getExpectedProofBytes(url, accessToken, timestamp);
     // follow flow from https://wopi.readthedocs.io/en/latest/scenarios/proofkeys.html#verifying-the-proof-keys
     boolean res = ProofKeyHelper.verifyProofKey(discoveryPlugin.getProofKey(), proofKeyHeader, expectedProofBytes);
+    boolean successWithOldKey = false;
     if (!res && StringUtils.isNotBlank(oldProofKeyHeader)) {
       res = ProofKeyHelper.verifyProofKey(discoveryPlugin.getProofKey(), oldProofKeyHeader, expectedProofBytes);
       if (!res) {
         res = ProofKeyHelper.verifyProofKey(discoveryPlugin.getOldProofKey(), proofKeyHeader, expectedProofBytes);
+        successWithOldKey = res;
       }
+    }
+
+    // Rerun discovery in case of success with old key or failure
+    if (!res || successWithOldKey) {
+      discoveryPlugin.loadDiscovery();
     }
     return res;
   }
