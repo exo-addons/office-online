@@ -21,7 +21,6 @@ import org.exoplatform.officeonline.EditorService;
 import org.exoplatform.officeonline.exception.OfficeOnlineException;
 import org.exoplatform.services.rest.resource.ResourceContainer;
 
-// TODO: Auto-generated Javadoc
 /**
  * The Class EditorResource.
  */
