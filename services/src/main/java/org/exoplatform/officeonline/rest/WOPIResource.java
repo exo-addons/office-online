@@ -19,6 +19,7 @@
 package org.exoplatform.officeonline.rest;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.Serializable;
 import java.net.InetAddress;
 import java.net.URI;
@@ -44,16 +45,21 @@ import org.exoplatform.officeonline.EditorConfig;
 import org.exoplatform.officeonline.WOPIService;
 import org.exoplatform.officeonline.exception.AuthenticationFailedException;
 import org.exoplatform.officeonline.exception.EditorConfigNotFoundException;
+import org.exoplatform.officeonline.exception.FileExtensionNotFoundException;
+import org.exoplatform.officeonline.exception.FileLockedException;
 import org.exoplatform.officeonline.exception.FileNotFoundException;
+import org.exoplatform.officeonline.exception.IllegalFileNameException;
 import org.exoplatform.officeonline.exception.InvalidFileNameException;
 import org.exoplatform.officeonline.exception.LockMismatchException;
 import org.exoplatform.officeonline.exception.OfficeOnlineException;
 import org.exoplatform.officeonline.exception.PermissionDeniedException;
 import org.exoplatform.officeonline.exception.SizeMismatchException;
+import org.exoplatform.officeonline.exception.UpdateConflictException;
 import org.exoplatform.services.log.ExoLogger;
 import org.exoplatform.services.log.Log;
 import org.exoplatform.services.rest.resource.ResourceContainer;
 
+// TODO: Auto-generated Javadoc
 /**
  * The Class WOPIService.
  */
@@ -95,52 +101,55 @@ public class WOPIResource implements ResourceContainer {
   }
 
   /** The Constant FILE_CONVERSION. */
-  protected static final String FILE_CONVERSION         = "X-WOPI-FileConversion";
+  protected static final String FILE_CONVERSION           = "X-WOPI-FileConversion";
 
   /** The Constant ITEM_VERSION. */
-  protected static final String ITEM_VERSION            = "X-WOPI-ItemVersion";
+  protected static final String ITEM_VERSION              = "X-WOPI-ItemVersion";
 
   /** The Constant LOCK. */
-  protected static final String LOCK                    = "X-WOPI-Lock";
+  protected static final String LOCK                      = "X-WOPI-Lock";
 
   /** The Constant MAX_EXPECTED_SIZE. */
-  protected static final String MAX_EXPECTED_SIZE       = "X-WOPI-MaxExpectedSize";
+  protected static final String MAX_EXPECTED_SIZE         = "X-WOPI-MaxExpectedSize";
 
   /** The Constant OLD_LOCK. */
-  protected static final String OLD_LOCK                = "X-WOPI-OldLock";
+  protected static final String OLD_LOCK                  = "X-WOPI-OldLock";
 
   /** The Constant OVERRIDE. */
-  protected static final String OVERRIDE                = "X-WOPI-Override";
+  protected static final String OVERRIDE                  = "X-WOPI-Override";
 
   /** The Constant PROOF. */
-  protected static final String PROOF                   = "X-WOPI-Proof";
+  protected static final String PROOF                     = "X-WOPI-Proof";
 
   /** The Constant PROOF_OLD. */
-  protected static final String PROOF_OLD               = "X-WOPI-ProofOld";
+  protected static final String PROOF_OLD                 = "X-WOPI-ProofOld";
 
   /** The Constant RELATIVE_TARGET. */
-  protected static final String RELATIVE_TARGET         = "X-WOPI-RelativeTarget";
+  protected static final String RELATIVE_TARGET           = "X-WOPI-RelativeTarget";
+
+  /** The Constant OVERWRITE_RELATIVE_TARGET. */
+  protected static final String OVERWRITE_RELATIVE_TARGET = "X-WOPI-OverwriteRelativeTarget";
 
   /** The Constant REQUESTED_NAME. */
-  protected static final String REQUESTED_NAME          = "X-WOPI-RequestedName";
+  protected static final String REQUESTED_NAME            = "X-WOPI-RequestedName";
 
   /** The Constant SUGGESTED_TARGET. */
-  protected static final String SUGGESTED_TARGET        = "X-WOPI-SuggestedTarget";
+  protected static final String SUGGESTED_TARGET          = "X-WOPI-SuggestedTarget";
 
   /** The Constant INVALID_FILE_NAME_ERROR. */
-  protected static final String INVALID_FILE_NAME_ERROR = "X-WOPI-InvalidFileNameError";
+  protected static final String INVALID_FILE_NAME_ERROR   = "X-WOPI-InvalidFileNameError";
 
   /** The Constant URL_TYPE. */
-  protected static final String URL_TYPE                = "X-WOPI-UrlType";
+  protected static final String URL_TYPE                  = "X-WOPI-UrlType";
 
   /** The Constant TIMESTAMP. */
-  protected static final String TIMESTAMP               = "X-WOPI-TimeStamp";
+  protected static final String TIMESTAMP                 = "X-WOPI-TimeStamp";
 
   /** The Constant API_VERSION. */
-  protected static final String API_VERSION             = "1.1";
+  protected static final String API_VERSION               = "1.1";
 
   /** The Constant LOG. */
-  protected static final Log    LOG                     = ExoLogger.getLogger(WOPIService.class);
+  protected static final Log    LOG                       = ExoLogger.getLogger(WOPIService.class);
 
   /** The editor service. */
   protected final WOPIService   wopiService;
@@ -334,8 +343,29 @@ public class WOPIResource implements ResourceContainer {
       String oldLock = request.getHeader(OLD_LOCK);
       return lockOrUnlockAndRelock(config, providedLock, oldLock);
     }
-    case PUT_RELATIVE:
-      return putRelativeFile();
+    case PUT_RELATIVE: {
+      if (request.getHeader(RELATIVE_TARGET) != null && request.getHeader(SUGGESTED_TARGET) != null) {
+        return Response.status(Status.BAD_REQUEST)
+                       .entity("{\"error\": \"Headers RELATIVE_TARGET and SUGGESTED_TARGET are mutually exclusive.\"}")
+                       .type(MediaType.APPLICATION_JSON)
+                       .build();
+      }
+
+      try {
+        if (request.getHeader(RELATIVE_TARGET) != null) {
+          boolean overwrite = Boolean.parseBoolean(request.getHeader(OVERWRITE_RELATIVE_TARGET));
+          return putRelativeFile(config, request.getHeader(RELATIVE_TARGET), overwrite, request.getInputStream());
+        }
+        if (request.getHeader(SUGGESTED_TARGET) != null) {
+          return putSuggestedFile(config, request.getHeader(SUGGESTED_TARGET), request.getInputStream());
+        }
+      } catch (IOException e) {
+        return Response.status(Status.INTERNAL_SERVER_ERROR)
+                       .entity("{\"error\": \"Cannot get request body\"}")
+                       .type(MediaType.APPLICATION_JSON)
+                       .build();
+      }
+    }
     case REFRESH_LOCK: {
       String providedLock = request.getHeader(LOCK);
       return refreshLock(config, providedLock);
@@ -394,6 +424,10 @@ public class WOPIResource implements ResourceContainer {
   /**
    * Rename file.
    *
+   * @param fileId the file id
+   * @param config the config
+   * @param name the name
+   * @param lock the lock
    * @return the response
    */
   private Response renameFile(String fileId, EditorConfig config, String name, String lock) {
@@ -472,7 +506,6 @@ public class WOPIResource implements ResourceContainer {
   /**
    * Unlock.
    *
-   * @param fileId the file id
    * @param config the config
    * @param providedLock the provided lock
    * @return the response
@@ -528,7 +561,6 @@ public class WOPIResource implements ResourceContainer {
   /**
    * Refresh lock.
    *
-   * @param fileId the file id
    * @param config the config
    * @param lockId the lock id
    * @return the response
@@ -565,11 +597,80 @@ public class WOPIResource implements ResourceContainer {
   /**
    * Put relative file.
    *
+   * @param config the config
+   * @param target the target
+   * @param overwrite the overwrite
+   * @param data the data
    * @return the response
    */
-  private Response putRelativeFile() {
-    // TODO put relative file
-    return null;
+  private Response putRelativeFile(EditorConfig config, String target, boolean overwrite, InputStream data) {
+    try {
+      wopiService.putRelativeFile(config, target, overwrite, data);
+      return Response.ok().build();
+    } catch (IllegalFileNameException e) {
+      return Response.status(Status.BAD_REQUEST)
+                     .entity("{\"error\": \"" + e.getMessage() + "\"}")
+                     .type(MediaType.APPLICATION_JSON)
+                     .build();
+    } catch (FileLockedException e) {
+      return Response.status(Status.CONFLICT)
+                     .entity("{\"error\": \"" + e.getMessage() + "\"}")
+                     .header(LOCK, e.getLockId() != null ? e.getLockId() : "")
+                     .type(MediaType.APPLICATION_JSON)
+                     .build();
+    } catch (UpdateConflictException e) {
+      return Response.status(Status.CONFLICT)
+                     .entity("{\"error\": \"" + e.getMessage() + "\"}")
+                     .type(MediaType.APPLICATION_JSON)
+                     .build();
+    } catch (FileNotFoundException e) {
+      return Response.status(Status.NOT_FOUND)
+                     .entity("{\"error\": \"" + e.getMessage() + "\"}")
+                     .type(MediaType.APPLICATION_JSON)
+                     .build();
+    } catch (FileExtensionNotFoundException e) {
+      return Response.status(Status.INTERNAL_SERVER_ERROR)
+                     .entity("{\"error\": \"" + e.getMessage() + "\"}")
+                     .type(MediaType.APPLICATION_JSON)
+                     .build();
+    } catch (RepositoryException e) {
+      LOG.error("Cannot create new file based on existing one in specific mode.", e);
+      return Response.status(Status.INTERNAL_SERVER_ERROR)
+                     .entity("{\"error\": \"Cannot create new file based on existing one in specific mode.\"}")
+                     .type(MediaType.APPLICATION_JSON)
+                     .build();
+    }
+  }
+
+  /**
+   * Put relative file in suggested mode.
+   *
+   * @param config the config
+   * @param target the target
+   * @param data the data
+   * @return the response
+   */
+  private Response putSuggestedFile(EditorConfig config, String target, InputStream data) {
+    try {
+      wopiService.putSuggestedFile(config, target, data);
+      return Response.ok().build();
+    } catch (FileNotFoundException e) {
+      return Response.status(Status.NOT_FOUND)
+                     .entity("{\"error\": \"" + e.getMessage() + "\"}")
+                     .type(MediaType.APPLICATION_JSON)
+                     .build();
+    } catch (FileExtensionNotFoundException e) {
+      return Response.status(Status.INTERNAL_SERVER_ERROR)
+                     .entity("{\"error\": \"" + e.getMessage() + "\"}")
+                     .type(MediaType.APPLICATION_JSON)
+                     .build();
+    } catch (RepositoryException e) {
+      LOG.error("Cannot create new file based on existing one in suggested mode.", e);
+      return Response.status(Status.INTERNAL_SERVER_ERROR)
+                     .entity("{\"error\": \"Cannot create new file based on existing one in suggested mode.\"}")
+                     .type(MediaType.APPLICATION_JSON)
+                     .build();
+    }
   }
 
   /**

@@ -386,7 +386,7 @@ public abstract class AbstractOfficeOnlineService implements Startable {
    * @return the string
    * @throws OfficeOnlineException the office online exception
    */
-  protected AccessToken generateAccessToken(EditorConfig.Builder configBuilder) throws OfficeOnlineException {
+  public AccessToken generateAccessToken(EditorConfig.Builder configBuilder) throws OfficeOnlineException {
     try {
       Key key = activeCache.get(SECRET_KEY);
       Cipher chiper = Cipher.getInstance(ALGORITHM);

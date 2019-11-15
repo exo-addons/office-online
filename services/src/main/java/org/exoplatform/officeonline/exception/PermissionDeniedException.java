@@ -1,12 +1,16 @@
 package org.exoplatform.officeonline.exception;
 
+/**
+ * The Class PermissionDeniedException.
+ */
 public class PermissionDeniedException extends OfficeOnlineException {
 
   /** The Constant serialVersionUID. */
   private static final long serialVersionUID = 8675025886542058617L;
 
+
   /**
-   * Instantiates a new bad parameter exception.
+   * Instantiates a new permission denied exception.
    *
    * @param message the message
    */
@@ -15,7 +19,7 @@ public class PermissionDeniedException extends OfficeOnlineException {
   }
 
   /**
-   * Instantiates a new bad parameter exception.
+   * Instantiates a new permission denied exception.
    *
    * @param cause the cause
    */
@@ -23,8 +27,9 @@ public class PermissionDeniedException extends OfficeOnlineException {
     super(cause);
   }
 
+
   /**
-   * Instantiates a new bad parameter exception.
+   * Instantiates a new permission denied exception.
    *
    * @param message the message
    * @param cause the cause
