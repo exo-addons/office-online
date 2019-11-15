@@ -250,7 +250,7 @@ public class WOPIService extends AbstractOfficeOnlineService {
         } else {
           FileLock fileLock = lockManager.getLock(node);
           if (lockId.equals(fileLock.getLockId())) {
-            getUserSession(config.getWorkspace()).addLockToken(fileLock.getLockToken());
+            node.getSession().addLockToken(fileLock.getLockToken());
           } else {
             throw new LockMismatchException("Given lock is different from the file lock", LockUtil.getLockToken(node));
           }
@@ -872,7 +872,7 @@ public class WOPIService extends AbstractOfficeOnlineService {
     Node parent = node.getParent();
 
     String path = parent.getPath() + "/" + filename;
-    Session userSession = getUserSession(config.getWorkspace());
+    Session userSession = node.getSession();
     if (userSession.itemExists(path)) {
       if (!overwrite) {
         throw new UpdateConflictException("Overwrite is not allowed");
