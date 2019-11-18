@@ -43,7 +43,7 @@
       </properties-param>
       <properties-param>
         <name>breadcrumb-configuration</name>
-        <property name="brand-name" value="${officeonline.brand.name:ExoPlatform}" />
+        <property name="brand-name" value="${officeonline.brand.name:eXo Platform}" />
       </properties-param>
     </init-params>
   </component>

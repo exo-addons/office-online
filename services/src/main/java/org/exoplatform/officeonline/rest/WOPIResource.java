@@ -210,6 +210,7 @@ public class WOPIResource implements ResourceContainer {
                        .type(MediaType.APPLICATION_JSON)
                        .build();
       } catch (PermissionDeniedException e) {
+        LOG.warn("Cannot save document content.", e);
         return Response.status(Status.FORBIDDEN)
                        .entity("{\"error\": \"Permission denied\"}")
                        .type(MediaType.APPLICATION_JSON)
@@ -476,6 +477,7 @@ public class WOPIResource implements ResourceContainer {
                      .type(MediaType.APPLICATION_JSON)
                      .build();
     } catch (PermissionDeniedException e) {
+      LOG.warn("Cannot rename file.", e);
       return Response.status(Status.FORBIDDEN)
                      .entity("{\"error\": \"" + e.getMessage() + "\"}")
                      .type(MediaType.APPLICATION_JSON)
@@ -670,6 +672,7 @@ public class WOPIResource implements ResourceContainer {
                      .type(MediaType.APPLICATION_JSON)
                      .build();
     } catch (PermissionDeniedException e) {
+      LOG.warn("Cannot create new file based on existing one in specific mode.", e);
       return Response.status(Status.FORBIDDEN)
                      .entity("{\"error\": \"" + e.getMessage() + "\"}")
                      .type(MediaType.APPLICATION_JSON)
@@ -706,6 +709,7 @@ public class WOPIResource implements ResourceContainer {
                      .type(MediaType.APPLICATION_JSON)
                      .build();
     } catch (PermissionDeniedException e) {
+      LOG.warn("Cannot create new file based on existing one in suggested mode.", e);
       return Response.status(Status.FORBIDDEN)
                      .entity("{\"error\": \"" + e.getMessage() + "\"}")
                      .type(MediaType.APPLICATION_JSON)

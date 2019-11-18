@@ -79,7 +79,6 @@ public class EditorResource implements ResourceContainer {
                      .type(MediaType.APPLICATION_JSON)
                      .build();
     }
-
   }
 
   /**

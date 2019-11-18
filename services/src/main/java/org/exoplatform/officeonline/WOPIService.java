@@ -62,7 +62,6 @@ import org.exoplatform.services.security.ConversationState;
 import org.exoplatform.services.wcm.core.NodetypeConstant;
 import org.exoplatform.services.wcm.utils.WCMCoreUtils;
 
-// TODO: Auto-generated Javadoc
 /**
  * The Class WOPIService.
  */
@@ -455,7 +454,7 @@ public class WOPIService extends AbstractOfficeOnlineService {
 
     NodeImpl node = (NodeImpl) nodeByUUID(config.getFileId(), config.getWorkspace());
 
-    if (!hasParentPermissions(node) || !config.getPermissions().contains(Permissions.USER_CAN_RENAME)) {
+    if (!canUpdate(node) || !config.getPermissions().contains(Permissions.USER_CAN_RENAME)) {
       throw new PermissionDeniedException("Cannot rename document. Permission denied");
     }
     if (node.isLocked() && !node.getLock().getLockToken().equals(lock)) {
@@ -512,7 +511,7 @@ public class WOPIService extends AbstractOfficeOnlineService {
    * @return true if user can rename
    * @throws RepositoryException the repository exception
    */
-  protected boolean hasParentPermissions(Node node) throws RepositoryException {
+  protected boolean canUpdate(Node node) throws RepositoryException {
     NodeImpl parent;
     try {
       parent = (NodeImpl) node.getParent();
@@ -658,12 +657,12 @@ public class WOPIService extends AbstractOfficeOnlineService {
    * @throws RepositoryException the repository exception
    */
   protected void addUserPermissionsProperties(Map<String, Serializable> map, Node node) throws RepositoryException {
-    boolean hasWritePermission = canEditDocument(node);
-    boolean hasParentPermissions = hasParentPermissions(node);
-    map.put(Permissions.READ_ONLY.toString(), !hasWritePermission);
-    map.put(Permissions.USER_CAN_RENAME.toString(), hasParentPermissions);
-    map.put(Permissions.USER_CAN_WRITE.toString(), hasWritePermission);
-    map.put(Permissions.USER_CAN_NOT_WRITE_RELATIVE.toString(), !hasParentPermissions);
+    boolean canEdit = canEditDocument(node);
+    boolean canUpdate = canUpdate(node);
+    map.put(Permissions.READ_ONLY.toString(), !canEdit);
+    map.put(Permissions.USER_CAN_RENAME.toString(), canUpdate);
+    map.put(Permissions.USER_CAN_WRITE.toString(), canEdit);
+    map.put(Permissions.USER_CAN_NOT_WRITE_RELATIVE.toString(), !canUpdate);
   }
 
   /**
