@@ -24,6 +24,7 @@ import javax.jcr.Session;
 
 import org.apache.commons.lang.StringUtils;
 
+import org.exoplatform.commons.utils.CommonsUtils;
 import org.exoplatform.commons.utils.MimeTypeResolver;
 import org.exoplatform.container.PortalContainer;
 import org.exoplatform.container.component.ComponentPlugin;
@@ -61,6 +62,7 @@ import org.exoplatform.services.security.ConversationState;
 import org.exoplatform.services.wcm.core.NodetypeConstant;
 import org.exoplatform.services.wcm.utils.WCMCoreUtils;
 
+// TODO: Auto-generated Javadoc
 /**
  * The Class WOPIService.
  */
@@ -174,6 +176,7 @@ public class WOPIService extends AbstractOfficeOnlineService {
   /** The file extensions. */
   protected Map<String, String>   fileExtensions                      = new HashMap<>();
 
+  /** The brand name. */
   protected String                brandName;
 
   /**
@@ -370,6 +373,7 @@ public class WOPIService extends AbstractOfficeOnlineService {
 
     // Rerun discovery in case of success with old key or failure
     if (!res || successWithOldKey) {
+      // TODO: should we run in in separate thread?
       discoveryPlugin.loadDiscovery();
     }
     return res;
@@ -502,7 +506,7 @@ public class WOPIService extends AbstractOfficeOnlineService {
   }
 
   /**
-   * Checks parent node permissions
+   * Checks parent node permissions.
    *
    * @param node the node
    * @return true if user can rename
@@ -659,7 +663,7 @@ public class WOPIService extends AbstractOfficeOnlineService {
     map.put(Permissions.READ_ONLY.toString(), !hasWritePermission);
     map.put(Permissions.USER_CAN_RENAME.toString(), hasParentPermissions);
     map.put(Permissions.USER_CAN_WRITE.toString(), hasWritePermission);
-    map.put(Permissions.USER_CAN_NOT_WRITE_RELATIVE.toString(), hasParentPermissions);
+    map.put(Permissions.USER_CAN_NOT_WRITE_RELATIVE.toString(), !hasParentPermissions);
   }
 
   /**
@@ -696,10 +700,27 @@ public class WOPIService extends AbstractOfficeOnlineService {
                                                            .append(accessToken.getToken())
                                                            .toString();
     map.put(DOWNLOAD_URL, downloadURL);
-    // TODO: set url to the portlet
-    map.put(HOST_EDIT_URL, null);
-    map.put(HOST_VIEW_URL, null);
+    map.put(HOST_EDIT_URL, getEditorURL(node.getUUID(), schema, host, port));
+    // TODO: change to view action
+    map.put(HOST_VIEW_URL, getEditorURL(node.getUUID(), schema, host, port));
 
+  }
+
+  /**
+   * Gets the editor URL.
+   *
+   * @param fileId the file id
+   * @param schema the schema
+   * @param host the host
+   * @param port the port
+   * @return the editor URL
+   */
+  protected String getEditorURL(String fileId, String schema, String host, int port) {
+    return platformUrl(schema, host, port).append('/')
+                                          .append(CommonsUtils.getCurrentPortalOwner())
+                                          .append("/mseditor?docId=")
+                                          .append(fileId)
+                                          .toString();
   }
 
   /**
@@ -835,8 +856,8 @@ public class WOPIService extends AbstractOfficeOnlineService {
    * @param data the data
    * @throws RepositoryException the repository exception
    * @throws FileNotFoundException the file not found exception
-   * @throws FileExtensionNotFoundException 
-   * @throws PermissionDeniedException 
+   * @throws FileExtensionNotFoundException the file extension not found exception
+   * @throws PermissionDeniedException the permission denied exception
    */
   public void putSuggestedFile(EditorConfig config, String target, InputStream data) throws RepositoryException,
                                                                                      FileNotFoundException,
@@ -997,7 +1018,7 @@ public class WOPIService extends AbstractOfficeOnlineService {
    *
    * @param extension the extension
    * @return the mime type by extension
-   * @throws FileExtensionNotFoundException 
+   * @throws FileExtensionNotFoundException the file extension not found exception
    */
   public String getMimeTypeByExtension(String extension) throws FileExtensionNotFoundException {
     for (Entry<String, String> entry : fileExtensions.entrySet()) {
