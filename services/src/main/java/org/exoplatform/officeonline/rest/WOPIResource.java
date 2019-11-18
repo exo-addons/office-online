@@ -739,7 +739,7 @@ public class WOPIResource implements ResourceContainer {
     String oldProofKeyHeader = request.getHeader(PROOF_OLD);
     String timestampHeader = request.getHeader(TIMESTAMP);
     String accessToken = request.getParameter(ACCESS_TOKEN);
-    String url = request.getRequestURL().toString().toUpperCase();
+    String url = request.getRequestURL().append('?').append(request.getQueryString()).toString().toUpperCase();
     if (!wopiService.verifyProofKey(proofKeyHeader, oldProofKeyHeader, url, accessToken, timestampHeader)) {
       throw new ProofKeyValidationException("Proof key verification failed");
     }
