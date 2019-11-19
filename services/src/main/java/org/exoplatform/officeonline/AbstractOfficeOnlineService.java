@@ -479,6 +479,9 @@ public abstract class AbstractOfficeOnlineService implements Startable {
     List<String> values = Arrays.asList(decryptedToken.split(TOKEN_DELIMITE_SPLIT));
     if (values.size() > 2) {
       String workspace = values.get(0);
+      if(workspace.equals("null")) {
+        workspace = null;
+      }
       String userId = values.get(1);
       String fileId = values.get(2);
       long expires = Long.parseLong(values.get(3));
