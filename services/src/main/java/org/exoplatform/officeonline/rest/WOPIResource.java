@@ -193,6 +193,9 @@ public class WOPIResource implements ResourceContainer {
     }
 
     if (operation == Operation.PUT) {
+      if(LOG.isDebugEnabled()) {
+        LOG.debug("WOPI Request handled: putFile");
+      }
       try {
         EditorConfig config = getEditorConfig(context);
         String lockId = request.getHeader(LOCK);
@@ -269,6 +272,11 @@ public class WOPIResource implements ResourceContainer {
                      .type(MediaType.APPLICATION_JSON)
                      .build();
     }
+    
+    if(LOG.isDebugEnabled()) {
+      LOG.debug("WOPI Request handled: getFile");
+    }
+    
     try {
       EditorConfig config = getEditorConfig(context);
       if (!fileId.equals(config.getFileId())) {
@@ -363,11 +371,17 @@ public class WOPIResource implements ResourceContainer {
     case GET_SHARE_URL:
       return getShareUrl();
     case LOCK: {
+      if(LOG.isDebugEnabled()) {
+        LOG.debug("WOPI Request handled: lock");
+      }
       String providedLock = request.getHeader(LOCK);
       String oldLock = request.getHeader(OLD_LOCK);
       return lockOrUnlockAndRelock(config, providedLock, oldLock);
     }
     case PUT_RELATIVE: {
+      if(LOG.isDebugEnabled()) {
+        LOG.debug("WOPI Request handled: putRelative");
+      }
       if (request.getHeader(RELATIVE_TARGET) != null && request.getHeader(SUGGESTED_TARGET) != null) {
         return Response.status(Status.BAD_REQUEST)
                        .entity("{\"error\": \"Headers RELATIVE_TARGET and SUGGESTED_TARGET are mutually exclusive.\"}")
@@ -391,18 +405,30 @@ public class WOPIResource implements ResourceContainer {
       }
     }
     case REFRESH_LOCK: {
+      if(LOG.isDebugEnabled()) {
+        LOG.debug("WOPI Request handled: refreshLock");
+      }
       String providedLock = request.getHeader(LOCK);
       return refreshLock(config, providedLock);
     }
     case RENAME_FILE:
+      if(LOG.isDebugEnabled()) {
+        LOG.debug("WOPI Request handled: renameFile");
+      }
       String name = request.getHeader(REQUESTED_NAME);
       String lock = request.getHeader(LOCK);
       return renameFile(fileId, config, name, lock);
     case UNLOCK: {
+      if(LOG.isDebugEnabled()) {
+        LOG.debug("WOPI Request handled: unlock");
+      }
       String providedLock = request.getHeader(LOCK);
       return unlock(config, providedLock);
     }
     case DELETE: {
+      if(LOG.isDebugEnabled()) {
+        LOG.debug("WOPI Request handled: delete");
+      }
       return delete(config);
     }
     default:
@@ -431,6 +457,10 @@ public class WOPIResource implements ResourceContainer {
                      .build();
     }
 
+    if(LOG.isDebugEnabled()) {
+      LOG.debug("WOPI Request handled: checkFileInfo");
+    }
+    
     URI requestUri = uriInfo.getRequestUri();
     try {
       EditorConfig config = getEditorConfig(context);

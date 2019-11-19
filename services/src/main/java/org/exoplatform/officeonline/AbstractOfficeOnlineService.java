@@ -20,6 +20,7 @@ import javax.jcr.Session;
 import org.apache.commons.io.input.AutoCloseInputStream;
 import org.picocontainer.Startable;
 
+import org.exoplatform.commons.utils.CommonsUtils;
 import org.exoplatform.container.PortalContainer;
 import org.exoplatform.ecm.webui.utils.PermissionUtil;
 import org.exoplatform.ecm.webui.utils.Utils;
@@ -38,6 +39,8 @@ import org.exoplatform.services.organization.OrganizationService;
 import org.exoplatform.services.organization.User;
 import org.exoplatform.services.security.ConversationState;
 import org.exoplatform.services.wcm.core.NodetypeConstant;
+import org.exoplatform.webui.application.WebuiRequestContext;
+import org.exoplatform.webui.application.portlet.PortletRequestContext;
 
 /**
  * The Class AbstractOfficeOnlineService.
@@ -349,6 +352,43 @@ public abstract class AbstractOfficeOnlineService implements Startable {
       LOG.warn("Error creating document link for " + jcrPath, e);
       return new StringBuilder().append('/').append(PortalContainer.getCurrentPortalContainerName()).toString();
     }
+  }
+
+  /**
+   * Gets the editor URL.
+   *
+   * @param fileId the file id
+   * @param schema the schema
+   * @param host the host
+   * @param port the port
+   * @return the editor URL
+   */
+  public String getEditorURL(String fileId, String schema, String host, int port) {
+    return platformUrl(schema, host, port).append('/')
+                                          .append(CommonsUtils.getCurrentPortalOwner())
+                                          .append("/mseditor?fileId=")
+                                          .append(fileId)
+                                          .toString();
+  }
+
+  /**
+   * Gets the editor URL using PortletRequestContext.
+   *
+   * @param fileId the file id
+   * @param schema the schema
+   * @param host the host
+   * @param port the port
+   * @return the editor URL
+   */
+  public String getEditorURL(String fileId) {
+    PortletRequestContext pcontext = (PortletRequestContext) WebuiRequestContext.getCurrentInstance();
+    return platformUrl(pcontext.getRequest().getScheme(),
+                       pcontext.getRequest().getServerName(),
+                       pcontext.getRequest().getServerPort()).append('/')
+                                                             .append(CommonsUtils.getCurrentPortalOwner())
+                                                             .append("/mseditor?fileId=")
+                                                             .append(fileId)
+                                                             .toString();
   }
 
   /**

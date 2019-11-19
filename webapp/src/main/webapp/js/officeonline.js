@@ -37,6 +37,11 @@
     }
   };
 
+  var getEditorButton = function(editorLink) {
+    return "<li class='hidden-tabletL'><a href='" + editorLink + "' target='_blank'>"
+        + "<i class='uiIconEcmsOnlyofficeOpen uiIconEcmsLightGray uiIconEdit'></i>" + message("EditButtonTitle") + "</a></li>";
+  };
+
   /**
    * Editor core class.
    */
@@ -66,6 +71,18 @@
     this.showError = function(title, message) {
       // TODO: show as a popup/notification
       alert(title + " " + message);
+    };
+
+    this.initActivity = function(fileId, editorLink, activityId) {
+      if (editorLink) {
+        $("#activityContainer" + activityId).find("div[id^='ActivityContextBox'] > .actionBar .statusAction.pull-left").append(
+            getEditorButton(editorLink));
+      }
+    };
+
+    this.initPreview = function(docId, editorLink, clickSelector) {
+      log("Init preview called");
+      // TODO: implement
     };
   }
 

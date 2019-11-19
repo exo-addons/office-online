@@ -706,23 +706,6 @@ public class WOPIService extends AbstractOfficeOnlineService {
   }
 
   /**
-   * Gets the editor URL.
-   *
-   * @param fileId the file id
-   * @param schema the schema
-   * @param host the host
-   * @param port the port
-   * @return the editor URL
-   */
-  protected String getEditorURL(String fileId, String schema, String host, int port) {
-    return platformUrl(schema, host, port).append('/')
-                                          .append(CommonsUtils.getCurrentPortalOwner())
-                                          .append("/mseditor?docId=")
-                                          .append(fileId)
-                                          .toString();
-  }
-
-  /**
    * Adds the breadcrumb properties.
    *
    * @param map the map
