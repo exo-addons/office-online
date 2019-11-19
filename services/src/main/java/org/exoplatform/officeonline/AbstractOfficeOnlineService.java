@@ -48,7 +48,7 @@ public abstract class AbstractOfficeOnlineService implements Startable {
   protected static final Log             LOG                    = ExoLogger.getLogger(AbstractOfficeOnlineService.class);
 
   /** The Constant CACHE_NAME. */
-  public static final String             CACHE_NAME             = "officeonline.Cache".intern();
+  public static final String             CACHE_NAME             = "officeonline.key.Cache".intern();
 
   /** The Constant SECRET_KEY. */
   protected static final String          SECRET_KEY             = "secret-key";
