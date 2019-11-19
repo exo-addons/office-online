@@ -53,6 +53,7 @@ import org.exoplatform.officeonline.exception.InvalidFileNameException;
 import org.exoplatform.officeonline.exception.LockMismatchException;
 import org.exoplatform.officeonline.exception.OfficeOnlineException;
 import org.exoplatform.officeonline.exception.PermissionDeniedException;
+import org.exoplatform.officeonline.exception.ProofKeyValidationException;
 import org.exoplatform.officeonline.exception.SizeMismatchException;
 import org.exoplatform.officeonline.exception.UpdateConflictException;
 import org.exoplatform.services.log.ExoLogger;
@@ -182,7 +183,15 @@ public class WOPIResource implements ResourceContainer {
                           @HeaderParam(OVERRIDE) Operation operation,
                           @PathParam("fileId") String fileId) {
 
-    verifyProofKey(request);
+    try {
+      verifyProofKey(request);
+    } catch (ProofKeyValidationException e) {
+      return Response.status(Status.FORBIDDEN)
+                     .entity("{\"error\": \"" + e.getMessage() + "\"}")
+                     .type(MediaType.APPLICATION_JSON)
+                     .build();
+    }
+
     if (operation == Operation.PUT) {
       try {
         EditorConfig config = getEditorConfig(context);
@@ -201,6 +210,7 @@ public class WOPIResource implements ResourceContainer {
                        .type(MediaType.APPLICATION_JSON)
                        .build();
       } catch (PermissionDeniedException e) {
+        LOG.warn("Cannot save document content.", e);
         return Response.status(Status.FORBIDDEN)
                        .entity("{\"error\": \"Permission denied\"}")
                        .type(MediaType.APPLICATION_JSON)
@@ -251,7 +261,14 @@ public class WOPIResource implements ResourceContainer {
                           @Context ServletContext context,
                           @PathParam("fileId") String fileId) {
 
-    verifyProofKey(request);
+    try {
+      verifyProofKey(request);
+    } catch (ProofKeyValidationException e) {
+      return Response.status(Status.FORBIDDEN)
+                     .entity("{\"error\": \"" + e.getMessage() + "\"}")
+                     .type(MediaType.APPLICATION_JSON)
+                     .build();
+    }
     try {
       EditorConfig config = getEditorConfig(context);
       if (!fileId.equals(config.getFileId())) {
@@ -310,7 +327,14 @@ public class WOPIResource implements ResourceContainer {
                         @HeaderParam(OVERRIDE) Operation operation,
                         @PathParam("fileId") String fileId) {
 
-    verifyProofKey(request);
+    try {
+      verifyProofKey(request);
+    } catch (ProofKeyValidationException e) {
+      return Response.status(Status.FORBIDDEN)
+                     .entity("{\"error\": \"" + e.getMessage() + "\"}")
+                     .type(MediaType.APPLICATION_JSON)
+                     .build();
+    }
     EditorConfig config;
     try {
       config = getEditorConfig(context);
@@ -398,7 +422,14 @@ public class WOPIResource implements ResourceContainer {
   @Path("/files/{fileId}")
   @Produces(MediaType.APPLICATION_JSON)
   public Response checkFileInfo(@Context UriInfo uriInfo, @Context HttpServletRequest request, @Context ServletContext context) {
-    verifyProofKey(request);
+    try {
+      verifyProofKey(request);
+    } catch (ProofKeyValidationException e) {
+      return Response.status(Status.FORBIDDEN)
+                     .entity("{\"error\": \"" + e.getMessage() + "\"}")
+                     .type(MediaType.APPLICATION_JSON)
+                     .build();
+    }
 
     URI requestUri = uriInfo.getRequestUri();
     try {
@@ -431,8 +462,14 @@ public class WOPIResource implements ResourceContainer {
    * @return the response
    */
   private Response renameFile(String fileId, EditorConfig config, String name, String lock) {
+    if (!fileId.equals(config.getFileId())) {
+      return Response.status(Status.BAD_REQUEST)
+                     .entity("{\"error\": \"Provided fileId doesn't match fileId from access token\"}")
+                     .type(MediaType.APPLICATION_JSON)
+                     .build();
+    }
     try {
-      String title = wopiService.renameFile(fileId, config, name, lock);
+      String title = wopiService.renameFile(config, name, lock);
       return Response.ok().entity("{\"Name\": \"" + title + "\"}").type(MediaType.APPLICATION_JSON).build();
     } catch (FileNotFoundException e) {
       return Response.status(Status.NOT_FOUND)
@@ -440,6 +477,7 @@ public class WOPIResource implements ResourceContainer {
                      .type(MediaType.APPLICATION_JSON)
                      .build();
     } catch (PermissionDeniedException e) {
+      LOG.warn("Cannot rename file.", e);
       return Response.status(Status.FORBIDDEN)
                      .entity("{\"error\": \"" + e.getMessage() + "\"}")
                      .type(MediaType.APPLICATION_JSON)
@@ -633,6 +671,12 @@ public class WOPIResource implements ResourceContainer {
                      .entity("{\"error\": \"" + e.getMessage() + "\"}")
                      .type(MediaType.APPLICATION_JSON)
                      .build();
+    } catch (PermissionDeniedException e) {
+      LOG.warn("Cannot create new file based on existing one in specific mode.", e);
+      return Response.status(Status.FORBIDDEN)
+                     .entity("{\"error\": \"" + e.getMessage() + "\"}")
+                     .type(MediaType.APPLICATION_JSON)
+                     .build();
     } catch (RepositoryException e) {
       LOG.error("Cannot create new file based on existing one in specific mode.", e);
       return Response.status(Status.INTERNAL_SERVER_ERROR)
@@ -664,6 +708,12 @@ public class WOPIResource implements ResourceContainer {
                      .entity("{\"error\": \"" + e.getMessage() + "\"}")
                      .type(MediaType.APPLICATION_JSON)
                      .build();
+    } catch (PermissionDeniedException e) {
+      LOG.warn("Cannot create new file based on existing one in suggested mode.", e);
+      return Response.status(Status.FORBIDDEN)
+                     .entity("{\"error\": \"" + e.getMessage() + "\"}")
+                     .type(MediaType.APPLICATION_JSON)
+                     .build();
     } catch (RepositoryException e) {
       LOG.error("Cannot create new file based on existing one in suggested mode.", e);
       return Response.status(Status.INTERNAL_SERVER_ERROR)
@@ -688,15 +738,14 @@ public class WOPIResource implements ResourceContainer {
    *
    * @param request the request
    */
-  protected void verifyProofKey(HttpServletRequest request) {
+  protected void verifyProofKey(HttpServletRequest request) throws ProofKeyValidationException {
     String proofKeyHeader = request.getHeader(PROOF);
     String oldProofKeyHeader = request.getHeader(PROOF_OLD);
     String timestampHeader = request.getHeader(TIMESTAMP);
     String accessToken = request.getParameter(ACCESS_TOKEN);
-    // TODO: get url
-    String url = null;
+    String url = request.getRequestURL().append('?').append(request.getQueryString()).toString().toUpperCase();
     if (!wopiService.verifyProofKey(proofKeyHeader, oldProofKeyHeader, url, accessToken, timestampHeader)) {
-      throw new RuntimeException("Proof key verification failed");
+      throw new ProofKeyValidationException("Proof key verification failed");
     }
   }
 

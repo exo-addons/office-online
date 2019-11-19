@@ -41,6 +41,10 @@
         <name>token-configuration</name>
         <property name="secret-key" value="${officeonline.token.secret:}" />
       </properties-param>
+      <properties-param>
+        <name>breadcrumb-configuration</name>
+        <property name="brand-name" value="${officeonline.brand.name:eXo Platform}" />
+      </properties-param>
     </init-params>
   </component>
 
