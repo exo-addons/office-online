@@ -94,8 +94,8 @@ public class FileUIActivity extends org.exoplatform.wcm.ext.component.activity.F
       Node node = getContentNode(0);
       node = editorService.getNode(node.getSession().getWorkspace().getName(), node.getPath());
       if (node != null) {
-        require.addScripts("officeonline.initActivity('" + node.getUUID() + "', " + editorService.getEditorURL(node.getUUID())
-            + ",'" + activityId + "');");
+        require.addScripts("officeonline.initActivity('" + node.getUUID() + "', '" + editorService.getEditorURL(node.getUUID())
+            + "','" + activityId + "');");
       }
     }
 
@@ -104,8 +104,8 @@ public class FileUIActivity extends org.exoplatform.wcm.ext.component.activity.F
       Node symlink = getContentNode(index);
       Node node = editorService.getNode(symlink.getSession().getWorkspace().getName(), symlink.getPath());
       if (node != null) {
-        require.addScripts("officeonline.initPreview('" + node.getUUID() + "', " + editorService.getEditorURL(node.getUUID())
-            + ",'" + new StringBuilder("#Preview").append(activityId).append('-').append(index).toString() + "');");
+        require.addScripts("officeonline.initPreview('" + node.getUUID() + "', '" + editorService.getEditorURL(node.getUUID())
+            + "' ,'" + new StringBuilder("#Preview").append(activityId).append('-').append(index).toString() + "');");
       }
     }
     super.end();

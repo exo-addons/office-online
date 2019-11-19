@@ -39,7 +39,7 @@
 
   var getEditorButton = function(editorLink) {
     return "<li class='hidden-tabletL'><a href='" + editorLink + "' target='_blank'>"
-        + "<i class='uiIconEcmsOnlyofficeOpen uiIconEcmsLightGray uiIconEdit'></i>" + message("EditButtonTitle") + "</a></li>";
+        + "<i class='uiIconEcmsOnlyofficeOpen uiIconEcmsLightGray uiIconEdit'></i>Edit</a></li>";
   };
 
   /**
@@ -65,7 +65,9 @@
       office_frame.setAttribute('sandbox',
           'allow-scripts allow-same-origin allow-forms allow-popups allow-top-navigation allow-popups-to-escape-sandbox');
       frameholder.appendChild(office_frame);
-      document.getElementById('office_form').submit();
+      setTimeout(function(){
+        document.getElementById('office_form').submit();
+      }, 10000);
     };
 
     this.showError = function(title, message) {
