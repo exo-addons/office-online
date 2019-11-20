@@ -22,8 +22,6 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 import javax.jcr.Node;
-import javax.jcr.RepositoryException;
-import javax.jcr.UnsupportedRepositoryOperationException;
 
 import org.exoplatform.officeonline.EditorService;
 import org.exoplatform.services.log.ExoLogger;

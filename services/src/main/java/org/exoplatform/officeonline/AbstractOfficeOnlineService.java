@@ -193,29 +193,6 @@ public abstract class AbstractOfficeOnlineService implements Startable {
     return node.getNode("jcr:content");
   }
 
-  /**
-   * Can edit document.
-   *
-   * @param node the node
-   * @return true, if successful
-   * @throws RepositoryException the repository exception
-   */
-  protected boolean canEditDocument(Node node) throws RepositoryException {
-    boolean res = false;
-    if (node != null) {
-      String remoteUser = ConversationState.getCurrent().getIdentity().getUserId();
-      String superUser = userACL.getSuperUser();
-      boolean locked = node.isLocked();
-      if (locked && (remoteUser.equalsIgnoreCase(superUser) || node.getLock().getLockOwner().equals(remoteUser))) {
-        locked = false;
-      }
-      res = !locked && PermissionUtil.canSetProperty(node);
-    }
-    if (!res && LOG.isDebugEnabled()) {
-      LOG.debug("Cannot edit: {}", node != null ? node.getPath() : null);
-    }
-    return res;
-  }
 
   /**
    * Gets the content.

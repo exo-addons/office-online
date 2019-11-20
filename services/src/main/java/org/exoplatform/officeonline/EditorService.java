@@ -9,6 +9,7 @@ import javax.jcr.Node;
 import javax.jcr.RepositoryException;
 import javax.jcr.Session;
 
+import org.exoplatform.ecm.utils.permission.PermissionUtil;
 import org.exoplatform.officeonline.exception.OfficeOnlineException;
 import org.exoplatform.portal.config.UserACL;
 import org.exoplatform.services.cache.CacheService;
@@ -62,7 +63,7 @@ public class EditorService extends AbstractOfficeOnlineService {
 
     Node node = nodeByUUID(fileId, workspace);
     List<Permissions> permissions = new ArrayList<>();
-    if (canEditDocument(node)) {
+    if (PermissionUtil.canSetProperty(node)) {
       permissions.add(Permissions.USER_CAN_WRITE);
       permissions.add(Permissions.USER_CAN_RENAME);
     } else {

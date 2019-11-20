@@ -32,6 +32,7 @@ import org.exoplatform.container.xml.InitParams;
 import org.exoplatform.container.xml.PropertiesParam;
 import org.exoplatform.ecm.utils.lock.LockUtil;
 import org.exoplatform.ecm.utils.text.Text;
+import org.exoplatform.ecm.webui.utils.PermissionUtil;
 import org.exoplatform.ecm.webui.utils.Utils;
 import org.exoplatform.officeonline.exception.ActionNotFoundException;
 import org.exoplatform.officeonline.exception.FileExtensionNotFoundException;
@@ -264,7 +265,7 @@ public class WOPIService extends AbstractOfficeOnlineService {
   public void putFile(EditorConfig config, String lockId, InputStream data) throws Exception {
     Node node = nodeByUUID(config.getFileId(), config.getWorkspace());
     try {
-      if (canEditDocument(node) && config.permissions.contains(Permissions.USER_CAN_WRITE)) {
+      if (PermissionUtil.canSetProperty(node) && config.permissions.contains(Permissions.USER_CAN_WRITE)) {
         Node content = node.getNode(JCR_CONTENT);
         if (!node.isLocked()) {
           long size = content.getProperty(JCR_DATA).getLength();
@@ -695,7 +696,7 @@ public class WOPIService extends AbstractOfficeOnlineService {
    * @throws RepositoryException the repository exception
    */
   protected void addUserPermissionsProperties(Map<String, Serializable> map, Node node) throws RepositoryException {
-    boolean canEdit = canEditDocument(node);
+    boolean canEdit = PermissionUtil.canSetProperty(node);
     boolean canUpdate = canUpdate(node);
     map.put(Permissions.READ_ONLY.toString(), !canEdit);
     map.put(Permissions.USER_CAN_RENAME.toString(), canUpdate);
