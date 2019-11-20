@@ -65,9 +65,7 @@
       office_frame.setAttribute('sandbox',
           'allow-scripts allow-same-origin allow-forms allow-popups allow-top-navigation allow-popups-to-escape-sandbox');
       frameholder.appendChild(office_frame);
-      setTimeout(function(){
-        document.getElementById('office_form').submit();
-      }, 10000);
+      document.getElementById('office_form').submit();
     };
 
     this.showError = function(title, message) {

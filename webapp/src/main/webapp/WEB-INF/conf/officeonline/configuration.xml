@@ -45,6 +45,10 @@
         <name>breadcrumb-configuration</name>
         <property name="brand-name" value="${officeonline.brand.name:eXo Platform}" />
       </properties-param>
+      <properties-param>
+        <name>wopi-configuration</name>
+        <property name="wopi-url" value="${officeonline.wopi.files.url:http://wopi-dev01.exoplatform.org/portal/rest/wopi}" />
+      </properties-param>
     </init-params>
   </component>
 
