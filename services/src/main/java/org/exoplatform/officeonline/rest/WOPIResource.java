@@ -183,11 +183,15 @@ public class WOPIResource implements ResourceContainer {
                           @HeaderParam(OVERRIDE) Operation operation,
                           @PathParam("fileId") String fileId) {
 
-    logDebug("WOPI Request handled: putFile");
+    if (LOG.isDebugEnabled()) {
+      LOG.debug("WOPI Request handled: putFile");
+    }
     try {
       verifyProofKey(request);
     } catch (ProofKeyValidationException e) {
-      logDebug("Proof key validation failed for putFile", e);
+      if (LOG.isDebugEnabled()) {
+        LOG.debug("Proof key validation failed for putFile", e);
+      }
       return Response.status(Status.FORBIDDEN)
                      .entity("{\"error\": \"" + e.getMessage() + "\"}")
                      .type(MediaType.APPLICATION_JSON)
@@ -199,55 +203,73 @@ public class WOPIResource implements ResourceContainer {
         EditorConfig config = getEditorConfig(context);
         String lockId = request.getHeader(LOCK);
         wopiService.putFile(config, lockId, request.getInputStream());
-        logDebug("PutFile response OK. LockId: " + lockId);
+        if (LOG.isDebugEnabled()) {
+          LOG.debug("PutFile response OK. LockId: " + lockId);
+        }
         return Response.status(Status.OK).header(LOCK, lockId).type(MediaType.APPLICATION_JSON).build();
       } catch (FileNotFoundException e) {
-        logDebug("File not found for putFile", e);
+        if (LOG.isDebugEnabled()) {
+          LOG.debug("File not found for putFile", e);
+        }
         return Response.status(Status.NOT_FOUND)
                        .entity("{\"error\": \"" + e.getMessage() + "\"}")
                        .type(MediaType.APPLICATION_JSON)
                        .build();
       } catch (LockMismatchException | SizeMismatchException e) {
-        logDebug("Lock mismatch/size mismatch for putFile. Provided lock: " + request.getHeader(LOCK) + " Actual lock + "
-            + e.getLockId());
+        if (LOG.isDebugEnabled()) {
+          LOG.debug("Lock mismatch/size mismatch for putFile. Provided lock: " + request.getHeader(LOCK) + " Actual lock + "
+              + e.getLockId());
+        }
         return Response.status(Status.CONFLICT)
                        .entity("{\"error\": \"" + e.getMessage() + "\"}")
                        .header(LOCK, e.getLockId())
                        .type(MediaType.APPLICATION_JSON)
                        .build();
       } catch (PermissionDeniedException e) {
-        LOG.warn("Cannot save document content.", e);
+        if (LOG.isDebugEnabled()) {
+          LOG.debug("Permission denied for putFile", e);
+        }
         return Response.status(Status.FORBIDDEN)
                        .entity("{\"error\": \"Permission denied\"}")
                        .type(MediaType.APPLICATION_JSON)
                        .build();
       } catch (AuthenticationFailedException e) {
-        logDebug("Authentication failed for putFile", e);
+        if (LOG.isDebugEnabled()) {
+          LOG.debug("Authentication failed for putFile", e);
+        }
         return Response.status(Status.UNAUTHORIZED)
                        .entity("{\"error\": \"" + e.getMessage() + "\"}")
                        .type(MediaType.APPLICATION_JSON)
                        .build();
       } catch (OfficeOnlineException e) {
-        logDebug("Error occured while putFile", e);
+        if (LOG.isDebugEnabled()) {
+          LOG.debug("Office Online exception occured while handling putFile", e);
+        }
         return Response.status(Status.INTERNAL_SERVER_ERROR)
                        .entity("{\"error\": \"" + e.getMessage() + "\"}")
                        .type(MediaType.APPLICATION_JSON)
                        .build();
       } catch (IOException e) {
-        logDebug("Cannot get request body for putFile", e);
+        if (LOG.isDebugEnabled()) {
+          LOG.debug("Cannot get request body for putFile", e);
+        }
         return Response.status(Status.INTERNAL_SERVER_ERROR)
                        .entity("{\"error\": \"Cannot get request body\"}")
                        .type(MediaType.APPLICATION_JSON)
                        .build();
       } catch (Exception e) {
-        logDebug("Exception occured while putFile", e);
+        if (LOG.isDebugEnabled()) {
+          LOG.debug("Exception occured while handling putFile", e);
+        }
         return Response.status(Status.INTERNAL_SERVER_ERROR)
                        .entity("{\"error\": \"Internal error while saving content\"}")
                        .type(MediaType.APPLICATION_JSON)
                        .build();
       }
     } else {
-      logDebug("Wrong operation for putFile");
+      if (LOG.isDebugEnabled()) {
+        LOG.debug("Wrong operation for putFile");
+      }
       return Response.status(Status.BAD_REQUEST)
                      .entity("{\"error\": \"Wrong operation\"}")
                      .type(MediaType.APPLICATION_JSON)
@@ -272,11 +294,15 @@ public class WOPIResource implements ResourceContainer {
                           @Context ServletContext context,
                           @PathParam("fileId") String fileId) {
 
-    logDebug("WOPI Request handled: getFile");
+    if (LOG.isDebugEnabled()) {
+      LOG.debug("WOPI Request handled: getFile");
+    }
     try {
       verifyProofKey(request);
     } catch (ProofKeyValidationException e) {
-      logDebug("Proof key validation failed for getFile", e);
+      if (LOG.isDebugEnabled()) {
+        LOG.debug("Proof key validation failed for getFile", e);
+      }
       return Response.status(Status.FORBIDDEN)
                      .entity("{\"error\": \"" + e.getMessage() + "\"}")
                      .type(MediaType.APPLICATION_JSON)
@@ -286,7 +312,9 @@ public class WOPIResource implements ResourceContainer {
     try {
       EditorConfig config = getEditorConfig(context);
       if (!fileId.equals(config.getFileId())) {
-        logDebug("Provided fileId doesn't match fileId from access token");
+        if (LOG.isDebugEnabled()) {
+          LOG.debug("Provided fileId doesn't match fileId from access token");
+        }
         return Response.status(Status.BAD_REQUEST)
                        .entity("{\"error\": \"Provided fileId doesn't match fileId from access token\"}")
                        .type(MediaType.APPLICATION_JSON)
@@ -300,26 +328,34 @@ public class WOPIResource implements ResourceContainer {
       } catch (RepositoryException e) {
         LOG.error("Cannot get node version", e);
       }
-      logDebug("Get file response: OK");
+      if (LOG.isDebugEnabled()) {
+        LOG.debug("Get file response: OK");
+      }
       return Response.ok()
                      .header(ITEM_VERSION, version != null ? version : "")
                      .entity(content.getData())
                      .type(content.getType())
                      .build();
     } catch (FileNotFoundException e) {
-      logDebug("File not found for getFile ", e);
+      if (LOG.isDebugEnabled()) {
+        LOG.debug("File not found for getFile ", e);
+      }
       return Response.status(Status.NOT_FOUND)
                      .entity("{\"error\": \"" + e.getMessage() + "\"}")
                      .type(MediaType.APPLICATION_JSON)
                      .build();
     } catch (AuthenticationFailedException e) {
-      logDebug("Authentication Failed for getFile ", e);
+      if (LOG.isDebugEnabled()) {
+        LOG.debug("Authentication Failed for getFile ", e);
+      }
       return Response.status(Status.UNAUTHORIZED)
                      .entity("{\"error\": \"" + e.getMessage() + "\"}")
                      .type(MediaType.APPLICATION_JSON)
                      .build();
     } catch (OfficeOnlineException e) {
-      logDebug("Error occured while getFile ", e);
+      if (LOG.isDebugEnabled()) {
+        LOG.debug("Error occured while getFile ", e);
+      }
       return Response.status(Status.INTERNAL_SERVER_ERROR)
                      .entity("{\"error\": \"" + e.getMessage() + "\"}")
                      .type(MediaType.APPLICATION_JSON)
@@ -349,7 +385,9 @@ public class WOPIResource implements ResourceContainer {
     try {
       verifyProofKey(request);
     } catch (ProofKeyValidationException e) {
-      logDebug("Proof key validation failed for /files/", e);
+      if (LOG.isDebugEnabled()) {
+        LOG.debug("Proof key validation failed for /files/", e);
+      }
       return Response.status(Status.FORBIDDEN)
                      .entity("{\"error\": \"" + e.getMessage() + "\"}")
                      .type(MediaType.APPLICATION_JSON)
@@ -359,13 +397,17 @@ public class WOPIResource implements ResourceContainer {
     try {
       config = getEditorConfig(context);
     } catch (AuthenticationFailedException e) {
-      logDebug("Authentication failed for /files/", e);
+      if (LOG.isDebugEnabled()) {
+        LOG.debug("Authentication failed for /files/", e);
+      }
       return Response.status(Status.UNAUTHORIZED)
                      .entity("{\"error\": \"" + e.getMessage() + "\"}")
                      .type(MediaType.APPLICATION_JSON)
                      .build();
     } catch (EditorConfigNotFoundException e) {
-      logDebug("Editor Config not found failed for /files/", e);
+      if (LOG.isDebugEnabled()) {
+        LOG.debug("Editor Config not found failed for /files/", e);
+      }
       return Response.status(Status.INTERNAL_SERVER_ERROR)
                      .entity("{\"error\": \"" + e.getMessage() + "\"}")
                      .type(MediaType.APPLICATION_JSON)
@@ -373,7 +415,9 @@ public class WOPIResource implements ResourceContainer {
     }
 
     if (!fileId.equals(config.getFileId())) {
-      logDebug("Provided fileId doesn't match fileId from access token for /files/");
+      if (LOG.isDebugEnabled()) {
+        LOG.debug("Provided fileId doesn't match fileId from access token for /files/");
+      }
       return Response.status(Status.BAD_REQUEST)
                      .entity("{\"error\": \"Provided fileId doesn't match fileId from access token\"}")
                      .type(MediaType.APPLICATION_JSON)
@@ -398,7 +442,9 @@ public class WOPIResource implements ResourceContainer {
         LOG.debug("WOPI Request handled: putRelative");
       }
       if (request.getHeader(RELATIVE_TARGET) != null && request.getHeader(SUGGESTED_TARGET) != null) {
-        logDebug("Headers RELATIVE_TARGET and SUGGESTED_TARGET are mutually exclusive for putRelative");
+        if (LOG.isDebugEnabled()) {
+          LOG.debug("Headers RELATIVE_TARGET and SUGGESTED_TARGET are mutually exclusive for putRelative");
+        }
         return Response.status(Status.BAD_REQUEST)
                        .entity("{\"error\": \"Headers RELATIVE_TARGET and SUGGESTED_TARGET are mutually exclusive.\"}")
                        .type(MediaType.APPLICATION_JSON)
@@ -414,7 +460,9 @@ public class WOPIResource implements ResourceContainer {
           return putSuggestedFile(config, request.getHeader(SUGGESTED_TARGET), request.getInputStream());
         }
       } catch (IOException e) {
-        logDebug("Cannot get request body for putRelative", e);
+        if (LOG.isDebugEnabled()) {
+          LOG.debug("Cannot get request body for putRelative", e);
+        }
         return Response.status(Status.INTERNAL_SERVER_ERROR)
                        .entity("{\"error\": \"Cannot get request body\"}")
                        .type(MediaType.APPLICATION_JSON)
@@ -466,11 +514,15 @@ public class WOPIResource implements ResourceContainer {
   @Produces(MediaType.APPLICATION_JSON)
   public Response checkFileInfo(@Context UriInfo uriInfo, @Context HttpServletRequest request, @Context ServletContext context) {
 
-    logDebug("WOPI Request handled: checkFileInfo");
+    if (LOG.isDebugEnabled()) {
+      LOG.debug("WOPI Request handled: checkFileInfo");
+    }
     try {
       verifyProofKey(request);
     } catch (ProofKeyValidationException e) {
-      logDebug("Proof key validation failed for checkFileInfo", e);
+      if (LOG.isDebugEnabled()) {
+        LOG.debug("Proof key validation failed for checkFileInfo", e);
+      }
       return Response.status(Status.FORBIDDEN)
                      .entity("{\"error\": \"" + e.getMessage() + "\"}")
                      .type(MediaType.APPLICATION_JSON)
@@ -483,16 +535,22 @@ public class WOPIResource implements ResourceContainer {
                                                                      requestUri.getHost(),
                                                                      requestUri.getPort(),
                                                                      config);
-      logDebug("Check file info response: OK");
+      if (LOG.isDebugEnabled()) {
+        LOG.debug("Check file info response: OK");
+      }
       return Response.ok(fileInfo).type(MediaType.APPLICATION_JSON).build();
     } catch (AuthenticationFailedException e) {
-      logDebug("Authentication failed for checkFileInfo", e);
+      if (LOG.isDebugEnabled()) {
+        LOG.debug("Authentication failed for checkFileInfo", e);
+      }
       return Response.status(Status.UNAUTHORIZED)
                      .entity("{\"error\": \"" + e.getMessage() + "\"}")
                      .type(MediaType.APPLICATION_JSON)
                      .build();
     } catch (OfficeOnlineException e) {
-      logDebug("Error while checkFileInfo", e);
+      if (LOG.isDebugEnabled()) {
+        LOG.debug("Error while checkFileInfo", e);
+      }
       return Response.status(Status.INTERNAL_SERVER_ERROR)
                      .entity("{\"error\": \"" + e.getMessage() + "\"}")
                      .type(MediaType.APPLICATION_JSON)
@@ -511,7 +569,9 @@ public class WOPIResource implements ResourceContainer {
    */
   private Response renameFile(String fileId, EditorConfig config, String name, String lock) {
     if (!fileId.equals(config.getFileId())) {
-      logDebug("Provided fileId doesn't match fileId from access token for renameFile");
+      if (LOG.isDebugEnabled()) {
+        LOG.debug("Provided fileId doesn't match fileId from access token for renameFile");
+      }
       return Response.status(Status.BAD_REQUEST)
                      .entity("{\"error\": \"Provided fileId doesn't match fileId from access token\"}")
                      .type(MediaType.APPLICATION_JSON)
@@ -519,29 +579,39 @@ public class WOPIResource implements ResourceContainer {
     }
     try {
       String title = wopiService.renameFile(config, name, lock);
-      logDebug("Rename file response: OK");
+      if (LOG.isDebugEnabled()) {
+        LOG.debug("Rename file response: OK");
+      }
       return Response.ok().entity("{\"Name\": \"" + title + "\"}").type(MediaType.APPLICATION_JSON).build();
     } catch (FileNotFoundException e) {
-      logDebug("File not found for renameFile", e);
+      if (LOG.isDebugEnabled()) {
+        LOG.debug("File not found for renameFile", e);
+      }
       return Response.status(Status.NOT_FOUND)
                      .entity("{\"error\": \"" + e.getMessage() + "\"}")
                      .type(MediaType.APPLICATION_JSON)
                      .build();
     } catch (PermissionDeniedException e) {
-      LOG.warn("Cannot rename file.", e);
+      if (LOG.isDebugEnabled()) {
+        LOG.debug("Permission denied for rename file.", e);
+      }
       return Response.status(Status.FORBIDDEN)
                      .entity("{\"error\": \"" + e.getMessage() + "\"}")
                      .type(MediaType.APPLICATION_JSON)
                      .build();
     } catch (LockMismatchException e) {
-      logDebug("Lock mismatch for renameFile. Provided lock: " + lock + " Actual lock: " + e.getLockId());
+      if (LOG.isDebugEnabled()) {
+        LOG.debug("Lock mismatch for renameFile. Provided lock: " + lock + " Actual lock: " + e.getLockId());
+      }
       return Response.status(Status.CONFLICT)
                      .entity("{\"error\": \"" + e.getMessage() + "\"}")
                      .header(LOCK, e.getLockId())
                      .type(MediaType.APPLICATION_JSON)
                      .build();
     } catch (InvalidFileNameException e) {
-      logDebug("Invalid filename for renameFile", e);
+      if (LOG.isDebugEnabled()) {
+        LOG.debug("Invalid filename for renameFile", e);
+      }
       return Response.status(Status.BAD_REQUEST)
                      .entity("{\"error\": \"" + e.getMessage() + "\"}")
                      .header(INVALID_FILE_NAME_ERROR, e.getMessage())
@@ -572,16 +642,23 @@ public class WOPIResource implements ResourceContainer {
       } else {
         wopiService.lock(config, providedLock);
       }
-      logDebug("Lock or relock response: OK");
+      if (LOG.isDebugEnabled()) {
+        LOG.debug("Lock or relock response: OK");
+      }
       return Response.ok().build();
     } catch (FileNotFoundException e) {
-      logDebug("File not found for lock or relock", e);
+      if (LOG.isDebugEnabled()) {
+        LOG.debug("File not found for lock or relock", e);
+      }
       return Response.status(Status.NOT_FOUND)
                      .entity("{\"error\": \"" + e.getMessage() + "\"}")
                      .type(MediaType.APPLICATION_JSON)
                      .build();
     } catch (LockMismatchException e) {
-      logDebug("Lock mismatch for lock or relock. Provided lock: " + providedLock + " Old LockL " + oldLock + " Actual Lock: " + e.getLockId());
+      if (LOG.isDebugEnabled()) {
+        LOG.debug("Lock mismatch for lock or relock. Provided lock: " + providedLock + " Old LockL " + oldLock + " Actual Lock: "
+            + e.getLockId());
+      }
       return Response.status(Status.CONFLICT)
                      .entity("{\"error\": \"" + e.getMessage() + "\"}")
                      .header(LOCK, e.getLockId())
@@ -607,16 +684,22 @@ public class WOPIResource implements ResourceContainer {
   private Response unlock(EditorConfig config, String providedLock) {
     try {
       wopiService.unlock(config, providedLock);
-      logDebug("Unlock response: OK");
+      if (LOG.isDebugEnabled()) {
+        LOG.debug("Unlock response: OK");
+      }
       return Response.ok().build();
     } catch (FileNotFoundException e) {
-      logDebug("File not found for unlock", e);
+      if (LOG.isDebugEnabled()) {
+        LOG.debug("File not found for unlock", e);
+      }
       return Response.status(Status.NOT_FOUND)
                      .entity("{\"error\": \"" + e.getMessage() + "\"}")
                      .type(MediaType.APPLICATION_JSON)
                      .build();
     } catch (LockMismatchException e) {
-      logDebug("Lock mismatch for unlock. Given lock: " + providedLock + ", Actual: " + e.getLockId());
+      if (LOG.isDebugEnabled()) {
+        LOG.debug("Lock mismatch for unlock. Given lock: " + providedLock + ", Actual: " + e.getLockId());
+      }
       return Response.status(Status.CONFLICT)
                      .entity("{\"error\": \"" + e.getMessage() + "\"}")
                      .header(LOCK, e.getLockId())
@@ -640,10 +723,14 @@ public class WOPIResource implements ResourceContainer {
   private Response getLock(EditorConfig config) {
     try {
       String lock = wopiService.getLockId(config);
-      logDebug("GetLock response: OK. Lock: " + lock);
+      if (LOG.isDebugEnabled()) {
+        LOG.debug("GetLock response: OK. Lock: " + lock);
+      }
       return Response.ok().header(LOCK, lock != null ? lock : "").build();
     } catch (FileNotFoundException e) {
-      logDebug("File not found for getLock", e);
+      if (LOG.isDebugEnabled()) {
+        LOG.debug("File not found for getLock", e);
+      }
       return Response.status(Status.NOT_FOUND)
                      .entity("{\"error\": \"" + e.getMessage() + "\"}")
                      .type(MediaType.APPLICATION_JSON)
@@ -667,16 +754,22 @@ public class WOPIResource implements ResourceContainer {
   private Response refreshLock(EditorConfig config, String lockId) {
     try {
       wopiService.refreshLock(config, lockId);
-      logDebug("Refresh lock response: OK");
+      if (LOG.isDebugEnabled()) {
+        LOG.debug("Refresh lock response: OK");
+      }
       return Response.ok().build();
     } catch (FileNotFoundException e) {
-      logDebug("File not found for refresh lock", e);
+      if (LOG.isDebugEnabled()) {
+        LOG.debug("File not found for refresh lock", e);
+      }
       return Response.status(Status.NOT_FOUND)
                      .entity("{\"error\": \"" + e.getMessage() + "\"}")
                      .type(MediaType.APPLICATION_JSON)
                      .build();
     } catch (LockMismatchException e) {
-      logDebug("Lock mismatch for getlock. Given lock: " + lockId + ", Actual: " + e.getLockId());
+      if (LOG.isDebugEnabled()) {
+        LOG.debug("Lock mismatch for getlock. Given lock: " + lockId + ", Actual: " + e.getLockId());
+      }
       return Response.status(Status.CONFLICT)
                      .entity("{\"error\": \"" + e.getMessage() + "\"}")
                      .header(LOCK, e.getLockId())
@@ -708,41 +801,55 @@ public class WOPIResource implements ResourceContainer {
   private Response putRelativeFile(EditorConfig config, String target, boolean overwrite, InputStream data) {
     try {
       wopiService.putRelativeFile(config, target, overwrite, data);
-      logDebug("PutRelativeFile response: OK");
+      if (LOG.isDebugEnabled()) {
+        LOG.debug("PutRelativeFile response: OK");
+      }
       return Response.ok().build();
     } catch (IllegalFileNameException e) {
-      logDebug("Illegal file name for PutRelativeFile", e);
+      if (LOG.isDebugEnabled()) {
+        LOG.debug("Illegal file name for PutRelativeFile", e);
+      }
       return Response.status(Status.BAD_REQUEST)
                      .entity("{\"error\": \"" + e.getMessage() + "\"}")
                      .type(MediaType.APPLICATION_JSON)
                      .build();
     } catch (FileLockedException e) {
-      logDebug("File locked error for PutRelativeFile", e);
+      if (LOG.isDebugEnabled()) {
+        LOG.debug("File locked error for PutRelativeFile", e);
+      }
       return Response.status(Status.CONFLICT)
                      .entity("{\"error\": \"" + e.getMessage() + "\"}")
                      .header(LOCK, e.getLockId() != null ? e.getLockId() : "")
                      .type(MediaType.APPLICATION_JSON)
                      .build();
     } catch (UpdateConflictException e) {
-      logDebug("Update conflict for PutRelativeFile", e);
+      if (LOG.isDebugEnabled()) {
+        LOG.debug("Update conflict for PutRelativeFile", e);
+      }
       return Response.status(Status.CONFLICT)
                      .entity("{\"error\": \"" + e.getMessage() + "\"}")
                      .type(MediaType.APPLICATION_JSON)
                      .build();
     } catch (FileNotFoundException e) {
-      logDebug("File not found for PutRelativeFile", e);
+      if (LOG.isDebugEnabled()) {
+        LOG.debug("File not found for PutRelativeFile", e);
+      }
       return Response.status(Status.NOT_FOUND)
                      .entity("{\"error\": \"" + e.getMessage() + "\"}")
                      .type(MediaType.APPLICATION_JSON)
                      .build();
     } catch (FileExtensionNotFoundException e) {
-      logDebug("File extension not found for PutRelativeFile", e);
+      if (LOG.isDebugEnabled()) {
+        LOG.debug("File extension not found for PutRelativeFile", e);
+      }
       return Response.status(Status.INTERNAL_SERVER_ERROR)
                      .entity("{\"error\": \"" + e.getMessage() + "\"}")
                      .type(MediaType.APPLICATION_JSON)
                      .build();
     } catch (PermissionDeniedException e) {
-      LOG.warn("Cannot create new file based on existing one in specific mode.", e);
+      if (LOG.isDebugEnabled()) {
+        LOG.debug("Cannot create new file based on existing one in specific mode.", e);
+      }
       return Response.status(Status.FORBIDDEN)
                      .entity("{\"error\": \"" + e.getMessage() + "\"}")
                      .type(MediaType.APPLICATION_JSON)
@@ -767,22 +874,30 @@ public class WOPIResource implements ResourceContainer {
   private Response putSuggestedFile(EditorConfig config, String target, InputStream data) {
     try {
       wopiService.putSuggestedFile(config, target, data);
-      logDebug("PutRelativeFile [Suggested] response: OK");
+      if (LOG.isDebugEnabled()) {
+        LOG.debug("PutRelativeFile [Suggested] response: OK");
+      }
       return Response.ok().build();
     } catch (FileNotFoundException e) {
-      logDebug("File not found for PutRelativeFile [Suggested]");
+      if (LOG.isDebugEnabled()) {
+        LOG.debug("File not found for PutRelativeFile [Suggested]");
+      }
       return Response.status(Status.NOT_FOUND)
                      .entity("{\"error\": \"" + e.getMessage() + "\"}")
                      .type(MediaType.APPLICATION_JSON)
                      .build();
     } catch (FileExtensionNotFoundException e) {
-      logDebug("File extension not found for PutRelativeFile [Suggested]");
+      if (LOG.isDebugEnabled()) {
+        LOG.debug("File extension not found for PutRelativeFile [Suggested]");
+      }
       return Response.status(Status.INTERNAL_SERVER_ERROR)
                      .entity("{\"error\": \"" + e.getMessage() + "\"}")
                      .type(MediaType.APPLICATION_JSON)
                      .build();
     } catch (PermissionDeniedException e) {
-      LOG.warn("Cannot create new file based on existing one in suggested mode.", e);
+      if (LOG.isDebugEnabled()) {
+        LOG.debug("Permission denied for PutRelativeFile [Suggested]", e);
+      }
       return Response.status(Status.FORBIDDEN)
                      .entity("{\"error\": \"" + e.getMessage() + "\"}")
                      .type(MediaType.APPLICATION_JSON)
@@ -1009,17 +1124,4 @@ public class WOPIResource implements ResourceContainer {
     }
     return false;
   }
-
-  protected void logDebug(String msg) {
-    if (LOG.isDebugEnabled()) {
-      LOG.debug(msg);
-    }
-  }
-
-  protected void logDebug(String msg, Throwable throwable) {
-    if (LOG.isDebugEnabled()) {
-      LOG.debug(msg, throwable);
-    }
-  }
-
 }

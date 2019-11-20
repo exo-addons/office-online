@@ -22,7 +22,6 @@ import org.picocontainer.Startable;
 
 import org.exoplatform.commons.utils.CommonsUtils;
 import org.exoplatform.container.PortalContainer;
-import org.exoplatform.ecm.webui.utils.PermissionUtil;
 import org.exoplatform.ecm.webui.utils.Utils;
 import org.exoplatform.officeonline.exception.FileNotFoundException;
 import org.exoplatform.officeonline.exception.OfficeOnlineException;
@@ -37,7 +36,6 @@ import org.exoplatform.services.log.ExoLogger;
 import org.exoplatform.services.log.Log;
 import org.exoplatform.services.organization.OrganizationService;
 import org.exoplatform.services.organization.User;
-import org.exoplatform.services.security.ConversationState;
 import org.exoplatform.services.wcm.core.NodetypeConstant;
 import org.exoplatform.webui.application.WebuiRequestContext;
 import org.exoplatform.webui.application.portlet.PortletRequestContext;
@@ -192,7 +190,6 @@ public abstract class AbstractOfficeOnlineService implements Startable {
   protected Node nodeContent(Node node) throws RepositoryException {
     return node.getNode("jcr:content");
   }
-
 
   /**
    * Gets the content.
@@ -456,7 +453,7 @@ public abstract class AbstractOfficeOnlineService implements Startable {
     List<String> values = Arrays.asList(decryptedToken.split(TOKEN_DELIMITE_SPLIT));
     if (values.size() > 2) {
       String workspace = values.get(0);
-      if(workspace.equals("null")) {
+      if (workspace.equals("null")) {
         workspace = null;
       }
       String userId = values.get(1);
