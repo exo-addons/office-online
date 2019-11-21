@@ -177,7 +177,7 @@ public class WOPILockManagerPlugin extends BaseComponentPlugin {
           LOG.debug("Lock refreshed. UUID: {}, lockId: {}", node.getUUID(), lockId);
         }
       } else {
-        throw new LockMismatchException("Provided lockId doesn't match lock on the file", fileLock.getLockToken());
+        throw new LockMismatchException("Provided lockId doesn't match lock on the file", fileLock.getLockId());
       }
     } else {
       throw new LockMismatchException("File isn't locked", "");

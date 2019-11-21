@@ -24,13 +24,11 @@ import javax.jcr.Session;
 
 import org.apache.commons.lang.StringUtils;
 
-import org.exoplatform.commons.utils.CommonsUtils;
 import org.exoplatform.commons.utils.MimeTypeResolver;
 import org.exoplatform.container.PortalContainer;
 import org.exoplatform.container.component.ComponentPlugin;
 import org.exoplatform.container.xml.InitParams;
 import org.exoplatform.container.xml.PropertiesParam;
-import org.exoplatform.ecm.utils.lock.LockUtil;
 import org.exoplatform.ecm.utils.text.Text;
 import org.exoplatform.ecm.webui.utils.PermissionUtil;
 import org.exoplatform.ecm.webui.utils.Utils;
@@ -138,6 +136,9 @@ public class WOPIService extends AbstractOfficeOnlineService {
   /** The Constant SUPPORTS_UPDATE. */
   protected static final String   SUPPORTS_UPDATE                     = "SupportsUpdate";
 
+  /** The Constant SUPPORTS_DELETE_FILE. */
+  protected static final String   SUPPORTS_DELETE_FILE                     = "SupportsDeleteFile";
+
   /** The Constant SUPPORTED_SHARE_URL_TYPES. */
   protected static final String   SUPPORTED_SHARE_URL_TYPES           = "SupportedShareUrlTypes";
 
@@ -173,6 +174,15 @@ public class WOPIService extends AbstractOfficeOnlineService {
 
   /** The Constant WOPI_URL. */
   protected static final String   WOPI_URL                            = "wopi-url";
+
+  /** The Constant BRAND_NAME. */
+  protected static final String   BRAND_NAME                          = "brand-name";
+
+  /** The Constant WOPITEST_EXTENSION. */
+  protected static final String   WOPITEST_EXTENSION                  = "wopitest";
+
+  /** The Constant WOPITEST_ACTION. */
+  protected static final String   WOPITEST_ACTION                     = "view";
 
   /** The discovery plugin. */
   protected WOPIDiscoveryPlugin   discoveryPlugin;
@@ -219,7 +229,7 @@ public class WOPIService extends AbstractOfficeOnlineService {
     }
 
     PropertiesParam breadcrumbParam = initParams.getPropertiesParam(BREADCRUMB_CONFIGURATION_PROPERTIES);
-    brandName = breadcrumbParam.getProperty(SECRET_KEY);
+    brandName = breadcrumbParam.getProperty(BRAND_NAME);
 
     PropertiesParam wopiFilesUrlParam = initParams.getPropertiesParam(WOPI_CONFIGURATION_PROPERTIES);
     wopiUrl = wopiFilesUrlParam.getProperty(WOPI_URL);
@@ -353,28 +363,23 @@ public class WOPIService extends AbstractOfficeOnlineService {
    * @param userPort the user port
    * @param config the config
    * @return the map
-   * @throws OfficeOnlineException the office online exception
+   * @throws RepositoryException the repository exception
+   * @throws FileNotFoundException the file not found exception
    */
   public Map<String, Serializable> checkFileInfo(String userSchema,
                                                  String userHost,
                                                  int userPort,
-                                                 EditorConfig config) throws OfficeOnlineException {
+                                                 EditorConfig config) throws RepositoryException, FileNotFoundException {
 
-    try {
-      Node node = nodeByUUID(config.getFileId(), config.getWorkspace());
-      Map<String, Serializable> map = new HashMap<>();
-      addRequiredProperties(map, node);
-      addHostCapabilitiesProperties(map);
-      addUserMetadataProperties(map);
-      addUserPermissionsProperties(map, node);
-      addFileURLProperties(map, node, config.getAccessToken(), userSchema, userHost, userPort);
-      addBreadcrumbProperties(map, node, userSchema, userHost, userPort);
-      return map;
-    } catch (RepositoryException e) {
-      LOG.error("Error occured while checking file info {}", e.getMessage());
-      throw new OfficeOnlineException("Cannot check file info for fileId: " + config.getFileId() + ", workspace: "
-          + config.getWorkspace());
-    }
+    Node node = nodeByUUID(config.getFileId(), config.getWorkspace());
+    Map<String, Serializable> map = new HashMap<>();
+    addRequiredProperties(map, node);
+    addHostCapabilitiesProperties(map);
+    addUserMetadataProperties(map);
+    addUserPermissionsProperties(map, node);
+    addFileURLProperties(map, node, config.getAccessToken(), userSchema, userHost, userPort);
+    addBreadcrumbProperties(map, node, userSchema, userHost, userPort);
+    return map;
   }
 
   /**
@@ -466,6 +471,9 @@ public class WOPIService extends AbstractOfficeOnlineService {
                                                                                                       OfficeOnlineException {
     Node node = nodeByUUID(fileId, workspace);
     String extension = getFileExtension(node);
+    if (extension.equals(WOPITEST_EXTENSION)) {
+      action = WOPITEST_ACTION;
+    }
     String actionURL = discoveryPlugin.getActionUrl(extension, action);
     if (actionURL != null) {
       return String.format("%s%s=%s&", actionURL, PLACEHOLDER_WOPISRC, getWOPISrc(requestInfo, fileId));
@@ -602,7 +610,7 @@ public class WOPIService extends AbstractOfficeOnlineService {
    * @param fileId the file id
    * @return the WOPI src
    */
-  protected Object getWOPISrc(RequestInfo requestInfo, String fileId) {
+  public String getWOPISrc(RequestInfo requestInfo, String fileId) {
     return new StringBuilder(wopiUrl).append("/files/").append(fileId).toString();
   }
 
@@ -671,6 +679,8 @@ public class WOPIService extends AbstractOfficeOnlineService {
     map.put(SUPPORTS_LOCKS, true);
     map.put(SUPPORTS_RENAME, true);
     map.put(SUPPORTS_UPDATE, true);
+    // WARNING: host doesn't support delete file operation. Needed for wopitest putRelativeFile
+    map.put(SUPPORTS_DELETE_FILE, true);
     map.put(SUPPORTED_SHARE_URL_TYPES, (Serializable) Arrays.asList(SHARE_URL_READ_ONLY, SHARE_URL_READ_WRITE));
   }
 
@@ -756,7 +766,7 @@ public class WOPIService extends AbstractOfficeOnlineService {
   protected void addBreadcrumbProperties(Map<String, Serializable> map, Node node, String schema, String host, int port) {
     // TODO: replace by real values
     map.put(BREADCRUMB_BRAND_NAME, brandName);
-    map.put(BREADCRUMB_BRAND_URL, platformUrl(schema, host, port));
+    map.put(BREADCRUMB_BRAND_URL, platformUrl(schema, host, port).toString());
     try {
       Node parent = node.getParent();
       String url = explorerUri(schema, host, port, explorerLink(parent.getPath())).toString();
@@ -875,12 +885,13 @@ public class WOPIService extends AbstractOfficeOnlineService {
    * @param config the config
    * @param target the target
    * @param data the data
+   * @return the fileId
    * @throws RepositoryException the repository exception
    * @throws FileNotFoundException the file not found exception
    * @throws FileExtensionNotFoundException the file extension not found exception
    * @throws PermissionDeniedException the permission denied exception
    */
-  public void putSuggestedFile(EditorConfig config, String target, InputStream data) throws RepositoryException,
+  public String putSuggestedFile(EditorConfig config, String target, InputStream data) throws RepositoryException,
                                                                                      FileNotFoundException,
                                                                                      FileExtensionNotFoundException,
                                                                                      PermissionDeniedException {
@@ -903,8 +914,9 @@ public class WOPIService extends AbstractOfficeOnlineService {
     }
 
     Node parent = node.getParent();
-    createFile(parent, filename, data);
+    return createFile(parent, filename, data);
   }
+
 
   /**
    * Put relative file.
@@ -913,6 +925,7 @@ public class WOPIService extends AbstractOfficeOnlineService {
    * @param filename the filename
    * @param overwrite the overwrite
    * @param data the data
+   * @return the node uuid
    * @throws IllegalFileNameException the illegal file name exception
    * @throws FileNotFoundException the file not found exception
    * @throws RepositoryException the repository exception
@@ -921,7 +934,7 @@ public class WOPIService extends AbstractOfficeOnlineService {
    * @throws FileExtensionNotFoundException the file extension not found exception
    * @throws PermissionDeniedException the permission denied exception
    */
-  public void putRelativeFile(EditorConfig config,
+  public String putRelativeFile(EditorConfig config,
                               String filename,
                               boolean overwrite,
                               InputStream data) throws IllegalFileNameException,
@@ -985,10 +998,12 @@ public class WOPIService extends AbstractOfficeOnlineService {
       } catch (IOException e) {
         LOG.error("Cannot close data input stream", e);
       }
+      return targetNode.getUUID();
     } else {
-      createFile(parent, filename, data);
+      return createFile(parent, filename, data);
     }
   }
+
 
   /**
    * Creates the file.
@@ -996,10 +1011,11 @@ public class WOPIService extends AbstractOfficeOnlineService {
    * @param parent the parent
    * @param filename the filename
    * @param data the data
+   * @return the string
    * @throws RepositoryException the repository exception
    * @throws FileExtensionNotFoundException the file extension not found exception
    */
-  protected void createFile(Node parent, String filename, InputStream data) throws RepositoryException,
+  protected String createFile(Node parent, String filename, InputStream data) throws RepositoryException,
                                                                             FileExtensionNotFoundException {
     // Add node
     Node addedNode = parent.addNode(filename, Utils.NT_FILE);
@@ -1032,6 +1048,7 @@ public class WOPIService extends AbstractOfficeOnlineService {
     } catch (IOException e) {
       LOG.error("Cannot close data input stream", e);
     }
+    return addedNode.getUUID();
   }
 
   /**
@@ -1048,6 +1065,38 @@ public class WOPIService extends AbstractOfficeOnlineService {
       }
     }
     throw new FileExtensionNotFoundException("Cannot find file extension " + extension);
+  }
+
+  /**
+   * Gets the file version.
+   *
+   * @param fileId the file id
+   * @param workspace the workspace
+   * @return the file version
+   * @throws FileNotFoundException the file not found exception
+   * @throws RepositoryException the repository exception
+   */
+  public String getFileVersion(String fileId, String workspace) throws FileNotFoundException, RepositoryException {
+    Node node = nodeByUUID(fileId, workspace);
+    if (node.isNodeType(MIX_VERSIONABLE)) {
+      return node.getBaseVersion().getName();
+    }
+    return null;
+  }
+
+
+  /**
+   * Gets the file name.
+   *
+   * @param fileId the file id
+   * @param workspace the workspace
+   * @return the file name
+   * @throws RepositoryException 
+   * @throws FileNotFoundException 
+   */
+  public String getFileName(String fileId, String workspace) throws FileNotFoundException, RepositoryException {
+    Node node = nodeByUUID(fileId, workspace);
+    return node.getName();
   }
 
 }

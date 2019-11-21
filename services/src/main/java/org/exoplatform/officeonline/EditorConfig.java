@@ -83,7 +83,7 @@ public class EditorConfig {
    *
    * @return the workspace
    */
-  protected String getWorkspace() {
+  public String getWorkspace() {
     return workspace;
   }
 

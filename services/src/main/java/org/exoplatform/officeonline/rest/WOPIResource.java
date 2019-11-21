@@ -37,11 +37,13 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
+import javax.ws.rs.core.Response.ResponseBuilder;
 import javax.ws.rs.core.Response.Status;
 import javax.ws.rs.core.UriInfo;
 
 import org.exoplatform.officeonline.DocumentContent;
 import org.exoplatform.officeonline.EditorConfig;
+import org.exoplatform.officeonline.RequestInfo;
 import org.exoplatform.officeonline.WOPIService;
 import org.exoplatform.officeonline.exception.AuthenticationFailedException;
 import org.exoplatform.officeonline.exception.EditorConfigNotFoundException;
@@ -60,7 +62,6 @@ import org.exoplatform.services.log.ExoLogger;
 import org.exoplatform.services.log.Log;
 import org.exoplatform.services.rest.resource.ResourceContainer;
 
-// TODO: Auto-generated Javadoc
 /**
  * The Class WOPIService.
  */
@@ -192,7 +193,7 @@ public class WOPIResource implements ResourceContainer {
       if (LOG.isDebugEnabled()) {
         LOG.debug("Proof key validation failed for putFile", e);
       }
-      return Response.status(Status.FORBIDDEN)
+      return Response.status(Status.INTERNAL_SERVER_ERROR)
                      .entity("{\"error\": \"" + e.getMessage() + "\"}")
                      .type(MediaType.APPLICATION_JSON)
                      .build();
@@ -206,7 +207,9 @@ public class WOPIResource implements ResourceContainer {
         if (LOG.isDebugEnabled()) {
           LOG.debug("PutFile response OK. LockId: " + lockId);
         }
-        return Response.status(Status.OK).header(LOCK, lockId).type(MediaType.APPLICATION_JSON).build();
+        ResponseBuilder response = Response.ok().header(LOCK, lockId);
+        addItemVersionHeader(response, config);
+        return response.type(MediaType.APPLICATION_JSON).build();
       } catch (FileNotFoundException e) {
         if (LOG.isDebugEnabled()) {
           LOG.debug("File not found for putFile", e);
@@ -235,7 +238,7 @@ public class WOPIResource implements ResourceContainer {
                        .build();
       } catch (AuthenticationFailedException e) {
         if (LOG.isDebugEnabled()) {
-          LOG.debug("Authentication failed for putFile", e);
+          LOG.debug("Authentication failed for putFile");
         }
         return Response.status(Status.UNAUTHORIZED)
                        .entity("{\"error\": \"" + e.getMessage() + "\"}")
@@ -303,7 +306,7 @@ public class WOPIResource implements ResourceContainer {
       if (LOG.isDebugEnabled()) {
         LOG.debug("Proof key validation failed for getFile", e);
       }
-      return Response.status(Status.FORBIDDEN)
+      return Response.status(Status.INTERNAL_SERVER_ERROR)
                      .entity("{\"error\": \"" + e.getMessage() + "\"}")
                      .type(MediaType.APPLICATION_JSON)
                      .build();
@@ -346,7 +349,7 @@ public class WOPIResource implements ResourceContainer {
                      .build();
     } catch (AuthenticationFailedException e) {
       if (LOG.isDebugEnabled()) {
-        LOG.debug("Authentication Failed for getFile ", e);
+        LOG.debug("Authentication Failed for getFile");
       }
       return Response.status(Status.UNAUTHORIZED)
                      .entity("{\"error\": \"" + e.getMessage() + "\"}")
@@ -388,7 +391,7 @@ public class WOPIResource implements ResourceContainer {
       if (LOG.isDebugEnabled()) {
         LOG.debug("Proof key validation failed for /files/", e);
       }
-      return Response.status(Status.FORBIDDEN)
+      return Response.status(Status.INTERNAL_SERVER_ERROR)
                      .entity("{\"error\": \"" + e.getMessage() + "\"}")
                      .type(MediaType.APPLICATION_JSON)
                      .build();
@@ -398,7 +401,7 @@ public class WOPIResource implements ResourceContainer {
       config = getEditorConfig(context);
     } catch (AuthenticationFailedException e) {
       if (LOG.isDebugEnabled()) {
-        LOG.debug("Authentication failed for /files/", e);
+        LOG.debug("Authentication failed for /files/");
       }
       return Response.status(Status.UNAUTHORIZED)
                      .entity("{\"error\": \"" + e.getMessage() + "\"}")
@@ -452,12 +455,16 @@ public class WOPIResource implements ResourceContainer {
       }
 
       try {
+        RequestInfo requestInfo = new RequestInfo(request.getScheme(),
+                                                  request.getServerName(),
+                                                  request.getServerPort(),
+                                                  request.getRemoteUser());
         if (request.getHeader(RELATIVE_TARGET) != null) {
           boolean overwrite = Boolean.parseBoolean(request.getHeader(OVERWRITE_RELATIVE_TARGET));
-          return putRelativeFile(config, request.getHeader(RELATIVE_TARGET), overwrite, request.getInputStream());
+          return putRelativeFile(config, request.getHeader(RELATIVE_TARGET), overwrite, request.getInputStream(), requestInfo);
         }
         if (request.getHeader(SUGGESTED_TARGET) != null) {
-          return putSuggestedFile(config, request.getHeader(SUGGESTED_TARGET), request.getInputStream());
+          return putSuggestedFile(config, request.getHeader(SUGGESTED_TARGET), request.getInputStream(), requestInfo);
         }
       } catch (IOException e) {
         if (LOG.isDebugEnabled()) {
@@ -523,7 +530,7 @@ public class WOPIResource implements ResourceContainer {
       if (LOG.isDebugEnabled()) {
         LOG.debug("Proof key validation failed for checkFileInfo", e);
       }
-      return Response.status(Status.FORBIDDEN)
+      return Response.status(Status.INTERNAL_SERVER_ERROR)
                      .entity("{\"error\": \"" + e.getMessage() + "\"}")
                      .type(MediaType.APPLICATION_JSON)
                      .build();
@@ -541,7 +548,7 @@ public class WOPIResource implements ResourceContainer {
       return Response.ok(fileInfo).type(MediaType.APPLICATION_JSON).build();
     } catch (AuthenticationFailedException e) {
       if (LOG.isDebugEnabled()) {
-        LOG.debug("Authentication failed for checkFileInfo", e);
+        LOG.debug("Authentication failed for checkFileInfo");
       }
       return Response.status(Status.UNAUTHORIZED)
                      .entity("{\"error\": \"" + e.getMessage() + "\"}")
@@ -553,6 +560,14 @@ public class WOPIResource implements ResourceContainer {
       }
       return Response.status(Status.INTERNAL_SERVER_ERROR)
                      .entity("{\"error\": \"" + e.getMessage() + "\"}")
+                     .type(MediaType.APPLICATION_JSON)
+                     .build();
+    } catch (RepositoryException e) {
+      if (LOG.isDebugEnabled()) {
+        LOG.debug("Cannot check file info", e);
+      }
+      return Response.status(Status.INTERNAL_SERVER_ERROR)
+                     .entity("{\"error\": \"Cannot check file info\"}")
                      .type(MediaType.APPLICATION_JSON)
                      .build();
     }
@@ -645,7 +660,9 @@ public class WOPIResource implements ResourceContainer {
       if (LOG.isDebugEnabled()) {
         LOG.debug("Lock or relock response: OK");
       }
-      return Response.ok().build();
+      ResponseBuilder response = Response.ok();
+      addItemVersionHeader(response, config);
+      return response.build();
     } catch (FileNotFoundException e) {
       if (LOG.isDebugEnabled()) {
         LOG.debug("File not found for lock or relock", e);
@@ -687,7 +704,9 @@ public class WOPIResource implements ResourceContainer {
       if (LOG.isDebugEnabled()) {
         LOG.debug("Unlock response: OK");
       }
-      return Response.ok().build();
+      ResponseBuilder response = Response.ok();
+      addItemVersionHeader(response, config);
+      return response.build();
     } catch (FileNotFoundException e) {
       if (LOG.isDebugEnabled()) {
         LOG.debug("File not found for unlock", e);
@@ -784,6 +803,12 @@ public class WOPIResource implements ResourceContainer {
     }
   }
 
+  /**
+   * Delete.
+   *
+   * @param config the config
+   * @return the response
+   */
   private Response delete(EditorConfig config) {
     LOG.warn("WOPI DELETE is not allowed for Office Online for web");
     return Response.ok().build();
@@ -798,19 +823,27 @@ public class WOPIResource implements ResourceContainer {
    * @param data the data
    * @return the response
    */
-  private Response putRelativeFile(EditorConfig config, String target, boolean overwrite, InputStream data) {
+  private Response putRelativeFile(EditorConfig config,
+                                   String target,
+                                   boolean overwrite,
+                                   InputStream data,
+                                   RequestInfo requestInfo) {
     try {
-      wopiService.putRelativeFile(config, target, overwrite, data);
+      String fileId = wopiService.putRelativeFile(config, target, overwrite, data);
+      String fileName = wopiService.getFileName(fileId, config.getWorkspace());
+      String url = new StringBuilder(wopiService.getWOPISrc(requestInfo, fileId)).append("?")
+                                                                                 .append(config.getAccessToken().getToken())
+                                                                                 .toString();
       if (LOG.isDebugEnabled()) {
         LOG.debug("PutRelativeFile response: OK");
       }
-      return Response.ok().build();
+      return Response.ok().entity("{\"Name\": \"" + fileName + "\", \"Url\": \"" + url + "\"}").build();
     } catch (IllegalFileNameException e) {
       if (LOG.isDebugEnabled()) {
         LOG.debug("Illegal file name for PutRelativeFile", e);
       }
       return Response.status(Status.BAD_REQUEST)
-                     .entity("{\"error\": \"" + e.getMessage() + "\"}")
+                     .entity("{\"Name\": \"\", \"Url\": \"\"}")
                      .type(MediaType.APPLICATION_JSON)
                      .build();
     } catch (FileLockedException e) {
@@ -818,7 +851,7 @@ public class WOPIResource implements ResourceContainer {
         LOG.debug("File locked error for PutRelativeFile", e);
       }
       return Response.status(Status.CONFLICT)
-                     .entity("{\"error\": \"" + e.getMessage() + "\"}")
+                     .entity("{\"Name\": \"\", \"Url\": \"\"}")
                      .header(LOCK, e.getLockId() != null ? e.getLockId() : "")
                      .type(MediaType.APPLICATION_JSON)
                      .build();
@@ -826,38 +859,29 @@ public class WOPIResource implements ResourceContainer {
       if (LOG.isDebugEnabled()) {
         LOG.debug("Update conflict for PutRelativeFile", e);
       }
-      return Response.status(Status.CONFLICT)
-                     .entity("{\"error\": \"" + e.getMessage() + "\"}")
-                     .type(MediaType.APPLICATION_JSON)
-                     .build();
+      return Response.status(Status.CONFLICT).entity("{\"Name\": \"\", \"Url\": \"\"}").type(MediaType.APPLICATION_JSON).build();
     } catch (FileNotFoundException e) {
       if (LOG.isDebugEnabled()) {
         LOG.debug("File not found for PutRelativeFile", e);
       }
-      return Response.status(Status.NOT_FOUND)
-                     .entity("{\"error\": \"" + e.getMessage() + "\"}")
-                     .type(MediaType.APPLICATION_JSON)
-                     .build();
+      return Response.status(Status.NOT_FOUND).entity("{\"Name\": \"\", \"Url\": \"\"}").type(MediaType.APPLICATION_JSON).build();
     } catch (FileExtensionNotFoundException e) {
       if (LOG.isDebugEnabled()) {
         LOG.debug("File extension not found for PutRelativeFile", e);
       }
       return Response.status(Status.INTERNAL_SERVER_ERROR)
-                     .entity("{\"error\": \"" + e.getMessage() + "\"}")
+                     .entity("{\"Name\": \"\", \"Url\": \"\"}")
                      .type(MediaType.APPLICATION_JSON)
                      .build();
     } catch (PermissionDeniedException e) {
       if (LOG.isDebugEnabled()) {
         LOG.debug("Cannot create new file based on existing one in specific mode.", e);
       }
-      return Response.status(Status.FORBIDDEN)
-                     .entity("{\"error\": \"" + e.getMessage() + "\"}")
-                     .type(MediaType.APPLICATION_JSON)
-                     .build();
+      return Response.status(Status.FORBIDDEN).entity("{\"Name\": \"\", \"Url\": \"\"}").type(MediaType.APPLICATION_JSON).build();
     } catch (RepositoryException e) {
       LOG.error("Cannot create new file based on existing one in specific mode.", e);
       return Response.status(Status.INTERNAL_SERVER_ERROR)
-                     .entity("{\"error\": \"Cannot create new file based on existing one in specific mode.\"}")
+                     .entity("{\"Name\": \"\", \"Url\": \"\"}")
                      .type(MediaType.APPLICATION_JSON)
                      .build();
     }
@@ -871,41 +895,40 @@ public class WOPIResource implements ResourceContainer {
    * @param data the data
    * @return the response
    */
-  private Response putSuggestedFile(EditorConfig config, String target, InputStream data) {
+  private Response putSuggestedFile(EditorConfig config, String target, InputStream data, RequestInfo requestInfo) {
     try {
-      wopiService.putSuggestedFile(config, target, data);
+      String fileId = wopiService.putSuggestedFile(config, target, data);
+      String fileName = wopiService.getFileName(fileId, config.getWorkspace());
+      String url = new StringBuilder(wopiService.getWOPISrc(requestInfo, fileId)).append("?")
+                                                                                 .append(config.getAccessToken().getToken())
+                                                                                 .toString();
+
       if (LOG.isDebugEnabled()) {
         LOG.debug("PutRelativeFile [Suggested] response: OK");
       }
-      return Response.ok().build();
+      return Response.ok().entity("{\"Name\": \"" + fileName + "\", \"Url\": \"" + url + "\"}").build();
     } catch (FileNotFoundException e) {
       if (LOG.isDebugEnabled()) {
         LOG.debug("File not found for PutRelativeFile [Suggested]");
       }
-      return Response.status(Status.NOT_FOUND)
-                     .entity("{\"error\": \"" + e.getMessage() + "\"}")
-                     .type(MediaType.APPLICATION_JSON)
-                     .build();
+      return Response.status(Status.NOT_FOUND).entity("{\"Name\": \"\", \"Url\": \"\"}").type(MediaType.APPLICATION_JSON).build();
     } catch (FileExtensionNotFoundException e) {
       if (LOG.isDebugEnabled()) {
         LOG.debug("File extension not found for PutRelativeFile [Suggested]");
       }
       return Response.status(Status.INTERNAL_SERVER_ERROR)
-                     .entity("{\"error\": \"" + e.getMessage() + "\"}")
+                     .entity("{\"Name\": \"\", \"Url\": \"\"}")
                      .type(MediaType.APPLICATION_JSON)
                      .build();
     } catch (PermissionDeniedException e) {
       if (LOG.isDebugEnabled()) {
         LOG.debug("Permission denied for PutRelativeFile [Suggested]", e);
       }
-      return Response.status(Status.FORBIDDEN)
-                     .entity("{\"error\": \"" + e.getMessage() + "\"}")
-                     .type(MediaType.APPLICATION_JSON)
-                     .build();
+      return Response.status(Status.FORBIDDEN).entity("{\"Name\": \"\", \"Url\": \"\"}").type(MediaType.APPLICATION_JSON).build();
     } catch (RepositoryException e) {
       LOG.error("Cannot create new file based on existing one in suggested mode.", e);
       return Response.status(Status.INTERNAL_SERVER_ERROR)
-                     .entity("{\"error\": \"Cannot create new file based on existing one in suggested mode.\"}")
+                     .entity("{\"Name\": \"\", \"Url\": \"\"}")
                      .type(MediaType.APPLICATION_JSON)
                      .build();
     }
@@ -925,6 +948,7 @@ public class WOPIResource implements ResourceContainer {
    * Verify proof key.
    *
    * @param request the request
+   * @throws ProofKeyValidationException the proof key validation exception
    */
   protected void verifyProofKey(HttpServletRequest request) throws ProofKeyValidationException {
     String proofKeyHeader = request.getHeader(PROOF);
@@ -1099,6 +1123,28 @@ public class WOPIResource implements ResourceContainer {
       return host;
     }
     return clientIp; // was null - Dec 20, 2017
+  }
+
+  /**
+   * Adds the item version header.
+   *
+   * @param response the response
+   * @param config the config
+   */
+  protected void addItemVersionHeader(ResponseBuilder response, EditorConfig config) {
+    String version = null;
+    try {
+      version = wopiService.getFileVersion(config.getFileId(), config.getWorkspace());
+    } catch (FileNotFoundException e) {
+      if (LOG.isDebugEnabled()) {
+        LOG.debug("File not found for getting version");
+      }
+    } catch (RepositoryException e) {
+      LOG.debug("Error occured while getting file version", e);
+    }
+    if (version != null) {
+      response.header(ITEM_VERSION, version);
+    }
   }
 
   /**
