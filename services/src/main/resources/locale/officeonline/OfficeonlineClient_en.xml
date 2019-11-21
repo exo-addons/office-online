@@ -12,7 +12,7 @@
   </OfficeonlineEditorClient>
   
   <!-- Messages -->
-  <OnlyofficeEditor>
+  <OfficeonlineEditor>
     <message>
       <ViewerNotFound>Online document editor not found</ViewerNotFound>
     </message>
@@ -24,5 +24,5 @@
       <CannotReadDocument>Cannot read the document. Please retry.</CannotReadDocument>      
       <DocumentIdRequired>Wrong request: document ID required.</DocumentIdRequired>
     </error>
-  </OnlyofficeEditor>
+  </OfficeonlineEditor>
 </bundle>

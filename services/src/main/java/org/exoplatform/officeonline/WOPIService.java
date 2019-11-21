@@ -32,6 +32,7 @@ import org.exoplatform.container.xml.InitParams;
 import org.exoplatform.container.xml.PropertiesParam;
 import org.exoplatform.ecm.utils.lock.LockUtil;
 import org.exoplatform.ecm.utils.text.Text;
+import org.exoplatform.ecm.webui.utils.PermissionUtil;
 import org.exoplatform.ecm.webui.utils.Utils;
 import org.exoplatform.officeonline.exception.ActionNotFoundException;
 import org.exoplatform.officeonline.exception.FileExtensionNotFoundException;
@@ -62,6 +63,7 @@ import org.exoplatform.services.security.ConversationState;
 import org.exoplatform.services.wcm.core.NodetypeConstant;
 import org.exoplatform.services.wcm.utils.WCMCoreUtils;
 
+// TODO: Auto-generated Javadoc
 /**
  * The Class WOPIService.
  */
@@ -166,6 +168,12 @@ public class WOPIService extends AbstractOfficeOnlineService {
   /** The Constant BREADCRUMB_CONFIGURATION_PROPERTIES. */
   protected static final String   BREADCRUMB_CONFIGURATION_PROPERTIES = "breadcrumb-configuration";
 
+  /** The Constant WOPI_CONFIGURATION_PROPERTIES. */
+  protected static final String   WOPI_CONFIGURATION_PROPERTIES       = "wopi-configuration";
+
+  /** The Constant WOPI_URL. */
+  protected static final String   WOPI_URL                            = "wopi-url";
+
   /** The discovery plugin. */
   protected WOPIDiscoveryPlugin   discoveryPlugin;
 
@@ -177,6 +185,9 @@ public class WOPIService extends AbstractOfficeOnlineService {
 
   /** The brand name. */
   protected String                brandName;
+
+  /** The wopi files url. */
+  protected String                wopiUrl;
 
   /**
    * Instantiates a new WOPI service.
@@ -209,6 +220,9 @@ public class WOPIService extends AbstractOfficeOnlineService {
 
     PropertiesParam breadcrumbParam = initParams.getPropertiesParam(BREADCRUMB_CONFIGURATION_PROPERTIES);
     brandName = breadcrumbParam.getProperty(SECRET_KEY);
+
+    PropertiesParam wopiFilesUrlParam = initParams.getPropertiesParam(WOPI_CONFIGURATION_PROPERTIES);
+    wopiUrl = wopiFilesUrlParam.getProperty(WOPI_URL);
     initFileExtensions();
   }
 
@@ -251,7 +265,7 @@ public class WOPIService extends AbstractOfficeOnlineService {
   public void putFile(EditorConfig config, String lockId, InputStream data) throws Exception {
     Node node = nodeByUUID(config.getFileId(), config.getWorkspace());
     try {
-      if (canEditDocument(node) && config.permissions.contains(Permissions.USER_CAN_WRITE)) {
+      if (PermissionUtil.canSetProperty(node) && config.permissions.contains(Permissions.USER_CAN_WRITE)) {
         Node content = node.getNode(JCR_CONTENT);
         if (!node.isLocked()) {
           long size = content.getProperty(JCR_DATA).getLength();
@@ -259,11 +273,12 @@ public class WOPIService extends AbstractOfficeOnlineService {
             throw new SizeMismatchException("File is unlocked and size isn't equal to 0.", "");
           }
         } else {
+          // TODO: handle case when the file is locked by other service (filelock == null, but node is locked)
           FileLock fileLock = lockManager.getLock(node);
           if (lockId.equals(fileLock.getLockId())) {
             node.getSession().addLockToken(fileLock.getLockToken());
           } else {
-            throw new LockMismatchException("Given lock is different from the file lock", LockUtil.getLockToken(node));
+            throw new LockMismatchException("Given lock is different from the file lock", fileLock.getLockId());
           }
         }
         content.setProperty(JCR_DATA, data);
@@ -284,6 +299,17 @@ public class WOPIService extends AbstractOfficeOnlineService {
         if (node.hasProperty(EXO_LAST_MODIFIER)) {
           node.setProperty(EXO_LAST_MODIFIER, config.getUserId());
         }
+
+        node.save();
+
+        if (checkout(node)) {
+          // Make a new version from the downloaded state
+          node.checkin();
+          // Since 1.2.0-RC01 we check-out the document to let (more) other
+          // actions in ECMS appear on it
+          node.checkout();
+        }
+
         if (data != null) {
           try {
             data.close();
@@ -300,6 +326,23 @@ public class WOPIService extends AbstractOfficeOnlineService {
           + config.getWorkspace());
     }
 
+  }
+
+  /**
+   * Checkout.
+   *
+   * @param node the node
+   * @return true, if successful
+   * @throws RepositoryException the repository exception
+   */
+  protected boolean checkout(Node node) throws RepositoryException {
+    if (node.isNodeType("mix:versionable")) {
+      if (!node.isCheckedOut()) {
+        node.checkout();
+      }
+      return true;
+    }
+    return false;
   }
 
   /**
@@ -560,11 +603,7 @@ public class WOPIService extends AbstractOfficeOnlineService {
    * @return the WOPI src
    */
   protected Object getWOPISrc(RequestInfo requestInfo, String fileId) {
-    StringBuilder builder = new StringBuilder();
-    builder.append(platformRestUrl(platformUrl(requestInfo.getScheme(), requestInfo.getServerName(), requestInfo.getPort())));
-    builder.append(FILES_ENDPOINT);
-    builder.append(fileId);
-    return builder.toString();
+    return new StringBuilder(wopiUrl).append("/files/").append(fileId).toString();
   }
 
   /**
@@ -657,7 +696,7 @@ public class WOPIService extends AbstractOfficeOnlineService {
    * @throws RepositoryException the repository exception
    */
   protected void addUserPermissionsProperties(Map<String, Serializable> map, Node node) throws RepositoryException {
-    boolean canEdit = canEditDocument(node);
+    boolean canEdit = PermissionUtil.canSetProperty(node);
     boolean canUpdate = canUpdate(node);
     map.put(Permissions.READ_ONLY.toString(), !canEdit);
     map.put(Permissions.USER_CAN_RENAME.toString(), canUpdate);
@@ -703,23 +742,6 @@ public class WOPIService extends AbstractOfficeOnlineService {
     // TODO: change to view action
     map.put(HOST_VIEW_URL, getEditorURL(node.getUUID(), schema, host, port));
 
-  }
-
-  /**
-   * Gets the editor URL.
-   *
-   * @param fileId the file id
-   * @param schema the schema
-   * @param host the host
-   * @param port the port
-   * @return the editor URL
-   */
-  protected String getEditorURL(String fileId, String schema, String host, int port) {
-    return platformUrl(schema, host, port).append('/')
-                                          .append(CommonsUtils.getCurrentPortalOwner())
-                                          .append("/mseditor?docId=")
-                                          .append(fileId)
-                                          .toString();
   }
 
   /**

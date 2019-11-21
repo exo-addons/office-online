@@ -20,8 +20,8 @@ import javax.jcr.Session;
 import org.apache.commons.io.input.AutoCloseInputStream;
 import org.picocontainer.Startable;
 
+import org.exoplatform.commons.utils.CommonsUtils;
 import org.exoplatform.container.PortalContainer;
-import org.exoplatform.ecm.webui.utils.PermissionUtil;
 import org.exoplatform.ecm.webui.utils.Utils;
 import org.exoplatform.officeonline.exception.FileNotFoundException;
 import org.exoplatform.officeonline.exception.OfficeOnlineException;
@@ -36,8 +36,9 @@ import org.exoplatform.services.log.ExoLogger;
 import org.exoplatform.services.log.Log;
 import org.exoplatform.services.organization.OrganizationService;
 import org.exoplatform.services.organization.User;
-import org.exoplatform.services.security.ConversationState;
 import org.exoplatform.services.wcm.core.NodetypeConstant;
+import org.exoplatform.webui.application.WebuiRequestContext;
+import org.exoplatform.webui.application.portlet.PortletRequestContext;
 
 /**
  * The Class AbstractOfficeOnlineService.
@@ -48,7 +49,7 @@ public abstract class AbstractOfficeOnlineService implements Startable {
   protected static final Log             LOG                    = ExoLogger.getLogger(AbstractOfficeOnlineService.class);
 
   /** The Constant CACHE_NAME. */
-  public static final String             CACHE_NAME             = "officeonline.Cache".intern();
+  public static final String             CACHE_NAME             = "officeonline.key.Cache".intern();
 
   /** The Constant SECRET_KEY. */
   protected static final String          SECRET_KEY             = "secret-key";
@@ -191,30 +192,6 @@ public abstract class AbstractOfficeOnlineService implements Startable {
   }
 
   /**
-   * Can edit document.
-   *
-   * @param node the node
-   * @return true, if successful
-   * @throws RepositoryException the repository exception
-   */
-  protected boolean canEditDocument(Node node) throws RepositoryException {
-    boolean res = false;
-    if (node != null) {
-      String remoteUser = ConversationState.getCurrent().getIdentity().getUserId();
-      String superUser = userACL.getSuperUser();
-      boolean locked = node.isLocked();
-      if (locked && (remoteUser.equalsIgnoreCase(superUser) || node.getLock().getLockOwner().equals(remoteUser))) {
-        locked = false;
-      }
-      res = !locked && PermissionUtil.canSetProperty(node);
-    }
-    if (!res && LOG.isDebugEnabled()) {
-      LOG.debug("Cannot edit: {}", node != null ? node.getPath() : null);
-    }
-    return res;
-  }
-
-  /**
    * Gets the content.
    *
    * @param config the config
@@ -352,6 +329,43 @@ public abstract class AbstractOfficeOnlineService implements Startable {
   }
 
   /**
+   * Gets the editor URL.
+   *
+   * @param fileId the file id
+   * @param schema the schema
+   * @param host the host
+   * @param port the port
+   * @return the editor URL
+   */
+  public String getEditorURL(String fileId, String schema, String host, int port) {
+    return platformUrl(schema, host, port).append('/')
+                                          .append(CommonsUtils.getCurrentPortalOwner())
+                                          .append("/mseditor?fileId=")
+                                          .append(fileId)
+                                          .toString();
+  }
+
+  /**
+   * Gets the editor URL using PortletRequestContext.
+   *
+   * @param fileId the file id
+   * @param schema the schema
+   * @param host the host
+   * @param port the port
+   * @return the editor URL
+   */
+  public String getEditorURL(String fileId) {
+    PortletRequestContext pcontext = (PortletRequestContext) WebuiRequestContext.getCurrentInstance();
+    return platformUrl(pcontext.getRequest().getScheme(),
+                       pcontext.getRequest().getServerName(),
+                       pcontext.getRequest().getServerPort()).append('/')
+                                                             .append(CommonsUtils.getCurrentPortalOwner())
+                                                             .append("/mseditor?fileId=")
+                                                             .append(fileId)
+                                                             .toString();
+  }
+
+  /**
    * Gets the size.
    *
    * @param node the node
@@ -439,6 +453,9 @@ public abstract class AbstractOfficeOnlineService implements Startable {
     List<String> values = Arrays.asList(decryptedToken.split(TOKEN_DELIMITE_SPLIT));
     if (values.size() > 2) {
       String workspace = values.get(0);
+      if (workspace.equals("null")) {
+        workspace = null;
+      }
       String userId = values.get(1);
       String fileId = values.get(2);
       long expires = Long.parseLong(values.get(3));

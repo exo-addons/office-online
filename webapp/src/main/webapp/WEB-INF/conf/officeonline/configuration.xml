@@ -45,6 +45,10 @@
         <name>breadcrumb-configuration</name>
         <property name="brand-name" value="${officeonline.brand.name:eXo Platform}" />
       </properties-param>
+      <properties-param>
+        <name>wopi-configuration</name>
+        <property name="wopi-url" value="${officeonline.wopi.files.url:http://wopi-dev01.exoplatform.org/portal/rest/wopi}" />
+      </properties-param>
     </init-params>
   </component>
 
@@ -187,6 +191,58 @@
       </init-params>
     </component-plugin>
   </external-component-plugins>
+  
+   <!-- Cache configuration for secret key -->
+  <external-component-plugins>
+    <target-component>org.exoplatform.services.cache.CacheService</target-component>
+    <component-plugin>
+      <name>addExoCacheConfig</name>
+      <set-method>addExoCacheConfig</set-method>
+      <type>org.exoplatform.services.cache.ExoCacheConfigPlugin</type>
+      <description>Cache configuration for officeonline service</description>
+      <init-params>
+        <object-param>
+          <name>officeonline.key.Cache</name>
+          <description></description>
+          <object type="org.exoplatform.services.cache.ExoCacheConfig">
+            <field name="name">
+              <string>officeonline.key.Cache</string>
+            </field>
+            <field name="maxSize">
+              <int>${officeonline.key.Cache.Capacity:5000}</int>
+            </field>
+            <field name="liveTime">
+              <long>${officeonline.key.Cache.TimeToLive:-1}</long>
+            </field>
+            <field name="implementation">
+              <string>org.exoplatform.services.cache.concurrent.ConcurrentFIFOExoCache</string>
+            </field>
+          </object>
+        </object-param>
+        <object-param profiles="cluster">
+          <name>officeonline.key.Cache</name>
+          <description></description>
+          <object type="org.exoplatform.services.cache.impl.infinispan.generic.GenericExoCacheConfig">
+            <field name="name">
+              <string>officeonline.key.Cache</string>
+            </field>
+            <field name="strategy">
+              <string>${officeonline.key.Cache.strategy:NONE}</string>
+            </field>
+            <field name="maxEntries">
+              <int>${officeonline.key.Cache.Capacity:5000}</int>
+            </field>
+            <field name="lifespan">
+              <long>${officeonline.key.Cache.TimeToLive:-1}</long>
+            </field>
+            <field name="cacheMode">
+              <string>${officeonline.key.Cache.cacheMode:replication}</string>
+            </field>
+          </object>
+        </object-param>
+      </init-params>
+    </component-plugin>
+  </external-component-plugins>
 
 
   <external-component-plugins>
@@ -236,6 +292,54 @@
       </init-params>
     </component-plugin>
   </external-component-plugins>
+  
+  
+   <!-- ECMS menu action for onlyoffice. -->
+  <external-component-plugins>
+    <target-component>org.exoplatform.webui.ext.UIExtensionManager</target-component>
+    <component-plugin>
+      <name>Add Onlyoffice Actions</name>
+      <set-method>registerUIExtensionPlugin</set-method>
+      <type>org.exoplatform.webui.ext.UIExtensionPlugin</type>
+      <init-params>
+        <object-param>
+          <name>File Activity</name>
+          <object type="org.exoplatform.social.webui.activity.UIActivityExtension">
+            <field name="type">
+              <string>org.exoplatform.social.webui.activity.BaseUIActivity</string>
+            </field>
+            <field name="name">
+              <string>files:spaces</string>
+            </field>
+            <field name="component">
+              <string>org.exoplatform.officeonline.webui.FileUIActivity</string>
+            </field>
+            <field name="activityBuiderClass">
+              <string>org.exoplatform.wcm.ext.component.activity.FileUIActivityBuilder</string>
+            </field>
+          </object>
+        </object-param>
+        <object-param>
+          <name>Share File Activity</name>
+          <object type="org.exoplatform.social.webui.activity.UIActivityExtension">
+            <field name="type">
+              <string>org.exoplatform.social.webui.activity.BaseUIActivity</string>
+            </field>
+            <field name="name">
+              <string>sharefiles:spaces</string>
+            </field>
+            <field name="component">
+              <string>org.exoplatform.officeonline.webui.FileUIActivity</string>
+            </field>
+            <field name="activityBuiderClass">
+              <string>org.exoplatform.wcm.ext.component.activity.UISharedFileBuilder</string>
+            </field>
+          </object>
+        </object-param>
+      </init-params>
+    </component-plugin>
+  </external-component-plugins>
+  
 
   <external-component-plugins>
     <target-component>org.exoplatform.services.resources.ResourceBundleService</target-component>

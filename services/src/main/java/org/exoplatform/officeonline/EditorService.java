@@ -4,15 +4,19 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
+import javax.jcr.Item;
 import javax.jcr.Node;
 import javax.jcr.RepositoryException;
+import javax.jcr.Session;
 
+import org.exoplatform.ecm.utils.permission.PermissionUtil;
 import org.exoplatform.officeonline.exception.OfficeOnlineException;
 import org.exoplatform.portal.config.UserACL;
 import org.exoplatform.services.cache.CacheService;
 import org.exoplatform.services.cms.documents.DocumentService;
 import org.exoplatform.services.jcr.RepositoryService;
 import org.exoplatform.services.jcr.ext.app.SessionProviderService;
+import org.exoplatform.services.jcr.ext.common.SessionProvider;
 import org.exoplatform.services.log.ExoLogger;
 import org.exoplatform.services.log.Log;
 import org.exoplatform.services.organization.OrganizationService;
@@ -59,7 +63,7 @@ public class EditorService extends AbstractOfficeOnlineService {
 
     Node node = nodeByUUID(fileId, workspace);
     List<Permissions> permissions = new ArrayList<>();
-    if (canEditDocument(node)) {
+    if (PermissionUtil.canSetProperty(node)) {
       permissions.add(Permissions.USER_CAN_WRITE);
       permissions.add(Permissions.USER_CAN_RENAME);
     } else {
@@ -136,6 +140,19 @@ public class EditorService extends AbstractOfficeOnlineService {
     } catch (OfficeOnlineException e) {
       LOG.error(e);
     }
+  }
+
+  public Node getNode(String workspace, String path) throws RepositoryException {
+    if (workspace == null) {
+      workspace = jcrService.getCurrentRepository().getConfiguration().getDefaultWorkspaceName();
+    }
+    SessionProvider sp = sessionProviders.getSessionProvider(null);
+    Session userSession = sp.getSession(workspace, jcrService.getCurrentRepository());
+    Item item = userSession.getItem(path);
+    if (item != null && item.isNode()) {
+      return (Node) userSession.getItem(path);
+    }
+    return null;
   }
 
   /**
