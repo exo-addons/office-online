@@ -262,6 +262,9 @@ public class WOPIService extends AbstractOfficeOnlineService {
     fileExtensions.put("application/vnd.ms-powerpoint.presentation.macroEnabled.12", "pptm");
     fileExtensions.put("application/vnd.ms-powerpoint.template.macroEnabled.12", "potm");
     fileExtensions.put("application/vnd.ms-powerpoint.slideshow.macroEnabled.12", "ppsm");
+    
+    fileExtensions.put("text/plain", "wopitest");
+    fileExtensions.put("text/plain", "wopitestx");
   }
 
   /**
@@ -952,7 +955,7 @@ public class WOPIService extends AbstractOfficeOnlineService {
     filename = Text.escapeIllegalJcrChars(filename);
     // Check and escape newTitle
     if (StringUtils.isBlank(filename)) {
-      throw new IllegalFileNameException("Provided filename is illegal");
+      throw new IllegalFileNameException("Provided filename is illegal", filename);
     }
 
     Node node = nodeByUUID(config.getFileId(), config.getWorkspace());
@@ -962,13 +965,13 @@ public class WOPIService extends AbstractOfficeOnlineService {
     Session userSession = node.getSession();
     if (userSession.itemExists(path)) {
       if (!overwrite) {
-        throw new UpdateConflictException("Overwrite is not allowed");
+        throw new UpdateConflictException("Overwrite is not allowed", null, filename);
       }
 
       Node targetNode = (Node) userSession.getItem(path);
       if (targetNode.isLocked()) {
         FileLock lock = lockManager.getLock(targetNode);
-        throw new FileLockedException("File is locked", lock != null ? lock.getLockId() : null);
+        throw new FileLockedException("File is locked", lock != null ? lock.getLockId() : null, filename);
       }
 
       long editedTime = System.currentTimeMillis();

@@ -837,7 +837,7 @@ public class WOPIResource implements ResourceContainer {
         LOG.debug("Cannot get filename for putFile operation", e);
       }
     }
-    String currentUrl = new StringBuilder(wopiService.getWOPISrc(requestInfo, config.getFileId())).append("?")
+    String currentUrl = new StringBuilder(wopiService.getWOPISrc(requestInfo, config.getFileId())).append("?access_token=")
                                                                                                   .append(config.getAccessToken()
                                                                                                                 .getToken())
                                                                                                   .toString();
@@ -845,7 +845,7 @@ public class WOPIResource implements ResourceContainer {
     try {
       String fileId = wopiService.putRelativeFile(config, target, overwrite, data);
       String fileName = wopiService.getFileName(fileId, config.getWorkspace());
-      String url = new StringBuilder(wopiService.getWOPISrc(requestInfo, fileId)).append("?")
+      String url = new StringBuilder(wopiService.getWOPISrc(requestInfo, fileId)).append("?access_token=")
                                                                                  .append(config.getAccessToken().getToken())
                                                                                  .toString();
       if (LOG.isDebugEnabled()) {
@@ -858,7 +858,7 @@ public class WOPIResource implements ResourceContainer {
       }
 
       return Response.status(Status.BAD_REQUEST)
-                     .entity("{\"Name\": \"" + currentFileName + "\", \"Url\": \"" + currentUrl + "\", \"error\": \""
+                     .entity("{\"Name\": \"" + e.getFilename() + "\", \"Url\": \"" + currentUrl + "\", \"error\": \""
                          + e.getMessage() + "\"}")
                      .type(MediaType.APPLICATION_JSON)
                      .build();
@@ -867,7 +867,7 @@ public class WOPIResource implements ResourceContainer {
         LOG.debug("File locked error for PutRelativeFile", e);
       }
       return Response.status(Status.CONFLICT)
-                     .entity("{\"Name\": \"" + currentFileName + "\", \"Url\": \"" + currentUrl + "\", \"error\": \""
+                     .entity("{\"Name\": \"" + e.getFileName() + "\", \"Url\": \"" + currentUrl + "\", \"error\": \""
                          + e.getMessage() + "\"}")
                      .header(LOCK, e.getLockId() != null ? e.getLockId() : "")
                      .type(MediaType.APPLICATION_JSON)
@@ -877,7 +877,7 @@ public class WOPIResource implements ResourceContainer {
         LOG.debug("Update conflict for PutRelativeFile", e);
       }
       return Response.status(Status.CONFLICT)
-                     .entity("{\"Name\": \"" + currentFileName + "\", \"Url\": \"" + currentUrl + "\", \"error\": \""
+                     .entity("{\"Name\": \"" + e.getFileName() + "\", \"Url\": \"" + currentUrl + "\", \"error\": \""
                          + e.getMessage() + "\"}")
                      .type(MediaType.APPLICATION_JSON)
                      .build();
@@ -936,7 +936,7 @@ public class WOPIResource implements ResourceContainer {
         LOG.debug("Cannot get filename for putFile operation", e);
       }
     }
-    String currentUrl = new StringBuilder(wopiService.getWOPISrc(requestInfo, config.getFileId())).append("?")
+    String currentUrl = new StringBuilder(wopiService.getWOPISrc(requestInfo, config.getFileId())).append("?access_token=")
                                                                                                   .append(config.getAccessToken()
                                                                                                                 .getToken())
                                                                                                   .toString();
@@ -944,7 +944,7 @@ public class WOPIResource implements ResourceContainer {
     try {
       String fileId = wopiService.putSuggestedFile(config, target, data);
       String fileName = wopiService.getFileName(fileId, config.getWorkspace());
-      String url = new StringBuilder(wopiService.getWOPISrc(requestInfo, fileId)).append("?")
+      String url = new StringBuilder(wopiService.getWOPISrc(requestInfo, fileId)).append("?access_token=")
                                                                                  .append(config.getAccessToken().getToken())
                                                                                  .toString();
 
