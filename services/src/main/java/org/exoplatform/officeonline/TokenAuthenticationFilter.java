@@ -62,7 +62,8 @@ public class TokenAuthenticationFilter extends AbstractFilter implements Filter 
       }
       chain.doFilter(request, response);
     } finally {
-      context.removeAttribute(WOPIResource.ACCESS_TOKEN);
+      context.removeAttribute(WOPIResource.EDITOR_CONFIG_ATTRIBUTE);
+      context.removeAttribute(WOPIResource.WRONG_TOKEN_ATTRIBUTE);
       try {
         ConversationState.setCurrent(null);
       } catch (Exception e) {

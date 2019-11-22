@@ -52,7 +52,7 @@ public class WOPIDiscoveryPlugin extends BaseComponentPlugin {
 
   /** The supported app names. */
   protected final List<String>                    supportedAppNames                  =
-                                                                    Arrays.asList("Word", "Excel", "PowerPoint");
+                                                                    Arrays.asList("Word", "Excel", "PowerPoint", "WopiTest");
 
   /** The proof key. */
   protected PublicKey                             proofKey;
