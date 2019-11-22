@@ -567,7 +567,7 @@ public class WOPIResource implements ResourceContainer {
         LOG.debug("Cannot check file info", e);
       }
       return Response.status(Status.INTERNAL_SERVER_ERROR)
-                     .entity("{\"error\": \"Cannot check file info\"}")
+                     .entity("{\"error\": \"Failed to check file info\"}")
                      .type(MediaType.APPLICATION_JSON)
                      .build();
     }
@@ -828,6 +828,20 @@ public class WOPIResource implements ResourceContainer {
                                    boolean overwrite,
                                    InputStream data,
                                    RequestInfo requestInfo) {
+    // Current filename and url
+    String currentFileName = "";
+    try {
+      currentFileName = wopiService.getFileName(config.getFileId(), config.getWorkspace());
+    } catch (FileNotFoundException | RepositoryException e) {
+      if (LOG.isDebugEnabled()) {
+        LOG.debug("Cannot get filename for putFile operation", e);
+      }
+    }
+    String currentUrl = new StringBuilder(wopiService.getWOPISrc(requestInfo, config.getFileId())).append("?")
+                                                                                                  .append(config.getAccessToken()
+                                                                                                                .getToken())
+                                                                                                  .toString();
+
     try {
       String fileId = wopiService.putRelativeFile(config, target, overwrite, data);
       String fileName = wopiService.getFileName(fileId, config.getWorkspace());
@@ -842,8 +856,10 @@ public class WOPIResource implements ResourceContainer {
       if (LOG.isDebugEnabled()) {
         LOG.debug("Illegal file name for PutRelativeFile", e);
       }
+
       return Response.status(Status.BAD_REQUEST)
-                     .entity("{\"Name\": \"\", \"Url\": \"\"}")
+                     .entity("{\"Name\": \"" + currentFileName + "\", \"Url\": \"" + currentUrl + "\", \"error\": \""
+                         + e.getMessage() + "\"}")
                      .type(MediaType.APPLICATION_JSON)
                      .build();
     } catch (FileLockedException e) {
@@ -851,7 +867,8 @@ public class WOPIResource implements ResourceContainer {
         LOG.debug("File locked error for PutRelativeFile", e);
       }
       return Response.status(Status.CONFLICT)
-                     .entity("{\"Name\": \"\", \"Url\": \"\"}")
+                     .entity("{\"Name\": \"" + currentFileName + "\", \"Url\": \"" + currentUrl + "\", \"error\": \""
+                         + e.getMessage() + "\"}")
                      .header(LOCK, e.getLockId() != null ? e.getLockId() : "")
                      .type(MediaType.APPLICATION_JSON)
                      .build();
@@ -859,29 +876,43 @@ public class WOPIResource implements ResourceContainer {
       if (LOG.isDebugEnabled()) {
         LOG.debug("Update conflict for PutRelativeFile", e);
       }
-      return Response.status(Status.CONFLICT).entity("{\"Name\": \"\", \"Url\": \"\"}").type(MediaType.APPLICATION_JSON).build();
+      return Response.status(Status.CONFLICT)
+                     .entity("{\"Name\": \"" + currentFileName + "\", \"Url\": \"" + currentUrl + "\", \"error\": \""
+                         + e.getMessage() + "\"}")
+                     .type(MediaType.APPLICATION_JSON)
+                     .build();
     } catch (FileNotFoundException e) {
       if (LOG.isDebugEnabled()) {
         LOG.debug("File not found for PutRelativeFile", e);
       }
-      return Response.status(Status.NOT_FOUND).entity("{\"Name\": \"\", \"Url\": \"\"}").type(MediaType.APPLICATION_JSON).build();
+      return Response.status(Status.NOT_FOUND)
+                     .entity("{\"Name\": \"" + currentFileName + "\", \"Url\": \"" + currentUrl + "\", \"error\": \""
+                         + e.getMessage() + "\"}")
+                     .type(MediaType.APPLICATION_JSON)
+                     .build();
     } catch (FileExtensionNotFoundException e) {
       if (LOG.isDebugEnabled()) {
         LOG.debug("File extension not found for PutRelativeFile", e);
       }
       return Response.status(Status.INTERNAL_SERVER_ERROR)
-                     .entity("{\"Name\": \"\", \"Url\": \"\"}")
+                     .entity("{\"Name\": \"" + currentFileName + "\", \"Url\": \"" + currentUrl + "\", \"error\": \""
+                         + e.getMessage() + "\"}")
                      .type(MediaType.APPLICATION_JSON)
                      .build();
     } catch (PermissionDeniedException e) {
       if (LOG.isDebugEnabled()) {
         LOG.debug("Cannot create new file based on existing one in specific mode.", e);
       }
-      return Response.status(Status.FORBIDDEN).entity("{\"Name\": \"\", \"Url\": \"\"}").type(MediaType.APPLICATION_JSON).build();
+      return Response.status(Status.FORBIDDEN)
+                     .entity("{\"Name\": \"" + currentFileName + "\", \"Url\": \"" + currentUrl + "\", \"error\": \""
+                         + e.getMessage() + "\"}")
+                     .type(MediaType.APPLICATION_JSON)
+                     .build();
     } catch (RepositoryException e) {
       LOG.error("Cannot create new file based on existing one in specific mode.", e);
       return Response.status(Status.INTERNAL_SERVER_ERROR)
-                     .entity("{\"Name\": \"\", \"Url\": \"\"}")
+                     .entity("{\"Name\": \"" + currentFileName + "\", \"Url\": \"" + currentUrl
+                         + "\", \"error\": \"Failed to put relative file in specific mode\"}")
                      .type(MediaType.APPLICATION_JSON)
                      .build();
     }
@@ -896,6 +927,20 @@ public class WOPIResource implements ResourceContainer {
    * @return the response
    */
   private Response putSuggestedFile(EditorConfig config, String target, InputStream data, RequestInfo requestInfo) {
+    // Current filename and url
+    String currentFileName = "";
+    try {
+      currentFileName = wopiService.getFileName(config.getFileId(), config.getWorkspace());
+    } catch (FileNotFoundException | RepositoryException e) {
+      if (LOG.isDebugEnabled()) {
+        LOG.debug("Cannot get filename for putFile operation", e);
+      }
+    }
+    String currentUrl = new StringBuilder(wopiService.getWOPISrc(requestInfo, config.getFileId())).append("?")
+                                                                                                  .append(config.getAccessToken()
+                                                                                                                .getToken())
+                                                                                                  .toString();
+
     try {
       String fileId = wopiService.putSuggestedFile(config, target, data);
       String fileName = wopiService.getFileName(fileId, config.getWorkspace());
@@ -911,24 +956,34 @@ public class WOPIResource implements ResourceContainer {
       if (LOG.isDebugEnabled()) {
         LOG.debug("File not found for PutRelativeFile [Suggested]");
       }
-      return Response.status(Status.NOT_FOUND).entity("{\"Name\": \"\", \"Url\": \"\"}").type(MediaType.APPLICATION_JSON).build();
+      return Response.status(Status.NOT_FOUND)
+                     .entity("{\"Name\": \"" + currentFileName + "\", \"Url\": \"" + currentUrl + "\", \"error\": \""
+                         + e.getMessage() + "\"}")
+                     .type(MediaType.APPLICATION_JSON)
+                     .build();
     } catch (FileExtensionNotFoundException e) {
       if (LOG.isDebugEnabled()) {
         LOG.debug("File extension not found for PutRelativeFile [Suggested]");
       }
       return Response.status(Status.INTERNAL_SERVER_ERROR)
-                     .entity("{\"Name\": \"\", \"Url\": \"\"}")
+                     .entity("{\"Name\": \"" + currentFileName + "\", \"Url\": \"" + currentUrl + "\", \"error\": \""
+                         + e.getMessage() + "\"}")
                      .type(MediaType.APPLICATION_JSON)
                      .build();
     } catch (PermissionDeniedException e) {
       if (LOG.isDebugEnabled()) {
         LOG.debug("Permission denied for PutRelativeFile [Suggested]", e);
       }
-      return Response.status(Status.FORBIDDEN).entity("{\"Name\": \"\", \"Url\": \"\"}").type(MediaType.APPLICATION_JSON).build();
+      return Response.status(Status.FORBIDDEN)
+                     .entity("{\"Name\": \"" + currentFileName + "\", \"Url\": \"" + currentUrl + "\", \"error\": \""
+                         + e.getMessage() + "\"}")
+                     .type(MediaType.APPLICATION_JSON)
+                     .build();
     } catch (RepositoryException e) {
       LOG.error("Cannot create new file based on existing one in suggested mode.", e);
       return Response.status(Status.INTERNAL_SERVER_ERROR)
-                     .entity("{\"Name\": \"\", \"Url\": \"\"}")
+                     .entity("{\"Name\": \"" + currentFileName + "\", \"Url\": \"" + currentUrl
+                         + "\", \"error\": \"Failed to put relative file in suggested mode\"}")
                      .type(MediaType.APPLICATION_JSON)
                      .build();
     }
