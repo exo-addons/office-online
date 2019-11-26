@@ -9,7 +9,6 @@ import java.io.Serializable;
 import java.net.URI;
 import java.security.Key;
 import java.security.NoSuchAlgorithmException;
-import java.util.Arrays;
 import java.util.Base64;
 import java.util.Calendar;
 import java.util.GregorianCalendar;
@@ -24,7 +23,6 @@ import javax.jcr.AccessDeniedException;
 import javax.jcr.Node;
 import javax.jcr.RepositoryException;
 import javax.jcr.Session;
-import javax.jcr.lock.LockException;
 
 import org.apache.commons.lang.StringUtils;
 
@@ -66,7 +64,6 @@ import org.exoplatform.services.security.ConversationState;
 import org.exoplatform.services.wcm.core.NodetypeConstant;
 import org.exoplatform.services.wcm.utils.WCMCoreUtils;
 
-// TODO: Auto-generated Javadoc
 /**
  * The Class WOPIService.
  */
@@ -512,10 +509,10 @@ public class WOPIService extends AbstractOfficeOnlineService {
       throw new InvalidFileNameException("Requested title is not allowed due to using illegal JCR chars");
     }
 
-    NodeImpl node = (NodeImpl) nodeByUUID(config.getFileId(), config.getWorkspace());
-    
-    if(trashService.isInTrash(node)) {
-      throw new FileNotFoundException("File has been deleted. FileId: " + config.getFileId() + ", workspace: " + config.getWorkspace());
+    Node node = nodeByUUID(config.getFileId(), config.getWorkspace());
+    if (trashService.isInTrash(node)) {
+      throw new FileNotFoundException("File has been deleted. FileId: " + config.getFileId() + ", workspace: "
+          + config.getWorkspace());
     }
 
     if (!canUpdate(node) || !config.getPermissions().contains(Permissions.USER_CAN_RENAME)) {
@@ -967,8 +964,11 @@ public class WOPIService extends AbstractOfficeOnlineService {
     }
 
     filename = Text.escapeIllegalJcrChars(filename);
-    
-    // TODO: hadnle long filenames by trimming it. Remember about the uniqueness.
+
+    // TODO: handle long filenames by trimming it. Remember about the uniqueness.
+    // A trimmed node name should not conflict with another node name starting with the same prefix
+    // but being truncated before an unique part.
+    // The max length for node name is 512 chars (eXo JCR limit)
     if (StringUtils.isBlank(filename) || filename.length() > MAX_FILENAME_LENGHT) {
       throw new IllegalFileNameException("Provided filename is illegal", filename);
     }
@@ -1084,11 +1084,8 @@ public class WOPIService extends AbstractOfficeOnlineService {
         return entry.getKey();
       }
     }
-    if (extension.equals("wopitest")) {
-      return "application/msword";
-    }
-    if (extension.equals("wopitestx")) {
-      return "application/vnd.openxmlformats-officedocument.wordprocessingml.document";
+    if (extension.equals("wopitest") || extension.equals("wopitestx")) {
+      return "application/octet-stream";
     }
     throw new FileExtensionNotFoundException("Cannot find file extension " + extension);
   }

@@ -845,7 +845,7 @@ public class WOPIResource implements ResourceContainer {
                      .build();
 
     } catch (OfficeOnlineException | RepositoryException e) {
-      LOG.error("Cannot delete file.", e);
+      LOG.error("Cannot delete file. FileId: " + config.getFileId() + ", lockId: " + lockId, e);
       return Response.status(Status.INTERNAL_SERVER_ERROR)
                      .entity("{\"error\": \"Cannot delete file.\"}")
                      .type(MediaType.APPLICATION_JSON)
