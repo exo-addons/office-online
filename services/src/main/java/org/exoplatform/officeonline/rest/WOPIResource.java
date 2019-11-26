@@ -23,6 +23,7 @@ import java.io.InputStream;
 import java.io.Serializable;
 import java.net.InetAddress;
 import java.net.URI;
+import java.nio.charset.Charset;
 import java.util.Map;
 
 import javax.jcr.RepositoryException;
@@ -40,6 +41,8 @@ import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.ResponseBuilder;
 import javax.ws.rs.core.Response.Status;
 import javax.ws.rs.core.UriInfo;
+
+import com.beetstra.jutf7.CharsetProvider;
 
 import org.exoplatform.officeonline.DocumentContent;
 import org.exoplatform.officeonline.EditorConfig;
@@ -62,6 +65,7 @@ import org.exoplatform.services.log.ExoLogger;
 import org.exoplatform.services.log.Log;
 import org.exoplatform.services.rest.resource.ResourceContainer;
 
+// TODO: Auto-generated Javadoc
 /**
  * The Class WOPIService.
  */
@@ -152,6 +156,9 @@ public class WOPIResource implements ResourceContainer {
 
   /** The Constant LOG. */
   protected static final Log    LOG                       = ExoLogger.getLogger(WOPIService.class);
+
+  /** The Constant UTF-7. */
+  private static final Charset  UTF_7                     = new CharsetProvider().charsetForName("UTF-7");
 
   /** The editor service. */
   protected final WOPIService   wopiService;
@@ -483,13 +490,14 @@ public class WOPIResource implements ResourceContainer {
       String providedLock = request.getHeader(LOCK);
       return refreshLock(config, providedLock);
     }
-    case RENAME_FILE:
+    case RENAME_FILE: {
       if (LOG.isDebugEnabled()) {
         LOG.debug("WOPI Request handled: renameFile");
       }
       String name = request.getHeader(REQUESTED_NAME);
       String lock = request.getHeader(LOCK);
       return renameFile(fileId, config, name, lock);
+    }
     case UNLOCK: {
       if (LOG.isDebugEnabled()) {
         LOG.debug("WOPI Request handled: unlock");
@@ -501,7 +509,8 @@ public class WOPIResource implements ResourceContainer {
       if (LOG.isDebugEnabled()) {
         LOG.debug("WOPI Request handled: delete");
       }
-      return delete(config);
+      String lock = request.getHeader(LOCK);
+      return delete(config, lock);
     }
     default:
       return Response.status(Status.BAD_REQUEST).build();
@@ -593,6 +602,7 @@ public class WOPIResource implements ResourceContainer {
                      .build();
     }
     try {
+      name = new String(name.getBytes(), UTF_7);
       String title = wopiService.renameFile(config, name, lock);
       if (LOG.isDebugEnabled()) {
         LOG.debug("Rename file response: OK");
@@ -809,9 +819,38 @@ public class WOPIResource implements ResourceContainer {
    * @param config the config
    * @return the response
    */
-  private Response delete(EditorConfig config) {
-    LOG.warn("WOPI DELETE is not allowed for Office Online for web");
-    return Response.ok().build();
+  private Response delete(EditorConfig config, String lockId) {
+    try {
+      wopiService.delete(config, lockId);
+      if (LOG.isDebugEnabled()) {
+        LOG.debug("Delete response: OK");
+      }
+      return Response.ok().build();
+    } catch (LockMismatchException e) {
+      if (LOG.isDebugEnabled()) {
+        LOG.debug("Lock mismatch for delete. Given lock: " + lockId + ", Actual: " + e.getLockId());
+      }
+      return Response.status(Status.CONFLICT)
+                     .entity("{\"error\": \"" + e.getMessage() + "\"}")
+                     .header(LOCK, e.getLockId())
+                     .type(MediaType.APPLICATION_JSON)
+                     .build();
+    } catch (FileNotFoundException e) {
+      if (LOG.isDebugEnabled()) {
+        LOG.debug("File not found for refresh lock", e);
+      }
+      return Response.status(Status.NOT_FOUND)
+                     .entity("{\"error\": \"" + e.getMessage() + "\"}")
+                     .type(MediaType.APPLICATION_JSON)
+                     .build();
+
+    } catch (OfficeOnlineException | RepositoryException e) {
+      LOG.error("Cannot delete file.", e);
+      return Response.status(Status.INTERNAL_SERVER_ERROR)
+                     .entity("{\"error\": \"Cannot delete file.\"}")
+                     .type(MediaType.APPLICATION_JSON)
+                     .build();
+    }
   }
 
   /**
@@ -821,8 +860,10 @@ public class WOPIResource implements ResourceContainer {
    * @param target the target
    * @param overwrite the overwrite
    * @param data the data
+   * @param requestInfo the request info
    * @return the response
    */
+  @Produces("application/json; charset=UTF-8")
   private Response putRelativeFile(EditorConfig config,
                                    String target,
                                    boolean overwrite,
@@ -843,23 +884,29 @@ public class WOPIResource implements ResourceContainer {
                                                                                                   .toString();
 
     try {
+      target = new String(target.getBytes(), UTF_7);
       String fileId = wopiService.putRelativeFile(config, target, overwrite, data);
       String fileName = wopiService.getFileName(fileId, config.getWorkspace());
+      EditorConfig newConfig = wopiService.createEditorConfig(config.getUserId(), fileId, config.getWorkspace());
       String url = new StringBuilder(wopiService.getWOPISrc(requestInfo, fileId)).append("?access_token=")
-                                                                                 .append(config.getAccessToken().getToken())
+                                                                                 .append(newConfig.getAccessToken().getToken())
                                                                                  .toString();
+
       if (LOG.isDebugEnabled()) {
         LOG.debug("PutRelativeFile response: OK");
       }
-      return Response.ok().entity("{\"Name\": \"" + fileName + "\", \"Url\": \"" + url + "\"}").build();
+      return Response.ok()
+                     .type(MediaType.APPLICATION_JSON_TYPE)
+                     .entity("{\"Name\": \"" + fileName + "\", \"Url\": \"" + url + "\"}")
+                     .build();
     } catch (IllegalFileNameException e) {
       if (LOG.isDebugEnabled()) {
         LOG.debug("Illegal file name for PutRelativeFile", e);
       }
 
       return Response.status(Status.BAD_REQUEST)
-                     .entity("{\"Name\": \"" + e.getFilename() + "\", \"Url\": \"" + currentUrl + "\", \"error\": \""
-                         + e.getMessage() + "\"}")
+                     .entity("{\"Name\": \"" + e.getFilename() + "\", \"Url\": \"no-url\", \"error\": \"" + e.getMessage()
+                         + "\"}")
                      .type(MediaType.APPLICATION_JSON)
                      .build();
     } catch (FileLockedException e) {
@@ -908,7 +955,7 @@ public class WOPIResource implements ResourceContainer {
                          + e.getMessage() + "\"}")
                      .type(MediaType.APPLICATION_JSON)
                      .build();
-    } catch (RepositoryException e) {
+    } catch (OfficeOnlineException | RepositoryException e) {
       LOG.error("Cannot create new file based on existing one in specific mode.", e);
       return Response.status(Status.INTERNAL_SERVER_ERROR)
                      .entity("{\"Name\": \"" + currentFileName + "\", \"Url\": \"" + currentUrl
@@ -924,6 +971,7 @@ public class WOPIResource implements ResourceContainer {
    * @param config the config
    * @param target the target
    * @param data the data
+   * @param requestInfo the request info
    * @return the response
    */
   private Response putSuggestedFile(EditorConfig config, String target, InputStream data, RequestInfo requestInfo) {
@@ -942,16 +990,26 @@ public class WOPIResource implements ResourceContainer {
                                                                                                   .toString();
 
     try {
+      target = new String(target.getBytes(), UTF_7);
       String fileId = wopiService.putSuggestedFile(config, target, data);
       String fileName = wopiService.getFileName(fileId, config.getWorkspace());
       String url = new StringBuilder(wopiService.getWOPISrc(requestInfo, fileId)).append("?access_token=")
                                                                                  .append(config.getAccessToken().getToken())
                                                                                  .toString();
-
+      String editUrl = wopiService.getEditorURL(fileId,
+                                                requestInfo.getScheme(),
+                                                requestInfo.getServerName(),
+                                                requestInfo.getPort());
+      // TODO: introduce viewUrl
+      String viewUrl = editUrl;
       if (LOG.isDebugEnabled()) {
         LOG.debug("PutRelativeFile [Suggested] response: OK");
       }
-      return Response.ok().entity("{\"Name\": \"" + fileName + "\", \"Url\": \"" + url + "\"}").build();
+      return Response.ok()
+                     .entity("{\"Name\": \"" + fileName + "\", \"Url\": \"" + url + "\", \"HostEditUrl\": \"" + editUrl
+                         + "\", \"HostViewUrl\":\"" + viewUrl + "\"}")
+                     .type(MediaType.APPLICATION_JSON)
+                     .build();
     } catch (FileNotFoundException e) {
       if (LOG.isDebugEnabled()) {
         LOG.debug("File not found for PutRelativeFile [Suggested]");

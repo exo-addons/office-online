@@ -47,7 +47,7 @@ public class EditorConfig {
    *
    * @return the user id
    */
-  protected String getUserId() {
+  public String getUserId() {
     return userId;
   }
 

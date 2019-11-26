@@ -48,35 +48,6 @@ public class EditorService extends AbstractOfficeOnlineService {
     super(sessionProviders, jcrService, organization, documentService, cacheService, userACL);
   }
 
-  /**
-   * Creates the editor config.
-   *
-   * @param userId the userId
-   * @param workspace the workspace
-   * @param fileId the file id
-   * @return the editor config
-   * @throws RepositoryException the repository exception
-   * @throws OfficeOnlineException the office online exception
-   */
-  public EditorConfig createEditorConfig(String userId, String fileId, String workspace) throws OfficeOnlineException,
-                                                                                         RepositoryException {
-
-    Node node = nodeByUUID(fileId, workspace);
-    List<Permissions> permissions = new ArrayList<>();
-    if (PermissionUtil.canSetProperty(node)) {
-      permissions.add(Permissions.USER_CAN_WRITE);
-      permissions.add(Permissions.USER_CAN_RENAME);
-    } else {
-      permissions.add(Permissions.READ_ONLY);
-    }
-    EditorConfig.Builder configBuilder = new EditorConfig.Builder().userId(userId)
-                                                                   .fileId(fileId)
-                                                                   .workspace(workspace)
-                                                                   .permissions(permissions);
-    AccessToken accessToken = generateAccessToken(configBuilder);
-    configBuilder.accessToken(accessToken);
-    return configBuilder.build();
-  }
 
   /**
    * WARNING: ONLY FOR TESTING PURPOSES. SHOULD BE REMOVED ON PRODUCTION
