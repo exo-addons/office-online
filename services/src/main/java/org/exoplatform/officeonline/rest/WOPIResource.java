@@ -21,6 +21,7 @@ package org.exoplatform.officeonline.rest;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.Serializable;
+import java.io.StringWriter;
 import java.net.InetAddress;
 import java.net.URI;
 import java.nio.charset.Charset;
@@ -41,6 +42,8 @@ import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.ResponseBuilder;
 import javax.ws.rs.core.Response.Status;
 import javax.ws.rs.core.UriInfo;
+
+import org.apache.commons.io.IOUtils;
 
 import com.beetstra.jutf7.CharsetProvider;
 
@@ -65,7 +68,6 @@ import org.exoplatform.services.log.ExoLogger;
 import org.exoplatform.services.log.Log;
 import org.exoplatform.services.rest.resource.ResourceContainer;
 
-// TODO: Auto-generated Javadoc
 /**
  * The Class WOPIService.
  */
@@ -103,7 +105,9 @@ public class WOPIResource implements ResourceContainer {
     /** The unlock. */
     UNLOCK,
     /** The delete. */
-    DELETE
+    DELETE,
+    /** The put user info */
+    PUT_USER_INFO
   }
 
   /** The Constant FILE_CONVERSION. */
@@ -160,6 +164,9 @@ public class WOPIResource implements ResourceContainer {
   /** The Constant UTF-7. */
   private static final Charset  UTF_7                     = new CharsetProvider().charsetForName("UTF-7");
 
+  /** The Constant UTF-8. */
+  private static final Charset  UTF_8                     = new CharsetProvider().charsetForName("UTF-8");
+
   /** The editor service. */
   protected final WOPIService   wopiService;
 
@@ -198,7 +205,7 @@ public class WOPIResource implements ResourceContainer {
       verifyProofKey(request);
     } catch (ProofKeyValidationException e) {
       if (LOG.isDebugEnabled()) {
-        LOG.debug("Proof key validation failed for putFile", e);
+        LOG.debug("Proof key validation failed for putFile");
       }
       return Response.status(Status.INTERNAL_SERVER_ERROR)
                      .entity("{\"error\": \"" + e.getMessage() + "\"}")
@@ -311,7 +318,7 @@ public class WOPIResource implements ResourceContainer {
       verifyProofKey(request);
     } catch (ProofKeyValidationException e) {
       if (LOG.isDebugEnabled()) {
-        LOG.debug("Proof key validation failed for getFile", e);
+        LOG.debug("Proof key validation failed for getFile");
       }
       return Response.status(Status.INTERNAL_SERVER_ERROR)
                      .entity("{\"error\": \"" + e.getMessage() + "\"}")
@@ -396,7 +403,7 @@ public class WOPIResource implements ResourceContainer {
       verifyProofKey(request);
     } catch (ProofKeyValidationException e) {
       if (LOG.isDebugEnabled()) {
-        LOG.debug("Proof key validation failed for /files/", e);
+        LOG.debug("Proof key validation failed for /files/");
       }
       return Response.status(Status.INTERNAL_SERVER_ERROR)
                      .entity("{\"error\": \"" + e.getMessage() + "\"}")
@@ -433,24 +440,21 @@ public class WOPIResource implements ResourceContainer {
                      .type(MediaType.APPLICATION_JSON)
                      .build();
     }
-
+    
+    if (LOG.isDebugEnabled()) {
+      LOG.debug("WOPI Request: " + operation);
+    }
     switch (operation) {
     case GET_LOCK:
       return getLock(config);
     case GET_SHARE_URL:
       return getShareUrl();
     case LOCK: {
-      if (LOG.isDebugEnabled()) {
-        LOG.debug("WOPI Request handled: lock");
-      }
       String providedLock = request.getHeader(LOCK);
       String oldLock = request.getHeader(OLD_LOCK);
       return lockOrUnlockAndRelock(config, providedLock, oldLock);
     }
     case PUT_RELATIVE: {
-      if (LOG.isDebugEnabled()) {
-        LOG.debug("WOPI Request handled: putRelative");
-      }
       if (request.getHeader(RELATIVE_TARGET) != null && request.getHeader(SUGGESTED_TARGET) != null) {
         if (LOG.isDebugEnabled()) {
           LOG.debug("Headers RELATIVE_TARGET and SUGGESTED_TARGET are mutually exclusive for putRelative");
@@ -484,37 +488,44 @@ public class WOPIResource implements ResourceContainer {
       }
     }
     case REFRESH_LOCK: {
-      if (LOG.isDebugEnabled()) {
-        LOG.debug("WOPI Request handled: refreshLock");
-      }
       String providedLock = request.getHeader(LOCK);
       return refreshLock(config, providedLock);
     }
     case RENAME_FILE: {
-      if (LOG.isDebugEnabled()) {
-        LOG.debug("WOPI Request handled: renameFile");
-      }
       String name = request.getHeader(REQUESTED_NAME);
       String lock = request.getHeader(LOCK);
       return renameFile(fileId, config, name, lock);
     }
     case UNLOCK: {
-      if (LOG.isDebugEnabled()) {
-        LOG.debug("WOPI Request handled: unlock");
-      }
       String providedLock = request.getHeader(LOCK);
       return unlock(config, providedLock);
     }
     case DELETE: {
-      if (LOG.isDebugEnabled()) {
-        LOG.debug("WOPI Request handled: delete");
-      }
       String lock = request.getHeader(LOCK);
       return delete(config, lock);
+    }
+    case PUT_USER_INFO: {
+      try {
+        String userInfo = convertStreamToString(request.getInputStream());
+        return putUserInfo(config, userInfo);
+      } catch (IOException e) {
+        return Response.status(Status.INTERNAL_SERVER_ERROR)
+                       .entity("{\"error\": \"Failed to fetch userinfo from request body\"}")
+                       .type(MediaType.APPLICATION_JSON)
+                       .build();
+      }
     }
     default:
       return Response.status(Status.BAD_REQUEST).build();
     }
+  }
+
+  protected Response putUserInfo(EditorConfig config, String userInfo) {
+    wopiService.putUserInfo(config.getUserId(), userInfo);
+    if (LOG.isDebugEnabled()) {
+      LOG.debug("PutUserInfo response: OK. UserId: " + config.getUserId() + ". UserInfo: " + userInfo);
+    }
+    return Response.ok().build();
   }
 
   /**
@@ -537,7 +548,7 @@ public class WOPIResource implements ResourceContainer {
       verifyProofKey(request);
     } catch (ProofKeyValidationException e) {
       if (LOG.isDebugEnabled()) {
-        LOG.debug("Proof key validation failed for checkFileInfo", e);
+        LOG.debug("Proof key validation failed for checkFileInfo");
       }
       return Response.status(Status.INTERNAL_SERVER_ERROR)
                      .entity("{\"error\": \"" + e.getMessage() + "\"}")
@@ -1282,5 +1293,11 @@ public class WOPIResource implements ResourceContainer {
       return true;
     }
     return false;
+  }
+
+  protected String convertStreamToString(InputStream inputStream) throws IOException {
+    StringWriter writer = new StringWriter();
+    IOUtils.copy(inputStream, writer, UTF_8);
+    return writer.toString();
   }
 }

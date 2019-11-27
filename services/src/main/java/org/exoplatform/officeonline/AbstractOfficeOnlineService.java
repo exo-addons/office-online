@@ -49,8 +49,8 @@ public abstract class AbstractOfficeOnlineService implements Startable {
   /** The Constant LOG. */
   protected static final Log             LOG                    = ExoLogger.getLogger(AbstractOfficeOnlineService.class);
 
-  /** The Constant CACHE_NAME. */
-  public static final String             CACHE_NAME             = "officeonline.key.Cache".intern();
+  /** The Constant KEY_CACHE_NAME. */
+  public static final String             KEY_CACHE_NAME             = "officeonline.key.Cache".intern();
 
   /** The Constant SECRET_KEY. */
   protected static final String          SECRET_KEY             = "secret-key";
@@ -104,7 +104,7 @@ public abstract class AbstractOfficeOnlineService implements Startable {
   protected static final String          EXO_NAME               = "exo:name";
 
   /** Cache of Editing documents. */
-  protected final ExoCache<String, Key>  activeCache;
+  protected final ExoCache<String, Key>  keyCache;
 
   /** The session providers. */
   protected final SessionProviderService sessionProviders;
@@ -141,7 +141,7 @@ public abstract class AbstractOfficeOnlineService implements Startable {
     this.jcrService = jcrService;
     this.organization = organization;
     this.documentService = documentService;
-    this.activeCache = cacheService.getCacheInstance(CACHE_NAME);
+    this.keyCache = cacheService.getCacheInstance(KEY_CACHE_NAME);
     this.userACL = userACL;
   }
 
@@ -434,7 +434,7 @@ public abstract class AbstractOfficeOnlineService implements Startable {
    */
   public AccessToken generateAccessToken(EditorConfig.Builder configBuilder) throws OfficeOnlineException {
     try {
-      Key key = activeCache.get(SECRET_KEY);
+      Key key = keyCache.get(SECRET_KEY);
       Cipher chiper = Cipher.getInstance(ALGORITHM);
       chiper.init(Cipher.ENCRYPT_MODE, key);
 
@@ -469,7 +469,7 @@ public abstract class AbstractOfficeOnlineService implements Startable {
   public EditorConfig buildEditorConfig(String token) throws OfficeOnlineException {
     String decryptedToken = "";
     try {
-      Key key = activeCache.get(SECRET_KEY);
+      Key key = keyCache.get(SECRET_KEY);
       Cipher chiper = Cipher.getInstance(ALGORITHM);
       chiper.init(Cipher.DECRYPT_MODE, key);
       byte[] decoded = Base64.getUrlDecoder().decode(token.getBytes());

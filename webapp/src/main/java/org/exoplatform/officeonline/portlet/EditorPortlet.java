@@ -87,7 +87,8 @@ public class EditorPortlet extends GenericPortlet {
         RequestInfo requestInfo = new RequestInfo(request.getScheme(),
                                                   request.getServerName(),
                                                   request.getServerPort(),
-                                                  request.getRemoteUser());
+                                                  request.getRemoteUser(),
+                                                  request.getLocale());
         String actionURL = wopiService.getActionUrl(requestInfo, fileId, null, DEFAULT_ACTION);
         require.addScripts("officeonline.initEditor(" + token.toJSON() + ", \"" + actionURL + "\");");
       } catch (RepositoryException e) {

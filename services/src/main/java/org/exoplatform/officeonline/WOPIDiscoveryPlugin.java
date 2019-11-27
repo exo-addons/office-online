@@ -210,7 +210,7 @@ public class WOPIDiscoveryPlugin extends BaseComponentPlugin {
       app.getActions().forEach(action -> {
         actionURLs.computeIfAbsent(action.getExt(), k -> new HashMap<>())
                   .put(action.getName(),
-                       String.format("%s%s=%s&",
+                       String.format("%s%s=%s",
                                      action.getUrl().replaceFirst("<.*$", ""),
                                      PLACEHOLDER_IS_LICENSED_USER,
                                      PLACEHOLDER_IS_LICENSED_USER_VALUE));
