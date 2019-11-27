@@ -17,3 +17,12 @@ body {
   border: none;
   display: block;
 }
+
+.maskLayer .uiDocumentPreview .previewBtn .remoteEditBtn, .maskLayer .uiDocumentPreview .previewBtn .officeOnlineEditBtn {
+  float: right;
+  padding-left: 15px;
+}
+
+.maskLayer .uiDocumentPreview .previewBtn .officeOnlineEditBtn .uiIconEcmsOfficeonlineOpen {
+  color: #ffffff;
+}
