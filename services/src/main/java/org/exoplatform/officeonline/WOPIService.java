@@ -1,3 +1,6 @@
+/*
+ * 
+ */
 package org.exoplatform.officeonline;
 
 import java.io.IOException;
@@ -6,7 +9,6 @@ import java.io.Serializable;
 import java.net.URI;
 import java.security.Key;
 import java.security.NoSuchAlgorithmException;
-import java.util.Arrays;
 import java.util.Base64;
 import java.util.Calendar;
 import java.util.GregorianCalendar;
@@ -47,6 +49,7 @@ import org.exoplatform.officeonline.exception.WopiDiscoveryNotFoundException;
 import org.exoplatform.portal.config.UserACL;
 import org.exoplatform.services.cache.CacheService;
 import org.exoplatform.services.cms.documents.DocumentService;
+import org.exoplatform.services.cms.documents.TrashService;
 import org.exoplatform.services.cms.jcrext.activity.ActivityCommonService;
 import org.exoplatform.services.jcr.RepositoryService;
 import org.exoplatform.services.jcr.access.PermissionType;
@@ -61,7 +64,6 @@ import org.exoplatform.services.security.ConversationState;
 import org.exoplatform.services.wcm.core.NodetypeConstant;
 import org.exoplatform.services.wcm.utils.WCMCoreUtils;
 
-// TODO: Auto-generated Javadoc
 /**
  * The Class WOPIService.
  */
@@ -137,7 +139,7 @@ public class WOPIService extends AbstractOfficeOnlineService {
   protected static final String   SUPPORTS_UPDATE                     = "SupportsUpdate";
 
   /** The Constant SUPPORTS_DELETE_FILE. */
-  protected static final String   SUPPORTS_DELETE_FILE                     = "SupportsDeleteFile";
+  protected static final String   SUPPORTS_DELETE_FILE                = "SupportsDeleteFile";
 
   /** The Constant SUPPORTED_SHARE_URL_TYPES. */
   protected static final String   SUPPORTED_SHARE_URL_TYPES           = "SupportedShareUrlTypes";
@@ -184,6 +186,12 @@ public class WOPIService extends AbstractOfficeOnlineService {
   /** The Constant WOPITEST_ACTION. */
   protected static final String   WOPITEST_ACTION                     = "view";
 
+  /** The Constant MAX_FILENAME_LENGHT. */
+  protected static final int      MAX_FILENAME_LENGHT                 = 510;
+
+  /** The trash service. */
+  protected final TrashService    trashService;
+
   /** The discovery plugin. */
   protected WOPIDiscoveryPlugin   discoveryPlugin;
 
@@ -208,6 +216,7 @@ public class WOPIService extends AbstractOfficeOnlineService {
    * @param documentService the document service
    * @param cacheService the cache service
    * @param userACL the user ACL
+   * @param trashService the trash service
    * @param initParams the init params
    */
   public WOPIService(SessionProviderService sessionProviders,
@@ -216,8 +225,10 @@ public class WOPIService extends AbstractOfficeOnlineService {
                      DocumentService documentService,
                      CacheService cacheService,
                      UserACL userACL,
+                     TrashService trashService,
                      InitParams initParams) {
     super(sessionProviders, jcrService, organization, documentService, cacheService, userACL);
+    this.trashService = trashService;
     PropertiesParam tokenParam = initParams.getPropertiesParam(TOKEN_CONFIGURATION_PROPERTIES);
     String secretKey = tokenParam.getProperty(SECRET_KEY);
     if (secretKey != null && !secretKey.trim().isEmpty()) {
@@ -262,6 +273,7 @@ public class WOPIService extends AbstractOfficeOnlineService {
     fileExtensions.put("application/vnd.ms-powerpoint.presentation.macroEnabled.12", "pptm");
     fileExtensions.put("application/vnd.ms-powerpoint.template.macroEnabled.12", "potm");
     fileExtensions.put("application/vnd.ms-powerpoint.slideshow.macroEnabled.12", "ppsm");
+
   }
 
   /**
@@ -283,13 +295,7 @@ public class WOPIService extends AbstractOfficeOnlineService {
             throw new SizeMismatchException("File is unlocked and size isn't equal to 0.", "");
           }
         } else {
-          // TODO: handle case when the file is locked by other service (filelock == null, but node is locked)
-          FileLock fileLock = lockManager.getLock(node);
-          if (lockId.equals(fileLock.getLockId())) {
-            node.getSession().addLockToken(fileLock.getLockToken());
-          } else {
-            throw new LockMismatchException("Given lock is different from the file lock", fileLock.getLockId());
-          }
+          checkNodeLock(node, lockId);
         }
         content.setProperty(JCR_DATA, data);
         Calendar editedTime = Calendar.getInstance();
@@ -493,9 +499,9 @@ public class WOPIService extends AbstractOfficeOnlineService {
    * @throws OfficeOnlineException the office online exception
    * @throws LockMismatchException the lock mismatch exception
    */
-  public String renameFile(EditorConfig config, String newTitle, String lock) throws RepositoryException,
-                                                                              OfficeOnlineException,
-                                                                              LockMismatchException {
+  public String renameFile(EditorConfig config, String newTitle, String lockId) throws RepositoryException,
+                                                                                OfficeOnlineException,
+                                                                                LockMismatchException {
 
     newTitle = Text.escapeIllegalJcrChars(newTitle);
     // Check and escape newTitle
@@ -503,14 +509,16 @@ public class WOPIService extends AbstractOfficeOnlineService {
       throw new InvalidFileNameException("Requested title is not allowed due to using illegal JCR chars");
     }
 
-    NodeImpl node = (NodeImpl) nodeByUUID(config.getFileId(), config.getWorkspace());
+    Node node = nodeByUUID(config.getFileId(), config.getWorkspace());
+    if (trashService.isInTrash(node)) {
+      throw new FileNotFoundException("File has been deleted. FileId: " + config.getFileId() + ", workspace: "
+          + config.getWorkspace());
+    }
 
     if (!canUpdate(node) || !config.getPermissions().contains(Permissions.USER_CAN_RENAME)) {
       throw new PermissionDeniedException("Cannot rename document. Permission denied");
     }
-    if (node.isLocked() && !node.getLock().getLockToken().equals(lock)) {
-      throw new LockMismatchException("Given lock is different from the file lock", node.getLock().getLockToken());
-    }
+    checkNodeLock(node, lockId);
 
     Node parentNode = node.getParent();
     if (parentNode.canAddMixin(NodetypeConstant.MIX_REFERENCEABLE)) {
@@ -679,9 +687,9 @@ public class WOPIService extends AbstractOfficeOnlineService {
     map.put(SUPPORTS_LOCKS, true);
     map.put(SUPPORTS_RENAME, true);
     map.put(SUPPORTS_UPDATE, true);
-    // WARNING: host doesn't support delete file operation. Needed for wopitest putRelativeFile
     map.put(SUPPORTS_DELETE_FILE, true);
-    map.put(SUPPORTED_SHARE_URL_TYPES, (Serializable) Arrays.asList(SHARE_URL_READ_ONLY, SHARE_URL_READ_WRITE));
+    // TODO: Introduce SHARE_URL_TYPES
+    // map.put(SUPPORTED_SHARE_URL_TYPES, (Serializable) Arrays.asList(SHARE_URL_READ_ONLY, SHARE_URL_READ_WRITE));
   }
 
   /**
@@ -892,9 +900,9 @@ public class WOPIService extends AbstractOfficeOnlineService {
    * @throws PermissionDeniedException the permission denied exception
    */
   public String putSuggestedFile(EditorConfig config, String target, InputStream data) throws RepositoryException,
-                                                                                     FileNotFoundException,
-                                                                                     FileExtensionNotFoundException,
-                                                                                     PermissionDeniedException {
+                                                                                       FileNotFoundException,
+                                                                                       FileExtensionNotFoundException,
+                                                                                       PermissionDeniedException {
     if (config.getPermissions().contains(Permissions.USER_CAN_NOT_WRITE_RELATIVE)) {
       throw new PermissionDeniedException("User " + config.getUserId() + " cannot write relative");
     }
@@ -913,10 +921,16 @@ public class WOPIService extends AbstractOfficeOnlineService {
       filename = DEFAULT_FILENAME + oldName.substring(oldName.lastIndexOf("."));
     }
 
+    // TODO: handle long filenames
+    if (filename.length() > MAX_FILENAME_LENGHT) {
+      String extension = filename.substring(filename.lastIndexOf("."));
+      int length = filename.length() - MAX_FILENAME_LENGHT + extension.length();
+      filename = filename.substring(0, length) + extension;
+    }
+
     Node parent = node.getParent();
     return createFile(parent, filename, data);
   }
-
 
   /**
    * Put relative file.
@@ -935,24 +949,28 @@ public class WOPIService extends AbstractOfficeOnlineService {
    * @throws PermissionDeniedException the permission denied exception
    */
   public String putRelativeFile(EditorConfig config,
-                              String filename,
-                              boolean overwrite,
-                              InputStream data) throws IllegalFileNameException,
-                                                FileNotFoundException,
-                                                RepositoryException,
-                                                FileLockedException,
-                                                UpdateConflictException,
-                                                FileExtensionNotFoundException,
-                                                PermissionDeniedException {
+                                String filename,
+                                boolean overwrite,
+                                InputStream data) throws IllegalFileNameException,
+                                                  FileNotFoundException,
+                                                  RepositoryException,
+                                                  FileLockedException,
+                                                  UpdateConflictException,
+                                                  FileExtensionNotFoundException,
+                                                  PermissionDeniedException {
 
     if (config.getPermissions().contains(Permissions.USER_CAN_NOT_WRITE_RELATIVE)) {
       throw new PermissionDeniedException("User " + config.getUserId() + " cannot write relative");
     }
 
     filename = Text.escapeIllegalJcrChars(filename);
-    // Check and escape newTitle
-    if (StringUtils.isBlank(filename)) {
-      throw new IllegalFileNameException("Provided filename is illegal");
+
+    // TODO: handle long filenames by trimming it. Remember about the uniqueness.
+    // A trimmed node name should not conflict with another node name starting with the same prefix
+    // but being truncated before an unique part.
+    // The max length for node name is 512 chars (eXo JCR limit)
+    if (StringUtils.isBlank(filename) || filename.length() > MAX_FILENAME_LENGHT) {
+      throw new IllegalFileNameException("Provided filename is illegal", filename);
     }
 
     Node node = nodeByUUID(config.getFileId(), config.getWorkspace());
@@ -962,13 +980,13 @@ public class WOPIService extends AbstractOfficeOnlineService {
     Session userSession = node.getSession();
     if (userSession.itemExists(path)) {
       if (!overwrite) {
-        throw new UpdateConflictException("Overwrite is not allowed");
+        throw new UpdateConflictException("Overwrite is not allowed", null, filename);
       }
 
       Node targetNode = (Node) userSession.getItem(path);
       if (targetNode.isLocked()) {
         FileLock lock = lockManager.getLock(targetNode);
-        throw new FileLockedException("File is locked", lock != null ? lock.getLockId() : null);
+        throw new FileLockedException("File is locked", lock != null ? lock.getLockId() : null, filename);
       }
 
       long editedTime = System.currentTimeMillis();
@@ -1004,7 +1022,6 @@ public class WOPIService extends AbstractOfficeOnlineService {
     }
   }
 
-
   /**
    * Creates the file.
    *
@@ -1016,7 +1033,7 @@ public class WOPIService extends AbstractOfficeOnlineService {
    * @throws FileExtensionNotFoundException the file extension not found exception
    */
   protected String createFile(Node parent, String filename, InputStream data) throws RepositoryException,
-                                                                            FileExtensionNotFoundException {
+                                                                              FileExtensionNotFoundException {
     // Add node
     Node addedNode = parent.addNode(filename, Utils.NT_FILE);
 
@@ -1028,8 +1045,11 @@ public class WOPIService extends AbstractOfficeOnlineService {
     if (addedNode.canAddMixin(MIX_VERSIONABLE)) {
       addedNode.addMixin(MIX_VERSIONABLE);
     }
-
+    if (addedNode.hasProperty("exo:name")) {
+      addedNode.setProperty("exo:name", filename);
+    }
     addedNode.setProperty(Utils.EXO_TITLE, filename);
+
     Node content = addedNode.addNode("jcr:content", "nt:resource");
 
     content.setProperty("jcr:data", data);
@@ -1064,6 +1084,9 @@ public class WOPIService extends AbstractOfficeOnlineService {
         return entry.getKey();
       }
     }
+    if (extension.equals("wopitest") || extension.equals("wopitestx")) {
+      return "application/octet-stream";
+    }
     throw new FileExtensionNotFoundException("Cannot find file extension " + extension);
   }
 
@@ -1084,19 +1107,57 @@ public class WOPIService extends AbstractOfficeOnlineService {
     return null;
   }
 
-
   /**
    * Gets the file name.
    *
    * @param fileId the file id
    * @param workspace the workspace
    * @return the file name
-   * @throws RepositoryException 
-   * @throws FileNotFoundException 
+   * @throws FileNotFoundException the file not found exception
+   * @throws RepositoryException the repository exception
    */
   public String getFileName(String fileId, String workspace) throws FileNotFoundException, RepositoryException {
     Node node = nodeByUUID(fileId, workspace);
     return node.getName();
+  }
+
+  /**
+   * Delete.
+   *
+   * @param config the config
+   * @throws RepositoryException the repository exception
+   * @throws OfficeOnlineException the office online exception
+   * @throws LockMismatchException 
+   */
+  public void delete(EditorConfig config,
+                     String lockId) throws RepositoryException, OfficeOnlineException, LockMismatchException {
+    Node node = nodeByUUID(config.getFileId(), config.getWorkspace());
+    checkNodeLock(node, lockId);
+    try {
+      trashService.moveToTrash(node, sessionProviders.getSessionProvider(null));
+    } catch (Exception e) {
+      LOG.error("Cannot move node to trash.", e);
+      throw new OfficeOnlineException("Failed to delete file with fileId: " + config.getFileId());
+    }
+  }
+
+  /**
+   * Check node lock.
+   *
+   * @param node the node
+   * @param lockId the lock id
+   * @throws LockMismatchException the lock mismatch exception
+   * @throws RepositoryException the repository exception
+   */
+  protected void checkNodeLock(Node node, String lockId) throws LockMismatchException, RepositoryException {
+    if (node.isLocked()) {
+      FileLock lock = lockManager.getLock(node);
+      // TODO: handle case when lock is null
+      if (!lockId.equals(lock.getLockId())) {
+        throw new LockMismatchException("Given lock is different from the file lock", lock.getLockId());
+      }
+      node.getSession().addLockToken(lock.getLockToken());
+    }
   }
 
 }

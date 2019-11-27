@@ -1,6 +1,5 @@
 package org.exoplatform.officeonline.exception;
 
-
 /**
  * The Class UpdateConflictException.
  */
@@ -14,6 +13,9 @@ public class UpdateConflictException extends Exception {
   /** The lock id. */
   private String            lockId;
 
+  /** The filename */
+  private String            filename;
+
   /**
    * Instantiates a new UpdateConflictException.
    *
@@ -24,7 +26,19 @@ public class UpdateConflictException extends Exception {
     super(message);
     this.lockId = lockId;
   }
-  
+
+  /**
+   * Instantiates a new UpdateConflictException.
+   *
+   * @param message the message
+   * @param lockId the lock id
+   */
+  public UpdateConflictException(String message, String lockId, String filename) {
+    super(message);
+    this.lockId = lockId;
+    this.filename = filename;
+  }
+
   /**
    * Instantiates a new UpdateConflictException.
    *
@@ -41,6 +55,15 @@ public class UpdateConflictException extends Exception {
    */
   public String getLockId() {
     return lockId;
+  }
+  
+  /**
+   * Gets the filename.
+   *
+   * @return the filename
+   */
+  public String getFileName() {
+    return filename;
   }
 
 }

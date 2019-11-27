@@ -57,7 +57,7 @@
     <com.fasterxml.jackson.dataformat.version>2.9.8</com.fasterxml.jackson.dataformat.version>
     <com.fasterxml.jackson.module.version>2.9.8</com.fasterxml.jackson.module.version>
     <org.codehaus.woodstox.version>3.1.4</org.codehaus.woodstox.version>
-
+    <com.beetstra.jutf7.version>1.0.0</com.beetstra.jutf7.version>
   </properties>
 
   <dependencyManagement>
@@ -115,6 +115,12 @@
         <groupId>org.codehaus.woodstox</groupId>
         <artifactId>stax2-api</artifactId>
         <version>${org.codehaus.woodstox.version}</version>
+      </dependency>
+
+      <dependency>
+        <groupId>com.beetstra.jutf7</groupId>
+        <artifactId>jutf7</artifactId>
+        <version>${com.beetstra.jutf7.version}</version>
       </dependency>
     </dependencies>
   </dependencyManagement>

@@ -72,6 +72,12 @@
       <scope>compile</scope>
     </dependency>
 
+    <dependency>
+      <groupId>com.beetstra.jutf7</groupId>
+      <artifactId>jutf7</artifactId>
+      <scope>compile</scope>
+    </dependency>
+
     <!-- Portal & ECMS & Social -->
     <dependency>
       <groupId>org.exoplatform.commons</groupId>
@@ -164,7 +170,7 @@
       <artifactId>mockito-core</artifactId>
       <scope>test</scope>
     </dependency>
-   
+
   </dependencies>
 
   <build>

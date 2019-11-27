@@ -15,5 +15,14 @@ public class LockMismatchException extends UpdateConflictException {
   public LockMismatchException(String message, String lockId) {
     super(message, lockId);
   }
+  
+  /**
+   * Instantiates a new LockMismatchException
+   *
+   * @param message the message
+   */
+  public LockMismatchException(String message, String lockId, String filename) {
+    super(message, lockId, filename);
+  }
 
 }

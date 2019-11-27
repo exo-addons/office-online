@@ -18,5 +18,15 @@ public class FileLockedException extends LockMismatchException {
   public FileLockedException(String message, String lockId) {
     super(message, lockId);
   }
+  
+  /**
+   * Instantiates a new file locked exception.
+   *
+   * @param message the message
+   * @param lockId the lock id
+   */
+  public FileLockedException(String message, String lockId, String filename) {
+    super(message, lockId, filename);
+  }
 
 }

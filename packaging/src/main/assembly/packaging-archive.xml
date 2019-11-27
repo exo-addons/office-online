@@ -25,6 +25,7 @@
         <include>com.fasterxml.jackson.dataformat:jackson-dataformat-xml:jar</include>
         <include>com.fasterxml.jackson.module:jackson-module-jaxb-annotations:jar</include>
         <include>org.codehaus.woodstox:stax2-api:jar</include>
+        <include>com.beetstra.jutf7:jutf7:jar</include>
       </includes>
       <scope>provided</scope>
       <fileMode>0644</fileMode>

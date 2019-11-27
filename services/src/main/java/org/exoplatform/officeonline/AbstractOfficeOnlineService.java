@@ -22,6 +22,7 @@ import org.picocontainer.Startable;
 
 import org.exoplatform.commons.utils.CommonsUtils;
 import org.exoplatform.container.PortalContainer;
+import org.exoplatform.ecm.utils.permission.PermissionUtil;
 import org.exoplatform.ecm.webui.utils.Utils;
 import org.exoplatform.officeonline.exception.FileNotFoundException;
 import org.exoplatform.officeonline.exception.OfficeOnlineException;
@@ -391,6 +392,37 @@ public abstract class AbstractOfficeOnlineService implements Startable {
       LOG.error("Couldn't get size of the document: {}", path);
     }
     return size;
+  }
+  
+
+  /**
+   * Creates the editor config.
+   *
+   * @param userId the userId
+   * @param workspace the workspace
+   * @param fileId the file id
+   * @return the editor config
+   * @throws RepositoryException the repository exception
+   * @throws OfficeOnlineException the office online exception
+   */
+  public EditorConfig createEditorConfig(String userId, String fileId, String workspace) throws OfficeOnlineException,
+                                                                                         RepositoryException {
+
+    Node node = nodeByUUID(fileId, workspace);
+    List<Permissions> permissions = new ArrayList<>();
+    if (PermissionUtil.canSetProperty(node)) {
+      permissions.add(Permissions.USER_CAN_WRITE);
+      permissions.add(Permissions.USER_CAN_RENAME);
+    } else {
+      permissions.add(Permissions.READ_ONLY);
+    }
+    EditorConfig.Builder configBuilder = new EditorConfig.Builder().userId(userId)
+                                                                   .fileId(fileId)
+                                                                   .workspace(workspace)
+                                                                   .permissions(permissions);
+    AccessToken accessToken = generateAccessToken(configBuilder);
+    configBuilder.accessToken(accessToken);
+    return configBuilder.build();
   }
 
   /**
