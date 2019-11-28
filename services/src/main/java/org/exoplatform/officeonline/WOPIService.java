@@ -65,7 +65,6 @@ import org.exoplatform.services.security.ConversationState;
 import org.exoplatform.services.wcm.core.NodetypeConstant;
 import org.exoplatform.services.wcm.utils.WCMCoreUtils;
 
-// TODO: Auto-generated Javadoc
 /**
  * The Class WOPIService.
  */

@@ -41,7 +41,6 @@ import org.exoplatform.services.wcm.core.NodetypeConstant;
 import org.exoplatform.webui.application.WebuiRequestContext;
 import org.exoplatform.webui.application.portlet.PortletRequestContext;
 
-// TODO: Auto-generated Javadoc
 /**
  * The Class AbstractOfficeOnlineService.
  */
