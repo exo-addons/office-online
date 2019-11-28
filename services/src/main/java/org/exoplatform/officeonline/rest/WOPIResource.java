@@ -509,6 +509,7 @@ public class WOPIResource implements ResourceContainer {
         String userInfo = convertStreamToString(request.getInputStream());
         return putUserInfo(config, userInfo);
       } catch (IOException e) {
+        LOG.error("Cannot put userinfo. UserId: " + config.getUserId(), e);
         return Response.status(Status.INTERNAL_SERVER_ERROR)
                        .entity("{\"error\": \"Failed to fetch userinfo from request body\"}")
                        .type(MediaType.APPLICATION_JSON)

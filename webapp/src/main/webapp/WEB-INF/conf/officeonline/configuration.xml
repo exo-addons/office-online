@@ -318,7 +318,7 @@
   <external-component-plugins>
     <target-component>org.exoplatform.webui.ext.UIExtensionManager</target-component>
     <component-plugin>
-      <name>Add Officeonline Actions</name>
+      <name>Add Office Online Actions</name>
       <set-method>registerUIExtensionPlugin</set-method>
       <type>org.exoplatform.webui.ext.UIExtensionPlugin</type>
       <init-params>
