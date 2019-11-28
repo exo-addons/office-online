@@ -48,6 +48,7 @@ import org.exoplatform.officeonline.exception.UpdateConflictException;
 import org.exoplatform.officeonline.exception.WopiDiscoveryNotFoundException;
 import org.exoplatform.portal.config.UserACL;
 import org.exoplatform.services.cache.CacheService;
+import org.exoplatform.services.cache.ExoCache;
 import org.exoplatform.services.cms.documents.DocumentService;
 import org.exoplatform.services.cms.documents.TrashService;
 import org.exoplatform.services.cms.jcrext.activity.ActivityCommonService;
@@ -70,142 +71,163 @@ import org.exoplatform.services.wcm.utils.WCMCoreUtils;
 public class WOPIService extends AbstractOfficeOnlineService {
 
   /** The Constant LOG. */
-  protected static final Log      LOG                                 = ExoLogger.getLogger(WOPIService.class);
+  protected static final Log         LOG                                 = ExoLogger.getLogger(WOPIService.class);
 
   /** The Constant BASE_FILE_NAME. */
-  protected static final String   BASE_FILE_NAME                      = "BaseFileName";
+  protected static final String      BASE_FILE_NAME                      = "BaseFileName";
 
   /** The Constant DEFAULT_FILENAME. */
-  protected static final String   DEFAULT_FILENAME                    = "Untitled";
+  protected static final String      DEFAULT_FILENAME                    = "Untitled";
 
   /** The Constant OWNER_ID. */
-  protected static final String   OWNER_ID                            = "OwnerId";
+  protected static final String      OWNER_ID                            = "OwnerId";
 
   /** The Constant FILES_ENDPOINT. */
-  protected static final String   FILES_ENDPOINT                      = "/wopi/files/";
+  protected static final String      FILES_ENDPOINT                      = "/wopi/files/";
 
   /** The Constant SIZE. */
-  protected static final String   SIZE                                = "Size";
+  protected static final String      SIZE                                = "Size";
 
   /** The Constant USER_ID. */
-  protected static final String   USER_ID                             = "UserId";
+  protected static final String      USER_ID                             = "UserId";
 
   /** The Constant VERSION. */
-  protected static final String   VERSION                             = "Version";
+  protected static final String      VERSION                             = "Version";
 
   /** The Constant BREADCRUMB_BRAND_NAME. */
-  protected static final String   BREADCRUMB_BRAND_NAME               = "BreadcrumbBrandName";
+  protected static final String      BREADCRUMB_BRAND_NAME               = "BreadcrumbBrandName";
 
   /** The Constant BREADCRUMB_BRAND_URL. */
-  protected static final String   BREADCRUMB_BRAND_URL                = "BreadcrumbBrandUrl";
+  protected static final String      BREADCRUMB_BRAND_URL                = "BreadcrumbBrandUrl";
 
   /** The Constant BREADCRUMB_FOLDER_NAME. */
-  protected static final String   BREADCRUMB_FOLDER_NAME              = "BreadcrumbFolderName";
+  protected static final String      BREADCRUMB_FOLDER_NAME              = "BreadcrumbFolderName";
 
   /** The Constant BREADCRUMB_FOLDER_URL. */
-  protected static final String   BREADCRUMB_FOLDER_URL               = "BreadcrumbFolderUrl";
+  protected static final String      BREADCRUMB_FOLDER_URL               = "BreadcrumbFolderUrl";
 
   /** The Constant CLOSE_URL. */
-  protected static final String   CLOSE_URL                           = "CloseUrl";
+  protected static final String      CLOSE_URL                           = "CloseUrl";
 
   /** The Constant DOWNLOAD_URL. */
-  protected static final String   DOWNLOAD_URL                        = "DownloadUrl";
+  protected static final String      DOWNLOAD_URL                        = "DownloadUrl";
+
+  /** The Constant FILE_URL. */
+  protected static final String      FILE_URL                            = "FileUrl";
 
   /** The Constant FILE_VERSION_URL. */
-  protected static final String   FILE_VERSION_URL                    = "FileVersionUrl";
+  protected static final String      FILE_VERSION_URL                    = "FileVersionUrl";
 
   /** The Constant HOST_EDIT_URL. */
-  protected static final String   HOST_EDIT_URL                       = "HostEditUrl";
+  protected static final String      HOST_EDIT_URL                       = "HostEditUrl";
 
   /** The Constant HOST_VIEW_URL. */
-  protected static final String   HOST_VIEW_URL                       = "HostViewUrl";
+  protected static final String      HOST_VIEW_URL                       = "HostViewUrl";
 
   /** The Constant SIGNOUT_URL. */
-  protected static final String   SIGNOUT_URL                         = "SignoutUrl";
+  protected static final String      SIGNOUT_URL                         = "SignoutUrl";
 
   /** The Constant SUPPORTS_EXTENDED_LOCK_LENGTH. */
-  protected static final String   SUPPORTS_EXTENDED_LOCK_LENGTH       = "SupportsExtendedLockLength";
+  protected static final String      SUPPORTS_EXTENDED_LOCK_LENGTH       = "SupportsExtendedLockLength";
 
   /** The Constant SUPPORTS_GET_LOCK. */
-  protected static final String   SUPPORTS_GET_LOCK                   = "SupportsGetLock";
+  protected static final String      SUPPORTS_GET_LOCK                   = "SupportsGetLock";
 
   /** The Constant SUPPORTS_LOCKS. */
-  protected static final String   SUPPORTS_LOCKS                      = "SupportsLocks";
+  protected static final String      SUPPORTS_LOCKS                      = "SupportsLocks";
 
   /** The Constant SUPPORTS_RENAME. */
-  protected static final String   SUPPORTS_RENAME                     = "SupportsRename";
+  protected static final String      SUPPORTS_RENAME                     = "SupportsRename";
 
   /** The Constant SUPPORTS_UPDATE. */
-  protected static final String   SUPPORTS_UPDATE                     = "SupportsUpdate";
+  protected static final String      SUPPORTS_UPDATE                     = "SupportsUpdate";
 
   /** The Constant SUPPORTS_DELETE_FILE. */
-  protected static final String   SUPPORTS_DELETE_FILE                = "SupportsDeleteFile";
+  protected static final String      SUPPORTS_DELETE_FILE                = "SupportsDeleteFile";
+
+  /** The Constant SUPPORTS_USER_INFO. */
+  protected static final String      SUPPORTS_USER_INFO                  = "SupportsUserInfo";
 
   /** The Constant SUPPORTED_SHARE_URL_TYPES. */
-  protected static final String   SUPPORTED_SHARE_URL_TYPES           = "SupportedShareUrlTypes";
+  protected static final String      SUPPORTED_SHARE_URL_TYPES           = "SupportedShareUrlTypes";
 
   /** The Constant IS_ANONYMOUS_USER. */
-  protected static final String   IS_ANONYMOUS_USER                   = "IsAnonymousUser";
+  protected static final String      IS_ANONYMOUS_USER                   = "IsAnonymousUser";
+
+  /** The Constant USER_INFO. */
+  protected static final String      USER_INFO                           = "UserInfo";
 
   /** The Constant LICENSE_CHECK_FOR_EDIT_IS_ENABLED. */
-  protected static final String   LICENSE_CHECK_FOR_EDIT_IS_ENABLED   = "LicenseCheckForEditIsEnabled";
+  protected static final String      LICENSE_CHECK_FOR_EDIT_IS_ENABLED   = "LicenseCheckForEditIsEnabled";
 
   /** The Constant USER_FRIENDLY_NAME. */
-  protected static final String   USER_FRIENDLY_NAME                  = "UserFriendlyName";
+  protected static final String      USER_FRIENDLY_NAME                  = "UserFriendlyName";
 
   /** The Constant PLACEHOLDER_WOPISRC. */
-  protected static final String   PLACEHOLDER_WOPISRC                 = "wopisrc";
+  protected static final String      PLACEHOLDER_WOPISRC                 = "&wopisrc=";
+
+  /** The Constant PLACEHOLDER_DC_LLCC. */
+  protected static final String      PLACEHOLDER_DC_LLCC                 = "&DC_LLCC=";
+
+  /** The Constant PLACEHOLDER_UI_LLCC. */
+  protected static final String      PLACEHOLDER_UI_LLCC                 = "&UI_LLCC=";
 
   /** The Constant SHARE_URL. */
-  protected static final String   SHARE_URL                           = "ShareUrl";
+  protected static final String      SHARE_URL                           = "ShareUrl";
 
   /** The Constant SHARE_URL_READ_ONLY. */
-  protected static final String   SHARE_URL_READ_ONLY                 = "ReadOnly";
+  protected static final String      SHARE_URL_READ_ONLY                 = "ReadOnly";
 
   /** The Constant SHARE_URL_READ_WRITE. */
-  protected static final String   SHARE_URL_READ_WRITE                = "ReadWrite";
+  protected static final String      SHARE_URL_READ_WRITE                = "ReadWrite";
 
   /** The Constant TOKEN_CONFIGURATION_PROPERTIES. */
-  protected static final String   TOKEN_CONFIGURATION_PROPERTIES      = "token-configuration";
+  protected static final String      TOKEN_CONFIGURATION_PROPERTIES      = "token-configuration";
 
   /** The Constant BREADCRUMB_CONFIGURATION_PROPERTIES. */
-  protected static final String   BREADCRUMB_CONFIGURATION_PROPERTIES = "breadcrumb-configuration";
+  protected static final String      BREADCRUMB_CONFIGURATION_PROPERTIES = "breadcrumb-configuration";
 
   /** The Constant WOPI_CONFIGURATION_PROPERTIES. */
-  protected static final String   WOPI_CONFIGURATION_PROPERTIES       = "wopi-configuration";
+  protected static final String      WOPI_CONFIGURATION_PROPERTIES       = "wopi-configuration";
 
   /** The Constant WOPI_URL. */
-  protected static final String   WOPI_URL                            = "wopi-url";
+  protected static final String      WOPI_URL                            = "wopi-url";
 
   /** The Constant BRAND_NAME. */
-  protected static final String   BRAND_NAME                          = "brand-name";
+  protected static final String      BRAND_NAME                          = "brand-name";
 
   /** The Constant WOPITEST_EXTENSION. */
-  protected static final String   WOPITEST_EXTENSION                  = "wopitest";
+  protected static final String      WOPITEST_EXTENSION                  = "wopitest";
 
   /** The Constant WOPITEST_ACTION. */
-  protected static final String   WOPITEST_ACTION                     = "view";
+  protected static final String      WOPITEST_ACTION                     = "view";
 
   /** The Constant MAX_FILENAME_LENGHT. */
-  protected static final int      MAX_FILENAME_LENGHT                 = 510;
+  protected static final int         MAX_FILENAME_LENGHT                 = 510;
+
+  /** The Constant USERIONFO_CACHE_NAME. */
+  public static final String         USERINFO_CACHE_NAME                 = "officeonline.userinfo.Cache".intern();
 
   /** The trash service. */
-  protected final TrashService    trashService;
+  protected final TrashService       trashService;
 
   /** The discovery plugin. */
-  protected WOPIDiscoveryPlugin   discoveryPlugin;
+  protected WOPIDiscoveryPlugin      discoveryPlugin;
 
   /** The lock manager. */
-  protected WOPILockManagerPlugin lockManager;
+  protected WOPILockManagerPlugin    lockManager;
 
   /** The file extensions. */
-  protected Map<String, String>   fileExtensions                      = new HashMap<>();
+  protected Map<String, String>      fileExtensions                      = new HashMap<>();
 
   /** The brand name. */
-  protected String                brandName;
+  protected String                   brandName;
 
   /** The wopi files url. */
-  protected String                wopiUrl;
+  protected String                   wopiUrl;
+
+  /** The user info cache. */
+  protected ExoCache<String, String> userInfoCache;
 
   /**
    * Instantiates a new WOPI service.
@@ -234,11 +256,12 @@ public class WOPIService extends AbstractOfficeOnlineService {
     if (secretKey != null && !secretKey.trim().isEmpty()) {
       byte[] decodedKey = Base64.getDecoder().decode(secretKey);
       SecretKey key = new SecretKeySpec(decodedKey, 0, decodedKey.length, ALGORITHM);
-      activeCache.put(SECRET_KEY, key);
+      keyCache.put(SECRET_KEY, key);
     } else {
-      activeCache.put(SECRET_KEY, generateSecretKey());
+      keyCache.put(SECRET_KEY, generateSecretKey());
     }
 
+    this.userInfoCache = cacheService.getCacheInstance(USERINFO_CACHE_NAME);
     PropertiesParam breadcrumbParam = initParams.getPropertiesParam(BREADCRUMB_CONFIGURATION_PROPERTIES);
     brandName = breadcrumbParam.getProperty(BRAND_NAME);
 
@@ -482,7 +505,13 @@ public class WOPIService extends AbstractOfficeOnlineService {
     }
     String actionURL = discoveryPlugin.getActionUrl(extension, action);
     if (actionURL != null) {
-      return String.format("%s%s=%s&", actionURL, PLACEHOLDER_WOPISRC, getWOPISrc(requestInfo, fileId));
+      return new StringBuilder(actionURL).append(PLACEHOLDER_WOPISRC)
+                                         .append(getWOPISrc(requestInfo, fileId))
+                                         .append(PLACEHOLDER_DC_LLCC)
+                                         .append(requestInfo.getLocale().toString())
+                                         .append(PLACEHOLDER_UI_LLCC)
+                                         .append(requestInfo.getLocale().toString())
+                                         .toString();
     } else {
       throw new ActionNotFoundException("Cannot find actionURL for file extension " + extension + " and action: " + action);
     }
@@ -493,7 +522,7 @@ public class WOPIService extends AbstractOfficeOnlineService {
    *
    * @param config the config
    * @param newTitle the new title
-   * @param lock the lock
+   * @param lockId the lock id
    * @return the string
    * @throws RepositoryException the repository exception
    * @throws OfficeOnlineException the office online exception
@@ -688,6 +717,7 @@ public class WOPIService extends AbstractOfficeOnlineService {
     map.put(SUPPORTS_RENAME, true);
     map.put(SUPPORTS_UPDATE, true);
     map.put(SUPPORTS_DELETE_FILE, true);
+    map.put(SUPPORTS_USER_INFO, true);
     // TODO: Introduce SHARE_URL_TYPES
     // map.put(SUPPORTED_SHARE_URL_TYPES, (Serializable) Arrays.asList(SHARE_URL_READ_ONLY, SHARE_URL_READ_WRITE));
   }
@@ -704,6 +734,10 @@ public class WOPIService extends AbstractOfficeOnlineService {
     map.put(IS_ANONYMOUS_USER, false);
     map.put(LICENSE_CHECK_FOR_EDIT_IS_ENABLED, true);
     map.put(USER_FRIENDLY_NAME, displayName);
+    String userInfo = userInfoCache.get(userId);
+    if (userInfo != null) {
+      map.put(USER_INFO, userInfo);
+    }
   }
 
   /**
@@ -752,13 +786,14 @@ public class WOPIService extends AbstractOfficeOnlineService {
 
     String downloadURL = new StringBuilder(platformRestURL).append("/officeonline/editor/content/")
                                                            .append(node.getUUID())
-                                                           .append("?accessToken=")
+                                                           .append("?access_token=")
                                                            .append(accessToken.getToken())
                                                            .toString();
     map.put(DOWNLOAD_URL, downloadURL);
     map.put(HOST_EDIT_URL, getEditorURL(node.getUUID(), schema, host, port));
     // TODO: change to view action
     map.put(HOST_VIEW_URL, getEditorURL(node.getUUID(), schema, host, port));
+    map.put(FILE_URL, downloadURL);
 
   }
 
@@ -1125,16 +1160,19 @@ public class WOPIService extends AbstractOfficeOnlineService {
    * Delete.
    *
    * @param config the config
+   * @param lockId the lock id
    * @throws RepositoryException the repository exception
    * @throws OfficeOnlineException the office online exception
-   * @throws LockMismatchException 
+   * @throws LockMismatchException the lock mismatch exception
    */
   public void delete(EditorConfig config,
                      String lockId) throws RepositoryException, OfficeOnlineException, LockMismatchException {
     Node node = nodeByUUID(config.getFileId(), config.getWorkspace());
     checkNodeLock(node, lockId);
     try {
-      trashService.moveToTrash(node, sessionProviders.getSessionProvider(null));
+      if (!trashService.isInTrash(node)) {
+        trashService.moveToTrash(node, sessionProviders.getSessionProvider(null));
+      }
     } catch (Exception e) {
       LOG.error("Cannot move node to trash.", e);
       throw new OfficeOnlineException("Failed to delete file with fileId: " + config.getFileId());
@@ -1158,6 +1196,16 @@ public class WOPIService extends AbstractOfficeOnlineService {
       }
       node.getSession().addLockToken(lock.getLockToken());
     }
+  }
+
+  /**
+   * Put user info.
+   *
+   * @param userId the user id
+   * @param userInfo the user info
+   */
+  public void putUserInfo(String userId, String userInfo) {
+    userInfoCache.put(userId, userInfo);
   }
 
 }
