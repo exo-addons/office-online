@@ -82,13 +82,14 @@ public class EditorPortlet extends GenericPortlet {
     RequireJS require = js.require("SHARED/officeonline", "officeonline");
     if (fileId != null) {
       try {
-        EditorConfig config = editorService.createEditorConfig(request.getRemoteUser(), fileId, null);
-        AccessToken token = config.getAccessToken();
         RequestInfo requestInfo = new RequestInfo(request.getScheme(),
                                                   request.getServerName(),
                                                   request.getServerPort(),
                                                   request.getRemoteUser(),
                                                   request.getLocale());
+        EditorConfig config = editorService.createEditorConfig(request.getRemoteUser(), fileId, null, requestInfo);
+        AccessToken token = config.getAccessToken();
+
         String actionURL = wopiService.getActionUrl(requestInfo, fileId, null, DEFAULT_ACTION);
         require.addScripts("officeonline.initEditor(" + token.toJSON() + ", \"" + actionURL + "\");");
       } catch (RepositoryException e) {

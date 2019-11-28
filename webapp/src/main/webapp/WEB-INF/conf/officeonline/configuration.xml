@@ -359,8 +359,8 @@
       </init-params>
     </component-plugin>
   </external-component-plugins>
-  
-  
+
+
   <external-component-plugins>
     <target-component>org.exoplatform.commons.addons.AddOnService</target-component>
     <component-plugin>

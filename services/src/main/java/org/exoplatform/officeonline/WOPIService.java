@@ -65,6 +65,7 @@ import org.exoplatform.services.security.ConversationState;
 import org.exoplatform.services.wcm.core.NodetypeConstant;
 import org.exoplatform.services.wcm.utils.WCMCoreUtils;
 
+// TODO: Auto-generated Javadoc
 /**
  * The Class WOPIService.
  */
@@ -226,6 +227,15 @@ public class WOPIService extends AbstractOfficeOnlineService {
   /** The wopi files url. */
   protected String                   wopiUrl;
 
+  /** The platform scheme. */
+  protected String                   platformScheme;
+
+  /** The platform host. */
+  protected String                   platformHost;
+
+  /** The platform port. */
+  protected int                      platformPort;
+
   /** The user info cache. */
   protected ExoCache<String, String> userInfoCache;
 
@@ -267,6 +277,7 @@ public class WOPIService extends AbstractOfficeOnlineService {
 
     PropertiesParam wopiFilesUrlParam = initParams.getPropertiesParam(WOPI_CONFIGURATION_PROPERTIES);
     wopiUrl = wopiFilesUrlParam.getProperty(WOPI_URL);
+
     initFileExtensions();
   }
 
@@ -387,18 +398,13 @@ public class WOPIService extends AbstractOfficeOnlineService {
   /**
    * Check file info.
    *
-   * @param userSchema the user schema
-   * @param userHost the user host
-   * @param userPort the user port
    * @param config the config
    * @return the map
    * @throws RepositoryException the repository exception
    * @throws FileNotFoundException the file not found exception
    */
-  public Map<String, Serializable> checkFileInfo(String userSchema,
-                                                 String userHost,
-                                                 int userPort,
-                                                 EditorConfig config) throws RepositoryException, FileNotFoundException {
+  public Map<String, Serializable> checkFileInfo(EditorConfig config) throws RepositoryException,
+                                                                                          FileNotFoundException {
 
     Node node = nodeByUUID(config.getFileId(), config.getWorkspace());
     Map<String, Serializable> map = new HashMap<>();
@@ -406,8 +412,8 @@ public class WOPIService extends AbstractOfficeOnlineService {
     addHostCapabilitiesProperties(map);
     addUserMetadataProperties(map);
     addUserPermissionsProperties(map, node);
-    addFileURLProperties(map, node, config.getAccessToken(), userSchema, userHost, userPort);
-    addBreadcrumbProperties(map, node, userSchema, userHost, userPort);
+    addFileURLProperties(map, node, config.getAccessToken(), config.getPlatformUrl());
+    addBreadcrumbProperties(map, node, config.getPlatformUrl());
     return map;
   }
 
@@ -762,24 +768,19 @@ public class WOPIService extends AbstractOfficeOnlineService {
    * @param map the map
    * @param node the node
    * @param accessToken the access token
-   * @param schema the schema
-   * @param host the host
-   * @param port the port
+   * @param platformUrl the platform url
    * @throws RepositoryException the repository exception
    */
   protected void addFileURLProperties(Map<String, Serializable> map,
                                       Node node,
                                       AccessToken accessToken,
-                                      String schema,
-                                      String host,
-                                      int port) throws RepositoryException {
+                                      String platformUrl) throws RepositoryException {
     String explorerLink = explorerLink(node.getPath());
-    URI explorerUri = explorerUri(schema, host, port, explorerLink);
+    URI explorerUri = explorerUri(platformUrl, explorerLink);
     if (explorerUri != null) {
       map.put(CLOSE_URL, explorerUri.toString());
       map.put(FILE_VERSION_URL, explorerUri.toString());
     }
-    StringBuilder platformUrl = platformUrl(schema, host, port);
     String platformRestURL = new StringBuilder(platformUrl).append('/')
                                                            .append(PortalContainer.getCurrentRestContextName())
                                                            .toString();
@@ -790,9 +791,9 @@ public class WOPIService extends AbstractOfficeOnlineService {
                                                            .append(accessToken.getToken())
                                                            .toString();
     map.put(DOWNLOAD_URL, downloadURL);
-    map.put(HOST_EDIT_URL, getEditorURL(node.getUUID(), schema, host, port));
+    map.put(HOST_EDIT_URL, getEditorURL(node.getUUID(), platformUrl));
     // TODO: change to view action
-    map.put(HOST_VIEW_URL, getEditorURL(node.getUUID(), schema, host, port));
+    map.put(HOST_VIEW_URL, getEditorURL(node.getUUID(), platformUrl));
     map.put(FILE_URL, downloadURL);
 
   }
@@ -802,17 +803,15 @@ public class WOPIService extends AbstractOfficeOnlineService {
    *
    * @param map the map
    * @param node the node
-   * @param schema the schema
-   * @param host the host
-   * @param port the port
+   * @param platformUrl the platform url
    */
-  protected void addBreadcrumbProperties(Map<String, Serializable> map, Node node, String schema, String host, int port) {
+  protected void addBreadcrumbProperties(Map<String, Serializable> map, Node node, String platformUrl) {
     // TODO: replace by real values
     map.put(BREADCRUMB_BRAND_NAME, brandName);
-    map.put(BREADCRUMB_BRAND_URL, platformUrl(schema, host, port).toString());
+    map.put(BREADCRUMB_BRAND_URL, platformUrl);
     try {
       Node parent = node.getParent();
-      String url = explorerUri(schema, host, port, explorerLink(parent.getPath())).toString();
+      String url = explorerUri(platformUrl, explorerLink(parent.getPath())).toString();
       if (parent.hasProperty(EXO_TITLE)) {
         map.put(BREADCRUMB_FOLDER_NAME, parent.getProperty(EXO_TITLE).getString());
       } else if (parent.hasProperty(EXO_NAME)) {
