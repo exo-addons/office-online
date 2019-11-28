@@ -9,7 +9,9 @@ import java.security.Key;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Base64;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import javax.crypto.Cipher;
 import javax.jcr.ItemNotFoundException;
@@ -21,6 +23,7 @@ import org.apache.commons.io.input.AutoCloseInputStream;
 import org.picocontainer.Startable;
 
 import org.exoplatform.commons.utils.CommonsUtils;
+import org.exoplatform.commons.utils.MimeTypeResolver;
 import org.exoplatform.container.PortalContainer;
 import org.exoplatform.ecm.utils.permission.PermissionUtil;
 import org.exoplatform.ecm.webui.utils.Utils;
@@ -62,13 +65,19 @@ public abstract class AbstractOfficeOnlineService implements Startable {
   protected static final String          TOKEN_DELIMITER        = "+";
 
   /** The Constant TOKEN_DELIMITER_SPLIT. */
-  protected static final String          TOKEN_DELIMITER_SPLIT   = "\\+";
+  protected static final String          TOKEN_DELIMITER_SPLIT  = "\\+";
 
   /** The Constant TOKEN_EXPIRES. */
   protected static final long            TOKEN_EXPIRES          = 30 * 60000;
 
   /** The Constant JCR_CONTENT. */
   protected static final String          JCR_CONTENT            = "jcr:content";
+
+  /** The Constant WOPITESTX. */
+  protected static final String          WOPITESTX              = "wopitestx";
+
+  /** The Constant WOPITEST. */
+  protected static final String          WOPITEST               = "wopitest";
 
   /** The Constant JCR_DATA. */
   protected static final String          JCR_DATA               = "jcr:data";
@@ -121,6 +130,9 @@ public abstract class AbstractOfficeOnlineService implements Startable {
   /** The document service. */
   protected final DocumentService        documentService;
 
+  /** The file extensions. */
+  protected Map<String, String>          fileExtensions         = new HashMap<>();
+
   /**
    * Instantiates a new office online editor service.
    *
@@ -143,6 +155,35 @@ public abstract class AbstractOfficeOnlineService implements Startable {
     this.documentService = documentService;
     this.keyCache = cacheService.getCacheInstance(KEY_CACHE_NAME);
     this.userACL = userACL;
+    initFileExtensions();
+  }
+
+  /**
+   * Inits the file extensions.
+   */
+  protected void initFileExtensions() {
+    fileExtensions.put("application/msword", "doc");
+    fileExtensions.put("application/vnd.openxmlformats-officedocument.wordprocessingml.document", "docx");
+    fileExtensions.put("application/vnd.openxmlformats-officedocument.wordprocessingml.template", "dotx");
+    fileExtensions.put("application/vnd.ms-word.document.macroEnabled.1", "docm");
+    fileExtensions.put("application/vnd.ms-word.template.macroEnabled.12", "dotm");
+
+    fileExtensions.put("application/vnd.ms-excel", "xls");
+    fileExtensions.put("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", "xlsx");
+    fileExtensions.put("application/vnd.openxmlformats-officedocument.spreadsheetml.template", "xltx");
+    fileExtensions.put("application/vnd.ms-excel.sheet.macroEnabled.12", "xlsm");
+    fileExtensions.put("application/vnd.ms-excel.template.macroEnabled.12", "xltm");
+    fileExtensions.put("application/vnd.ms-excel.addin.macroEnabled.12", "xlam");
+    fileExtensions.put("application/vnd.ms-excel.sheet.binary.macroEnabled.12", "xlsb");
+
+    fileExtensions.put("application/vnd.ms-powerpoint", "ppt");
+    fileExtensions.put("application/vnd.openxmlformats-officedocument.presentationml.presentation", "pptx");
+    fileExtensions.put("application/vnd.openxmlformats-officedocument.presentationml.template", "potx");
+    fileExtensions.put("application/vnd.openxmlformats-officedocument.presentationml.slideshow", "ppsx");
+    fileExtensions.put("application/vnd.ms-powerpoint.addin.macroEnabled.12", "ppam");
+    fileExtensions.put("application/vnd.ms-powerpoint.presentation.macroEnabled.12", "pptm");
+    fileExtensions.put("application/vnd.ms-powerpoint.template.macroEnabled.12", "potm");
+    fileExtensions.put("application/vnd.ms-powerpoint.slideshow.macroEnabled.12", "ppsm");
   }
 
   /**
@@ -335,33 +376,83 @@ public abstract class AbstractOfficeOnlineService implements Startable {
   /**
    * Gets the editor URL.
    *
-   * @param fileId the file id
+   * @param node the node
    * @param platformUrl the platform url
    * @return the editor URL
    */
-  public String getEditorURL(String fileId, String platformUrl) {
-    return new StringBuilder(platformUrl).append('/')
-                                         .append(CommonsUtils.getCurrentPortalOwner())
-                                         .append("/mseditor?fileId=")
-                                         .append(fileId)
-                                         .toString();
+  public String getEditorURL(String fileId, String workspace, String platformUrl) throws RepositoryException,
+                                                                                  FileNotFoundException {
+    Node node = nodeByUUID(fileId, workspace);
+    return getEditorURL(node, platformUrl);
+  }
+
+  /**
+   * Gets the editor URL.
+   *
+   * @param node the node
+   * @param platformUrl the platform url
+   * @return the editor URL
+   */
+  public String getEditorURL(Node node, String platformUrl) {
+    try {
+      if (isDocumentSupported(node)) {
+        return new StringBuilder(platformUrl).append('/')
+                                             .append(CommonsUtils.getCurrentPortalOwner())
+                                             .append("/mseditor?fileId=")
+                                             .append(node.getUUID())
+                                             .toString();
+      }
+    } catch (RepositoryException e) {
+      LOG.error("Cannot get editor link", e);
+    }
+    return null;
   }
 
   /**
    * Gets the editor URL using PortletRequestContext.
    *
-   * @param fileId the file id
+   * @param node the node
    * @return the editor URL
    */
-  public String getEditorURL(String fileId) {
-    PortletRequestContext pcontext = (PortletRequestContext) WebuiRequestContext.getCurrentInstance();
-    return platformUrl(pcontext.getRequest().getScheme(),
-                       pcontext.getRequest().getServerName(),
-                       pcontext.getRequest().getServerPort()).append('/')
-                                                             .append(CommonsUtils.getCurrentPortalOwner())
-                                                             .append("/mseditor?fileId=")
-                                                             .append(fileId)
-                                                             .toString();
+  public String getEditorURL(Node node) {
+    try {
+      if (isDocumentSupported(node)) {
+        PortletRequestContext pcontext = (PortletRequestContext) WebuiRequestContext.getCurrentInstance();
+        return platformUrl(pcontext.getRequest().getScheme(),
+                           pcontext.getRequest().getServerName(),
+                           pcontext.getRequest().getServerPort()).append('/')
+                                                                 .append(CommonsUtils.getCurrentPortalOwner())
+                                                                 .append("/mseditor?fileId=")
+                                                                 .append(node.getUUID())
+                                                                 .toString();
+      }
+    } catch (RepositoryException e) {
+      LOG.error("Cannot get editor link", e);
+    }
+    return null;
+  }
+
+  /**
+   * Checks if is document supported.
+   *
+   * @param node the node
+   * @return true, if is document supported
+   * @throws RepositoryException the repository exception
+   */
+  protected boolean isDocumentSupported(Node node) throws RepositoryException {
+    if (node != null) {
+      if (node.getName().endsWith(WOPITEST) || node.getName().endsWith(WOPITESTX)) {
+        return true;
+      }
+      String mimeType;
+      if (node.isNodeType(Utils.NT_FILE)) {
+        mimeType = node.getNode(Utils.JCR_CONTENT).getProperty(Utils.JCR_MIMETYPE).getString();
+      } else {
+        mimeType = new MimeTypeResolver().getMimeType(node.getName());
+      }
+      return fileExtensions.containsKey(mimeType);
+    }
+    return false;
   }
 
   /**
@@ -400,6 +491,7 @@ public abstract class AbstractOfficeOnlineService implements Startable {
    * @param userId the userId
    * @param fileId the file id
    * @param workspace the workspace
+   * @param requestInfo the request info
    * @return the editor config
    * @throws OfficeOnlineException the office online exception
    * @throws RepositoryException the repository exception

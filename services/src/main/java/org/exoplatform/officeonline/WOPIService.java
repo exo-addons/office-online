@@ -196,9 +196,6 @@ public class WOPIService extends AbstractOfficeOnlineService {
   /** The Constant BRAND_NAME. */
   protected static final String      BRAND_NAME                          = "brand-name";
 
-  /** The Constant WOPITEST_EXTENSION. */
-  protected static final String      WOPITEST_EXTENSION                  = "wopitest";
-
   /** The Constant WOPITEST_ACTION. */
   protected static final String      WOPITEST_ACTION                     = "view";
 
@@ -216,9 +213,6 @@ public class WOPIService extends AbstractOfficeOnlineService {
 
   /** The lock manager. */
   protected WOPILockManagerPlugin    lockManager;
-
-  /** The file extensions. */
-  protected Map<String, String>      fileExtensions                      = new HashMap<>();
 
   /** The brand name. */
   protected String                   brandName;
@@ -276,37 +270,6 @@ public class WOPIService extends AbstractOfficeOnlineService {
 
     PropertiesParam wopiFilesUrlParam = initParams.getPropertiesParam(WOPI_CONFIGURATION_PROPERTIES);
     wopiUrl = wopiFilesUrlParam.getProperty(WOPI_URL);
-
-    initFileExtensions();
-  }
-
-  /**
-   * Inits the file extensions.
-   */
-  protected void initFileExtensions() {
-    fileExtensions.put("application/msword", "doc");
-    fileExtensions.put("application/vnd.openxmlformats-officedocument.wordprocessingml.document", "docx");
-    fileExtensions.put("application/vnd.openxmlformats-officedocument.wordprocessingml.template", "dotx");
-    fileExtensions.put("application/vnd.ms-word.document.macroEnabled.1", "docm");
-    fileExtensions.put("application/vnd.ms-word.template.macroEnabled.12", "dotm");
-
-    fileExtensions.put("application/vnd.ms-excel", "xls");
-    fileExtensions.put("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", "xlsx");
-    fileExtensions.put("application/vnd.openxmlformats-officedocument.spreadsheetml.template", "xltx");
-    fileExtensions.put("application/vnd.ms-excel.sheet.macroEnabled.12", "xlsm");
-    fileExtensions.put("application/vnd.ms-excel.template.macroEnabled.12", "xltm");
-    fileExtensions.put("application/vnd.ms-excel.addin.macroEnabled.12", "xlam");
-    fileExtensions.put("application/vnd.ms-excel.sheet.binary.macroEnabled.12", "xlsb");
-
-    fileExtensions.put("application/vnd.ms-powerpoint", "ppt");
-    fileExtensions.put("application/vnd.openxmlformats-officedocument.presentationml.presentation", "pptx");
-    fileExtensions.put("application/vnd.openxmlformats-officedocument.presentationml.template", "potx");
-    fileExtensions.put("application/vnd.openxmlformats-officedocument.presentationml.slideshow", "ppsx");
-    fileExtensions.put("application/vnd.ms-powerpoint.addin.macroEnabled.12", "ppam");
-    fileExtensions.put("application/vnd.ms-powerpoint.presentation.macroEnabled.12", "pptm");
-    fileExtensions.put("application/vnd.ms-powerpoint.template.macroEnabled.12", "potm");
-    fileExtensions.put("application/vnd.ms-powerpoint.slideshow.macroEnabled.12", "ppsm");
-
   }
 
   /**
@@ -320,7 +283,7 @@ public class WOPIService extends AbstractOfficeOnlineService {
   public void putFile(EditorConfig config, String lockId, InputStream data) throws Exception {
     Node node = nodeByUUID(config.getFileId(), config.getWorkspace());
     try {
-      if (PermissionUtil.canSetProperty(node) && config.permissions.contains(Permissions.USER_CAN_WRITE)) {
+      if (canEdit(node) && config.permissions.contains(Permissions.USER_CAN_WRITE)) {
         Node content = node.getNode(JCR_CONTENT);
         if (!node.isLocked()) {
           long size = content.getProperty(JCR_DATA).getLength();
@@ -402,8 +365,7 @@ public class WOPIService extends AbstractOfficeOnlineService {
    * @throws RepositoryException the repository exception
    * @throws FileNotFoundException the file not found exception
    */
-  public Map<String, Serializable> checkFileInfo(EditorConfig config) throws RepositoryException,
-                                                                                          FileNotFoundException {
+  public Map<String, Serializable> checkFileInfo(EditorConfig config) throws RepositoryException, FileNotFoundException {
 
     Node node = nodeByUUID(config.getFileId(), config.getWorkspace());
     Map<String, Serializable> map = new HashMap<>();
@@ -505,7 +467,7 @@ public class WOPIService extends AbstractOfficeOnlineService {
                                                                                                       OfficeOnlineException {
     Node node = nodeByUUID(fileId, workspace);
     String extension = getFileExtension(node);
-    if (extension.equals(WOPITEST_EXTENSION)) {
+    if (extension.equals(WOPITEST)) {
       action = WOPITEST_ACTION;
     }
     String actionURL = discoveryPlugin.getActionUrl(extension, action);
@@ -753,12 +715,16 @@ public class WOPIService extends AbstractOfficeOnlineService {
    * @throws RepositoryException the repository exception
    */
   protected void addUserPermissionsProperties(Map<String, Serializable> map, Node node) throws RepositoryException {
-    boolean canEdit = PermissionUtil.canSetProperty(node);
+    boolean canEdit = canEdit(node);
     boolean canUpdate = canUpdate(node);
     map.put(Permissions.READ_ONLY.toString(), !canEdit);
     map.put(Permissions.USER_CAN_RENAME.toString(), canUpdate);
     map.put(Permissions.USER_CAN_WRITE.toString(), canEdit);
     map.put(Permissions.USER_CAN_NOT_WRITE_RELATIVE.toString(), !canUpdate);
+  }
+
+  protected boolean canEdit(Node node) throws RepositoryException {
+    return isDocumentSupported(node) && PermissionUtil.canSetProperty(node);
   }
 
   /**
@@ -790,9 +756,9 @@ public class WOPIService extends AbstractOfficeOnlineService {
                                                            .append(accessToken.getToken())
                                                            .toString();
     map.put(DOWNLOAD_URL, downloadURL);
-    map.put(HOST_EDIT_URL, getEditorURL(node.getUUID(), platformUrl));
+    map.put(HOST_EDIT_URL, getEditorURL(node, platformUrl));
     // TODO: change to view action
-    map.put(HOST_VIEW_URL, getEditorURL(node.getUUID(), platformUrl));
+    map.put(HOST_VIEW_URL, getEditorURL(node, platformUrl));
     map.put(FILE_URL, downloadURL);
 
   }
@@ -1117,7 +1083,7 @@ public class WOPIService extends AbstractOfficeOnlineService {
         return entry.getKey();
       }
     }
-    if (extension.equals("wopitest") || extension.equals("wopitestx")) {
+    if (extension.equals(WOPITEST) || extension.equals(WOPITESTX)) {
       return "application/octet-stream";
     }
     throw new FileExtensionNotFoundException("Cannot find file extension " + extension);

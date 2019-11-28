@@ -92,8 +92,7 @@ public class FileUIActivity extends org.exoplatform.wcm.ext.component.activity.F
       Node node = getContentNode(0);
       node = editorService.getNode(node.getSession().getWorkspace().getName(), node.getPath());
       if (node != null) {
-        require.addScripts("officeonline.initActivity('" + node.getUUID() + "', '" + editorService.getEditorURL(node.getUUID())
-            + "','" + activityId + "');");
+        require.addScripts("officeonline.initActivity('" + node.getUUID() + "', " + editorLink(node) + ",'" + activityId + "');");
       }
     }
 
@@ -102,11 +101,27 @@ public class FileUIActivity extends org.exoplatform.wcm.ext.component.activity.F
       Node symlink = getContentNode(index);
       Node node = editorService.getNode(symlink.getSession().getWorkspace().getName(), symlink.getPath());
       if (node != null) {
-        require.addScripts("officeonline.initPreview('" + node.getUUID() + "', '" + editorService.getEditorURL(node.getUUID())
-            + "' ,'" + new StringBuilder("#Preview").append(activityId).append('-').append(index).toString() + "');");
+        require.addScripts("officeonline.initPreview('" + node.getUUID() + "', " + editorLink(node) + " ,'"
+            + new StringBuilder("#Preview").append(activityId).append('-').append(index).toString() + "');");
       }
     }
     super.end();
+  }
+
+  /**
+   * Context editor link.
+   *
+   * @param node the node
+   * @param context the context
+   * @return the string
+   */
+  private String editorLink(Node node) {
+    String link = editorLinks.computeIfAbsent(node, n -> editorService.getEditorURL(node));
+    if (link == null || link.isEmpty()) {
+      return "null".intern();
+    } else {
+      return new StringBuilder().append('\'').append(link).append('\'').toString();
+    }
   }
 
 }
