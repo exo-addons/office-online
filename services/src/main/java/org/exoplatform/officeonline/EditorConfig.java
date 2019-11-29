@@ -21,8 +21,8 @@ public class EditorConfig {
   /** The workspace. */
   protected final String            workspace;
 
-  /** The platform url. */
-  protected final String            platformUrl;
+  /** The base url. */
+  protected final String            baseUrl;
 
   /** The permissions. */
   protected final List<Permissions> permissions;
@@ -33,7 +33,7 @@ public class EditorConfig {
    * @param userId the user id
    * @param fileId the file id
    * @param workspace the workspace
-   * @param platformUrl the platform url
+   * @param baseUrl the platform url
    * @param permissions the permissions
    * @param accessToken the access token
    * @param tokenExpires the token ttl
@@ -41,13 +41,13 @@ public class EditorConfig {
   public EditorConfig(String userId,
                       String fileId,
                       String workspace,
-                      String platformUrl,
+                      String baseUrl,
                       List<Permissions> permissions,
                       AccessToken accessToken) {
     this.userId = userId;
     this.fileId = fileId;
     this.workspace = workspace;
-    this.platformUrl = platformUrl;
+    this.baseUrl = baseUrl;
     this.permissions = permissions != null ? permissions : Collections.emptyList();
     this.accessToken = accessToken;
   }
@@ -98,12 +98,12 @@ public class EditorConfig {
   }
 
   /**
-   * Gets the workspace.
+   * Gets the base url.
    *
    * @return the workspace
    */
-  public String getPlatformUrl() {
-    return platformUrl;
+  public String getBaseUrl() {
+    return baseUrl;
   }
 
   public static class Builder {
@@ -120,8 +120,8 @@ public class EditorConfig {
     /** The workspace. */
     private String            workspace;
 
-    /** The platform url. */
-    private String            platformUrl;
+    /** The base url. */
+    private String            baseUrl;
 
     /** The permissions. */
     private List<Permissions> permissions = new ArrayList<>();
@@ -146,8 +146,8 @@ public class EditorConfig {
       return this;
     }
 
-    protected Builder platformUrl(String platformUrl) {
-      this.platformUrl = platformUrl;
+    protected Builder baseUrl(String baseUrl) {
+      this.baseUrl = baseUrl;
       return this;
     }
 
@@ -168,8 +168,8 @@ public class EditorConfig {
       return workspace;
     }
 
-    protected String platformUrl() {
-      return platformUrl;
+    protected String baseUrl() {
+      return baseUrl;
     }
 
     protected List<Permissions> permissions() {
@@ -181,7 +181,7 @@ public class EditorConfig {
     }
 
     protected EditorConfig build() {
-      return new EditorConfig(userId, fileId, workspace, platformUrl, permissions, accessToken);
+      return new EditorConfig(userId, fileId, workspace, baseUrl, permissions, accessToken);
     }
 
   }

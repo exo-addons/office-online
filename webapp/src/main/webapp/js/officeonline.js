@@ -39,7 +39,7 @@
 
   var getEditorButton = function(editorLink) {
     return "<li class='hidden-tabletL'><a href='" + editorLink + "' target='_blank'>"
-        + "<i class='uiIconEcmsOfficeonlineOpen uiIconEcmsLightGray uiIconEdit'></i>Edit</a></li>";
+        + "<i class='uiIconEcmsOfficeOnlineOpen uiIconEcmsLightGray uiIconEdit'></i>Edit</a></li>";
   };
 
   /**

@@ -45,8 +45,8 @@
       <mime-type>text/html</mime-type>
     </supports>
     <portlet-info>
-      <title>Officeonline stream portlet</title>
-      <short-title>Officeonline document</short-title>
+      <title>Office Online stream portlet</title>
+      <short-title>Office Online document</short-title>
     </portlet-info>
   </portlet>
   
