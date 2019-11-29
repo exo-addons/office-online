@@ -12,6 +12,7 @@ import java.util.Base64;
 import java.util.List;
 
 import javax.crypto.Cipher;
+import javax.jcr.Item;
 import javax.jcr.ItemNotFoundException;
 import javax.jcr.Node;
 import javax.jcr.RepositoryException;
@@ -37,6 +38,7 @@ import org.exoplatform.services.log.Log;
 import org.exoplatform.services.organization.OrganizationService;
 import org.exoplatform.services.organization.User;
 import org.exoplatform.services.wcm.core.NodetypeConstant;
+
 
 /**
  * The Class AbstractOfficeOnlineService.
@@ -428,6 +430,28 @@ public abstract class AbstractOfficeOnlineService implements Startable {
       LOG.error("Error occured while generating token. {}", e.getMessage());
       throw new OfficeOnlineException("Couldn't generate token from editor config.");
     }
+  }
+  
+
+  /**
+   * Gets the node.
+   *
+   * @param workspace the workspace
+   * @param path the path
+   * @return the node
+   * @throws RepositoryException the repository exception
+   */
+  public Node getNode(String workspace, String path) throws RepositoryException {
+    if (workspace == null) {
+      workspace = jcrService.getCurrentRepository().getConfiguration().getDefaultWorkspaceName();
+    }
+    SessionProvider sp = sessionProviders.getSessionProvider(null);
+    Session userSession = sp.getSession(workspace, jcrService.getCurrentRepository());
+    Item item = userSession.getItem(path);
+    if (item != null && item.isNode()) {
+      return (Node) userSession.getItem(path);
+    }
+    return null;
   }
 
   /**
