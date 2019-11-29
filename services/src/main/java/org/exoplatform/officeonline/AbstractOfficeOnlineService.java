@@ -20,7 +20,6 @@ import javax.jcr.Session;
 import org.apache.commons.io.input.AutoCloseInputStream;
 import org.picocontainer.Startable;
 
-import org.exoplatform.commons.utils.CommonsUtils;
 import org.exoplatform.container.PortalContainer;
 import org.exoplatform.ecm.utils.permission.PermissionUtil;
 import org.exoplatform.ecm.webui.utils.Utils;
@@ -38,8 +37,6 @@ import org.exoplatform.services.log.Log;
 import org.exoplatform.services.organization.OrganizationService;
 import org.exoplatform.services.organization.User;
 import org.exoplatform.services.wcm.core.NodetypeConstant;
-import org.exoplatform.webui.application.WebuiRequestContext;
-import org.exoplatform.webui.application.portlet.PortletRequestContext;
 
 /**
  * The Class AbstractOfficeOnlineService.
@@ -47,61 +44,67 @@ import org.exoplatform.webui.application.portlet.PortletRequestContext;
 public abstract class AbstractOfficeOnlineService implements Startable {
 
   /** The Constant LOG. */
-  protected static final Log             LOG                    = ExoLogger.getLogger(AbstractOfficeOnlineService.class);
+  protected static final Log             LOG                     = ExoLogger.getLogger(AbstractOfficeOnlineService.class);
 
   /** The Constant KEY_CACHE_NAME. */
-  public static final String             KEY_CACHE_NAME             = "officeonline.key.Cache".intern();
+  public static final String             KEY_CACHE_NAME          = "officeonline.key.Cache".intern();
 
   /** The Constant SECRET_KEY. */
-  protected static final String          SECRET_KEY             = "secret-key";
+  protected static final String          SECRET_KEY              = "secret-key";
 
   /** The Constant ALGORITHM. */
-  protected static final String          ALGORITHM              = "AES";
+  protected static final String          ALGORITHM               = "AES";
 
   /** The Constant TOKEN_DELIMITER. */
-  protected static final String          TOKEN_DELIMITER        = "+";
+  protected static final String          TOKEN_DELIMITER         = "+";
 
-  /** The Constant TOKEN_DELIMITER_SPLIT. */
-  protected static final String          TOKEN_DELIMITE_SPLIT   = "\\+";
+  /** The Constant TOKEN_DELIMITER_PATTERN. */
+  protected static final String          TOKEN_DELIMITER_PATTERN = "\\+";
 
   /** The Constant TOKEN_EXPIRES. */
-  protected static final long            TOKEN_EXPIRES          = 30 * 60000;
+  protected static final long            TOKEN_EXPIRES           = 30 * 60000;
 
   /** The Constant JCR_CONTENT. */
-  protected static final String          JCR_CONTENT            = "jcr:content";
+  protected static final String          JCR_CONTENT             = "jcr:content";
+
+  /** The Constant WOPITESTX. */
+  protected static final String          WOPITESTX               = "wopitestx";
+
+  /** The Constant WOPITEST. */
+  protected static final String          WOPITEST                = "wopitest";
 
   /** The Constant JCR_DATA. */
-  protected static final String          JCR_DATA               = "jcr:data";
+  protected static final String          JCR_DATA                = "jcr:data";
 
   /** The Constant EXO_LAST_MODIFIER. */
-  protected static final String          EXO_LAST_MODIFIER      = "exo:lastModifier";
+  protected static final String          EXO_LAST_MODIFIER       = "exo:lastModifier";
 
   /** The Constant EXO_LAST_MODIFIED_DATE. */
-  protected static final String          EXO_LAST_MODIFIED_DATE = "exo:lastModifiedDate";
+  protected static final String          EXO_LAST_MODIFIED_DATE  = "exo:lastModifiedDate";
 
   /** The Constant EXO_DATE_MODIFIED. */
-  protected static final String          EXO_DATE_MODIFIED      = "exo:dateModified";
+  protected static final String          EXO_DATE_MODIFIED       = "exo:dateModified";
 
   /** The Constant JCR_LAST_MODIFIED. */
-  protected static final String          JCR_LAST_MODIFIED      = "jcr:lastModified";
+  protected static final String          JCR_LAST_MODIFIED       = "jcr:lastModified";
 
   /** The Constant MIX_VERSIONABLE. */
-  protected static final String          MIX_VERSIONABLE        = "mix:versionable";
+  protected static final String          MIX_VERSIONABLE         = "mix:versionable";
 
   /** The Constant EXO_OWNER. */
-  protected static final String          EXO_OWNER              = "exo:owner";
+  protected static final String          EXO_OWNER               = "exo:owner";
 
   /** The Constant EXO_TITLE. */
-  protected static final String          EXO_TITLE              = "exo:title";
+  protected static final String          EXO_TITLE               = "exo:title";
 
   /** The Constant EXO_PRIVILEGEABLE. */
-  protected static final String          EXO_PRIVILEGEABLE      = "exo:privilegeable";
+  protected static final String          EXO_PRIVILEGEABLE       = "exo:privilegeable";
 
   /** The Constant JCR_MIME_TYPE. */
-  protected static final String          JCR_MIME_TYPE          = "jcr:mimeType";
+  protected static final String          JCR_MIME_TYPE           = "jcr:mimeType";
 
   /** The Constant EXO_NAME. */
-  protected static final String          EXO_NAME               = "exo:name";
+  protected static final String          EXO_NAME                = "exo:name";
 
   /** Cache of Editing documents. */
   protected final ExoCache<String, Key>  keyCache;
@@ -282,21 +285,20 @@ public abstract class AbstractOfficeOnlineService implements Startable {
   /**
    * Explorer uri.
    *
-   * @param schema the schema
-   * @param host the host
-   * @param port the port
+   * @param baseUrl the base url
    * @param ecmsLink the ecms link
    * @return the uri
    */
-  protected URI explorerUri(String schema, String host, int port, String ecmsLink) {
+  protected URI explorerUri(String baseUrl, String ecmsLink) {
     URI uri;
     try {
+      URI baseURI = new URI(baseUrl);
       ecmsLink = URLDecoder.decode(ecmsLink, StandardCharsets.UTF_8.name());
       String[] linkParts = ecmsLink.split("\\?");
       if (linkParts.length >= 2) {
-        uri = new URI(schema, null, host, port, linkParts[0], linkParts[1], null);
+        uri = new URI(baseURI.getScheme(), null, baseURI.getHost(), baseURI.getPort(), linkParts[0], linkParts[1], null);
       } else {
-        uri = new URI(schema, null, host, port, ecmsLink, null, null);
+        uri = new URI(baseURI.getScheme(), null, baseURI.getHost(), baseURI.getPort(), ecmsLink, null, null);
       }
     } catch (Exception e) {
       LOG.warn("Error creating document URI", e);
@@ -328,43 +330,6 @@ public abstract class AbstractOfficeOnlineService implements Startable {
   }
 
   /**
-   * Gets the editor URL.
-   *
-   * @param fileId the file id
-   * @param schema the schema
-   * @param host the host
-   * @param port the port
-   * @return the editor URL
-   */
-  public String getEditorURL(String fileId, String schema, String host, int port) {
-    return platformUrl(schema, host, port).append('/')
-                                          .append(CommonsUtils.getCurrentPortalOwner())
-                                          .append("/mseditor?fileId=")
-                                          .append(fileId)
-                                          .toString();
-  }
-
-  /**
-   * Gets the editor URL using PortletRequestContext.
-   *
-   * @param fileId the file id
-   * @param schema the schema
-   * @param host the host
-   * @param port the port
-   * @return the editor URL
-   */
-  public String getEditorURL(String fileId) {
-    PortletRequestContext pcontext = (PortletRequestContext) WebuiRequestContext.getCurrentInstance();
-    return platformUrl(pcontext.getRequest().getScheme(),
-                       pcontext.getRequest().getServerName(),
-                       pcontext.getRequest().getServerPort()).append('/')
-                                                             .append(CommonsUtils.getCurrentPortalOwner())
-                                                             .append("/mseditor?fileId=")
-                                                             .append(fileId)
-                                                             .toString();
-  }
-
-  /**
    * Gets the size.
    *
    * @param node the node
@@ -393,20 +358,22 @@ public abstract class AbstractOfficeOnlineService implements Startable {
     }
     return size;
   }
-  
 
   /**
    * Creates the editor config.
    *
    * @param userId the userId
-   * @param workspace the workspace
    * @param fileId the file id
+   * @param workspace the workspace
+   * @param requestInfo the request info
    * @return the editor config
-   * @throws RepositoryException the repository exception
    * @throws OfficeOnlineException the office online exception
+   * @throws RepositoryException the repository exception
    */
-  public EditorConfig createEditorConfig(String userId, String fileId, String workspace) throws OfficeOnlineException,
-                                                                                         RepositoryException {
+  public EditorConfig createEditorConfig(String userId,
+                                         String fileId,
+                                         String workspace,
+                                         RequestInfo requestInfo) throws OfficeOnlineException, RepositoryException {
 
     Node node = nodeByUUID(fileId, workspace);
     List<Permissions> permissions = new ArrayList<>();
@@ -416,10 +383,12 @@ public abstract class AbstractOfficeOnlineService implements Startable {
     } else {
       permissions.add(Permissions.READ_ONLY);
     }
+    String baseUrl = platformUrl(requestInfo.getScheme(), requestInfo.getServerName(), requestInfo.getPort()).toString();
     EditorConfig.Builder configBuilder = new EditorConfig.Builder().userId(userId)
                                                                    .fileId(fileId)
                                                                    .workspace(workspace)
-                                                                   .permissions(permissions);
+                                                                   .permissions(permissions)
+                                                                   .baseUrl(baseUrl);
     AccessToken accessToken = generateAccessToken(configBuilder);
     configBuilder.accessToken(accessToken);
     return configBuilder.build();
@@ -446,7 +415,9 @@ public abstract class AbstractOfficeOnlineService implements Startable {
                                                  .append(TOKEN_DELIMITER)
                                                  .append(configBuilder.fileId())
                                                  .append(TOKEN_DELIMITER)
-                                                 .append(expires);
+                                                 .append(expires)
+                                                 .append(TOKEN_DELIMITER)
+                                                 .append(configBuilder.baseUrl());
       configBuilder.permissions().forEach(permission -> {
         builder.append(TOKEN_DELIMITER).append(permission.getShortName());
       });
@@ -480,8 +451,8 @@ public abstract class AbstractOfficeOnlineService implements Startable {
     }
 
     List<Permissions> permissions = new ArrayList<>();
-    List<String> values = Arrays.asList(decryptedToken.split(TOKEN_DELIMITE_SPLIT));
-    if (values.size() > 2) {
+    List<String> values = Arrays.asList(decryptedToken.split(TOKEN_DELIMITER_PATTERN));
+    if (values.size() > 4) {
       String workspace = values.get(0);
       if (workspace.equals("null")) {
         workspace = null;
@@ -489,11 +460,17 @@ public abstract class AbstractOfficeOnlineService implements Startable {
       String userId = values.get(1);
       String fileId = values.get(2);
       long expires = Long.parseLong(values.get(3));
-      values.stream().skip(4).forEach(value -> permissions.add(Permissions.fromShortName(value)));
-      return new EditorConfig(userId, fileId, workspace, permissions, new AccessToken(token, expires));
+      String baseUrl = values.get(4);
+      values.stream().skip(5).forEach(value -> permissions.add(Permissions.fromShortName(value)));
+      return new EditorConfig.Builder().userId(userId)
+                                       .fileId(fileId)
+                                       .workspace(workspace)
+                                       .baseUrl(baseUrl)
+                                       .permissions(permissions)
+                                       .accessToken(new AccessToken(token, expires))
+                                       .build();
     } else {
       throw new OfficeOnlineException("Decrypted token doesn't contain all required parameters");
     }
   }
-
 }

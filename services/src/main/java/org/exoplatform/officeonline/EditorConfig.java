@@ -21,6 +21,9 @@ public class EditorConfig {
   /** The workspace. */
   protected final String            workspace;
 
+  /** The base url. */
+  protected final String            baseUrl;
+
   /** The permissions. */
   protected final List<Permissions> permissions;
 
@@ -30,14 +33,21 @@ public class EditorConfig {
    * @param userId the user id
    * @param fileId the file id
    * @param workspace the workspace
+   * @param baseUrl the platform url
    * @param permissions the permissions
    * @param accessToken the access token
    * @param tokenExpires the token ttl
    */
-  public EditorConfig(String userId, String fileId, String workspace, List<Permissions> permissions, AccessToken accessToken) {
+  public EditorConfig(String userId,
+                      String fileId,
+                      String workspace,
+                      String baseUrl,
+                      List<Permissions> permissions,
+                      AccessToken accessToken) {
     this.userId = userId;
     this.fileId = fileId;
     this.workspace = workspace;
+    this.baseUrl = baseUrl;
     this.permissions = permissions != null ? permissions : Collections.emptyList();
     this.accessToken = accessToken;
   }
@@ -87,6 +97,15 @@ public class EditorConfig {
     return workspace;
   }
 
+  /**
+   * Gets the base url.
+   *
+   * @return the workspace
+   */
+  public String getBaseUrl() {
+    return baseUrl;
+  }
+
   public static class Builder {
 
     /** The access token. */
@@ -100,6 +119,9 @@ public class EditorConfig {
 
     /** The workspace. */
     private String            workspace;
+
+    /** The base url. */
+    private String            baseUrl;
 
     /** The permissions. */
     private List<Permissions> permissions = new ArrayList<>();
@@ -124,6 +146,11 @@ public class EditorConfig {
       return this;
     }
 
+    protected Builder baseUrl(String baseUrl) {
+      this.baseUrl = baseUrl;
+      return this;
+    }
+
     protected Builder permissions(List<Permissions> permissions) {
       this.permissions = permissions;
       return this;
@@ -141,6 +168,10 @@ public class EditorConfig {
       return workspace;
     }
 
+    protected String baseUrl() {
+      return baseUrl;
+    }
+
     protected List<Permissions> permissions() {
       return permissions;
     }
@@ -150,7 +181,7 @@ public class EditorConfig {
     }
 
     protected EditorConfig build() {
-      return new EditorConfig(userId, fileId, workspace, permissions, accessToken);
+      return new EditorConfig(userId, fileId, workspace, baseUrl, permissions, accessToken);
     }
 
   }

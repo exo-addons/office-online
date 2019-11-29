@@ -39,6 +39,22 @@
     <application-name>officeonline</application-name>
     <portlet-name>OfficeOnlineEditorPortlet</portlet-name>
     <skin-name>Enterprise</skin-name>
+    <css-path>/skin/officeonline-editor.css</css-path>
+    <overwrite>true</overwrite>
+  </portlet-skin>
+
+  <portlet-skin>
+    <application-name>officeonline</application-name>
+    <portlet-name>OfficeOnlineStreamPortlet</portlet-name>
+    <skin-name>Enterprise</skin-name>
+    <css-path>/skin/officeonline.css</css-path>
+    <overwrite>true</overwrite>
+  </portlet-skin>
+
+  <portlet-skin>
+    <application-name>officeonline</application-name>
+    <portlet-name>OfficeOnlineStreamPortlet</portlet-name>
+    <skin-name>Default</skin-name>
     <css-path>/skin/officeonline.css</css-path>
     <overwrite>true</overwrite>
   </portlet-skin>

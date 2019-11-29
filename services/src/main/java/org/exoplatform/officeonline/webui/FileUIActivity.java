@@ -24,6 +24,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import javax.jcr.Node;
 
 import org.exoplatform.officeonline.EditorService;
+import org.exoplatform.officeonline.WOPIService;
 import org.exoplatform.services.log.ExoLogger;
 import org.exoplatform.services.log.Log;
 import org.exoplatform.social.webui.activity.BaseUIActivity;
@@ -63,6 +64,9 @@ public class FileUIActivity extends org.exoplatform.wcm.ext.component.activity.F
   /** The editor service. */
   protected final EditorService     editorService;
 
+  /** The editor service. */
+  protected final WOPIService       wopiService;
+
   /** The editor links. */
   protected final Map<Node, String> editorLinks = new ConcurrentHashMap<>();
 
@@ -75,6 +79,7 @@ public class FileUIActivity extends org.exoplatform.wcm.ext.component.activity.F
   public FileUIActivity() throws Exception {
     super();
     this.editorService = this.getApplicationComponent(EditorService.class);
+    this.wopiService = this.getApplicationComponent(WOPIService.class);
   }
 
   /**
@@ -92,8 +97,7 @@ public class FileUIActivity extends org.exoplatform.wcm.ext.component.activity.F
       Node node = getContentNode(0);
       node = editorService.getNode(node.getSession().getWorkspace().getName(), node.getPath());
       if (node != null) {
-        require.addScripts("officeonline.initActivity('" + node.getUUID() + "', '" + editorService.getEditorURL(node.getUUID())
-            + "','" + activityId + "');");
+        require.addScripts("officeonline.initActivity('" + node.getUUID() + "', " + editorLink(node) + ",'" + activityId + "');");
       }
     }
 
@@ -102,11 +106,27 @@ public class FileUIActivity extends org.exoplatform.wcm.ext.component.activity.F
       Node symlink = getContentNode(index);
       Node node = editorService.getNode(symlink.getSession().getWorkspace().getName(), symlink.getPath());
       if (node != null) {
-        require.addScripts("officeonline.initPreview('" + node.getUUID() + "', '" + editorService.getEditorURL(node.getUUID())
-            + "' ,'" + new StringBuilder("#Preview").append(activityId).append('-').append(index).toString() + "');");
+        require.addScripts("officeonline.initPreview('" + node.getUUID() + "', " + editorLink(node) + " ,'"
+            + new StringBuilder("#Preview").append(activityId).append('-').append(index).toString() + "');");
       }
     }
     super.end();
+  }
+
+  /**
+   * Context editor link.
+   *
+   * @param node the node
+   * @param context the context
+   * @return the string
+   */
+  private String editorLink(Node node) {
+    String link = editorLinks.computeIfAbsent(node, n -> wopiService.getEditorLink(node));
+    if (link == null || link.isEmpty()) {
+      return "null".intern();
+    } else {
+      return new StringBuilder().append('\'').append(link).append('\'').toString();
+    }
   }
 
 }

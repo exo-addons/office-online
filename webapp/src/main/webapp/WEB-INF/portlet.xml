@@ -37,5 +37,17 @@
     </portlet-info>
   </portlet>
   
+  <portlet>
+    <portlet-name>OfficeOnlineStreamPortlet</portlet-name>
+    <display-name xml:lang="EN">Office Online Stream Portlet</display-name>
+    <portlet-class>org.exoplatform.officeonline.portlet.OfficeOnlineStreamPortlet</portlet-class>
+    <supports>
+      <mime-type>text/html</mime-type>
+    </supports>
+    <portlet-info>
+      <title>Office Online stream portlet</title>
+      <short-title>Office Online document</short-title>
+    </portlet-info>
+  </portlet>
   
 </portlet-app>

@@ -559,10 +559,7 @@ public class WOPIResource implements ResourceContainer {
     URI requestUri = uriInfo.getRequestUri();
     try {
       EditorConfig config = getEditorConfig(context);
-      Map<String, Serializable> fileInfo = wopiService.checkFileInfo(requestUri.getScheme(),
-                                                                     requestUri.getHost(),
-                                                                     requestUri.getPort(),
-                                                                     config);
+      Map<String, Serializable> fileInfo = wopiService.checkFileInfo(config);
       if (LOG.isDebugEnabled()) {
         LOG.debug("Check file info response: OK");
       }
@@ -899,7 +896,7 @@ public class WOPIResource implements ResourceContainer {
       target = new String(target.getBytes(), UTF_7);
       String fileId = wopiService.putRelativeFile(config, target, overwrite, data);
       String fileName = wopiService.getFileName(fileId, config.getWorkspace());
-      EditorConfig newConfig = wopiService.createEditorConfig(config.getUserId(), fileId, config.getWorkspace());
+      EditorConfig newConfig = wopiService.createEditorConfig(config.getUserId(), fileId, config.getWorkspace(), requestInfo);
       String url = new StringBuilder(wopiService.getWOPISrc(requestInfo, fileId)).append("?access_token=")
                                                                                  .append(newConfig.getAccessToken().getToken())
                                                                                  .toString();
@@ -1008,10 +1005,7 @@ public class WOPIResource implements ResourceContainer {
       String url = new StringBuilder(wopiService.getWOPISrc(requestInfo, fileId)).append("?access_token=")
                                                                                  .append(config.getAccessToken().getToken())
                                                                                  .toString();
-      String editUrl = wopiService.getEditorURL(fileId,
-                                                requestInfo.getScheme(),
-                                                requestInfo.getServerName(),
-                                                requestInfo.getPort());
+      String editUrl = wopiService.getEditorURL(fileId, config.getWorkspace(), config.getBaseUrl());
       // TODO: introduce viewUrl
       String viewUrl = editUrl;
       if (LOG.isDebugEnabled()) {
