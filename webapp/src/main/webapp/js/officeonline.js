@@ -43,7 +43,7 @@
   };
 
   var getNoPreviewEditorButton = function(editorLink) {
-    return "<a class='btn officeOnlineEditBtn hidden-tabletL' href='#' onclick='javascript:window.open(\"" + editorLink + "\");'>"
+    return "<a class='btn editInOfficeOnline hidden-tabletL' href='#' onclick='javascript:window.open(\"" + editorLink + "\");'>"
         + "<i class='uiIconEcmsOfficeOnlineOpen uiIconEcmsLightGray uiIconEdit'></i>Edit in MS</a>";
   };
 
@@ -60,7 +60,7 @@
       } else {
         log("Cannot find .noPreview element");
       }
-    } else if ($elem.find("a.officeOnlineEditBtn").length == 0) {
+    } else if ($elem.find("a.editInOfficeOnline").length == 0) {
       var $detailContainer = $elem.find(".detailContainer");
       var $downloadBtn = $detailContainer.find(".uiIconDownload").closest("a.btn");
       if ($downloadBtn.length != 0) {
@@ -84,7 +84,7 @@
         log("Cannot find element " + $elem);
       }
     } else {
-      $elem.append("<div class='officeOnlineEditBtn'>" + getEditorButton(editorLink) + "</div>");
+      $elem.append("<div class='editInOfficeOnline'>" + getEditorButton(editorLink) + "</div>");
     }
   };
 

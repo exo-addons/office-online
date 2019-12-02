@@ -49,6 +49,8 @@ import org.exoplatform.services.jcr.ext.hierarchy.NodeHierarchyCreator;
  * 
  * Created by The eXo Platform SAS
  * 
+ * Copied from org.exoplatform.onlyoffice.webui.CustomizeViewPlugin
+ * 
  * @author <a href="mailto:pnedonosko@exoplatform.com">Peter Nedonosko</a>
  * @version $Id: CustomizeViewPlugin.java 00000 Mar 2, 2016 pnedonosko $
  * 

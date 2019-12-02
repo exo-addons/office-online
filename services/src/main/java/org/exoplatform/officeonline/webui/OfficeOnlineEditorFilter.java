@@ -39,6 +39,8 @@ import org.exoplatform.webui.application.WebuiApplication;
 /**
  * Filter to add listener that will initialize OfficeOnline editor app. <br>
  * Created by The eXo Platform SAS.
+ * 
+ * Adopted from org.exoplatform.onlyoffice.webui.OnlyofficeEditorFilter
  *
  * @author <a href="mailto:pnedonosko@exoplatform.com">Peter Nedonosko</a>
  * @version $Id: OfficeOnlineEditorFilter.java 00000 Mar 21, 2019 pnedonosko $

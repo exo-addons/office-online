@@ -36,6 +36,8 @@ import org.exoplatform.webui.application.WebuiRequestContext;
  * <br>
  * Created by The eXo Platform SAS.
  * 
+ * Adopted from org.exoplatform.onlyoffice.webui.OnlyofficeDocumentsLifecycle
+ * 
  * @author <a href="mailto:pnedonosko@exoplatform.com">Peter Nedonosko</a>
  * @version $Id: OnlyofficeDocumentsLifecycle.java 00000 Mar 21, 2019 pnedonosko
  *          $

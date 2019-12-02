@@ -41,6 +41,8 @@ import org.exoplatform.webui.ext.manager.UIAbstractManagerComponent;
 /**
  * Open Onlyoffice editor in file view. Created by The eXo Platform SAS.
  * 
+ * Adopted from org.exoplatform.onlyoffice.webui.OnlyofficeOpenManageComponent
+ * 
  * @author <a href="mailto:pnedonosko@exoplatform.com">Peter Nedonosko</a>
  * @version $Id: OnlyofficeComponent.java 00000 Mar 01, 2016 pnedonosko $
  */

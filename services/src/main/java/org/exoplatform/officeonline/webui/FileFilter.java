@@ -30,6 +30,8 @@ import org.exoplatform.services.wcm.utils.WCMCoreUtils;
 /**
  * Created by The eXo Platform SAS.
  *
+ * Adopted from org.exoplatform.onlyoffice.webui.FileFilter
+ *
  * @author <a href="mailto:pnedonosko@exoplatform.com">Peter Nedonosko</a>
  * @version $Id: FileFilter.java 00000 Mar 2, 2016 pnedonosko $
  */
