@@ -113,18 +113,6 @@ public class EditorService extends AbstractOfficeOnlineService {
     }
   }
 
-  public Node getNode(String workspace, String path) throws RepositoryException {
-    if (workspace == null) {
-      workspace = jcrService.getCurrentRepository().getConfiguration().getDefaultWorkspaceName();
-    }
-    SessionProvider sp = sessionProviders.getSessionProvider(null);
-    Session userSession = sp.getSession(workspace, jcrService.getCurrentRepository());
-    Item item = userSession.getItem(path);
-    if (item != null && item.isNode()) {
-      return (Node) userSession.getItem(path);
-    }
-    return null;
-  }
 
   /**
    * Stop.

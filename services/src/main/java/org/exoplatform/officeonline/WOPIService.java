@@ -679,7 +679,7 @@ public class WOPIService extends AbstractOfficeOnlineService {
    * @return true, if is document supported
    * @throws RepositoryException the repository exception
    */
-  protected boolean isDocumentSupported(Node node) throws RepositoryException {
+  public boolean isDocumentSupported(Node node) throws RepositoryException {
     if (node != null) {
       if (node.getName().endsWith(WOPITEST) || node.getName().endsWith(WOPITESTX)) {
         return true;
@@ -811,7 +811,7 @@ public class WOPIService extends AbstractOfficeOnlineService {
     map.put(Permissions.USER_CAN_NOT_WRITE_RELATIVE.toString(), !canUpdate);
   }
 
-  protected boolean canEdit(Node node) throws RepositoryException {
+  public boolean canEdit(Node node) throws RepositoryException {
     return isDocumentSupported(node) && PermissionUtil.canSetProperty(node);
   }
 

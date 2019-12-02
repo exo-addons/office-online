@@ -39,6 +39,8 @@ import org.exoplatform.webui.core.lifecycle.UIFormLifecycle;
 /**
  * Created by The eXo Platform SAS.
  *
+ * Adopted from org.exoplatform.onlyoffice.webui.FileUIActivity
+ *
  * @author <a href="mailto:pnedonosko@exoplatform.com">Peter Nedonosko</a>
  * @version $Id: FileUIActivity.java 00000 Feb 20, 2019 pnedonosko $
  */

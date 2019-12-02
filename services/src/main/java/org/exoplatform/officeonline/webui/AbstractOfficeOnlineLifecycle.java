@@ -32,6 +32,8 @@ import org.exoplatform.webui.application.WebuiRequestContext;
  * Base listener for OfficeOnline integration in Platforms apps. <br>
  * Created by The eXo Platform SAS.
  * 
+ * Adopted from org.exoplatform.onlyoffice.webui.AbstractOnlyofficeLifecycle
+ * 
  * @author <a href="mailto:pnedonosko@exoplatform.com">Peter Nedonosko</a>
  * @version $Id: AbstractOfficeOnlineLifecycle.java 00000 Mar 21, 2019 pnedonosko
  *          $

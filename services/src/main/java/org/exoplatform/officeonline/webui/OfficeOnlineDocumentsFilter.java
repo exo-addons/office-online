@@ -19,11 +19,8 @@
 
 package org.exoplatform.officeonline.webui;
 
-import static org.exoplatform.officeonline.webui.OfficeOnlineEditorLifecycle.EDITOR_STATES_ATTR_NAME;
-
 import java.io.IOException;
 import java.util.List;
-import java.util.concurrent.ConcurrentHashMap;
 
 import javax.servlet.FilterChain;
 import javax.servlet.ServletException;
@@ -31,21 +28,29 @@ import javax.servlet.ServletRequest;
 import javax.servlet.ServletResponse;
 
 import org.exoplatform.container.ExoContainerContext;
-import org.exoplatform.portal.application.PortalApplication;
+import org.exoplatform.services.log.ExoLogger;
+import org.exoplatform.services.log.Log;
 import org.exoplatform.web.WebAppController;
 import org.exoplatform.web.application.ApplicationLifecycle;
 import org.exoplatform.webui.application.WebuiApplication;
 
 /**
- * Filter to add listener that will initialize OfficeOnline editor app. <br>
+ * Filter to add listener that will initialize Onlyoffice integration in
+ * Platform apps. <br>
  * Created by The eXo Platform SAS.
  * 
- * Adopted from org.exoplatform.onlyoffice.webui.OnlyofficeEditorFilter
+ * Adopted from org.exoplatform.onlyoffice.webui.OnlyofficeDocumentsFilter
  *
  * @author <a href="mailto:pnedonosko@exoplatform.com">Peter Nedonosko</a>
- * @version $Id: OfficeOnlineEditorFilter.java 00000 Mar 21, 2019 pnedonosko $
+ * @version $Id: OnlyofficeDocumentsFilter.java 00000 Mar 21, 2019 pnedonosko $
  */
-public class OfficeOnlineEditorFilter extends AbstractOfficeOnlineWebFilter {
+public class OfficeOnlineDocumentsFilter extends AbstractOfficeOnlineWebFilter {
+
+  /** The Constant LOG. */
+  protected static final Log    LOG                  = ExoLogger.getLogger(OfficeOnlineDocumentsFilter.class);
+
+  /** The Constant ECMS_EXPLORER_APP_ID. */
+  protected static final String ECMS_EXPLORER_APP_ID = "ecmexplorer/FileExplorerPortlet";
 
   /**
    * {@inheritDoc}
@@ -53,31 +58,23 @@ public class OfficeOnlineEditorFilter extends AbstractOfficeOnlineWebFilter {
   @Override
   public void doFilter(ServletRequest request, ServletResponse response, FilterChain chain) throws IOException, ServletException {
     WebAppController controller = ExoContainerContext.getCurrentContainer().getComponentInstanceOfType(WebAppController.class);
-    WebuiApplication app = controller.getApplication(PortalApplication.PORTAL_APPLICATION_ID);
+    WebuiApplication app = controller.getApplication(ECMS_EXPLORER_APP_ID);
+    // XXX It's known that since portal start this app will not present at very
+    // first request to it (Documents Explorer app), thus the filter will not
+    // add the lifecycle and it will not initialize the app in the first
+    // request.
     if (app != null) {
-      // Initialize portal app, this will happen once per app lifetime
+      // Initialize ECMS Explorer app, this will happen once per app lifetime
       @SuppressWarnings("rawtypes")
       final List<ApplicationLifecycle> lifecycles = app.getApplicationLifecycle();
-      OfficeOnlineEditorLifecycle lifecycle = getLifecycle(lifecycles, OfficeOnlineEditorLifecycle.class);
-      if (lifecycle == null) {
+      if (canAddLifecycle(lifecycles, OfficeOnlineDocumentsLifecycle.class)) {
         synchronized (lifecycles) {
-          lifecycle = getLifecycle(lifecycles, OfficeOnlineEditorLifecycle.class);
-          if (lifecycle == null) {
-            lifecycles.add(lifecycle = new OfficeOnlineEditorLifecycle());
+          if (canAddLifecycle(lifecycles, OfficeOnlineDocumentsLifecycle.class)) {
+            lifecycles.add(new OfficeOnlineDocumentsLifecycle());
           }
         }
       }
-      // Prepare env for lifecycle work 
-      request.setAttribute(EDITOR_STATES_ATTR_NAME, ConcurrentHashMap.newKeySet());
-      try {
-        chain.doFilter(request, response);
-      } finally {
-        // run restore for a case of exception in request processing
-        lifecycle.restore(request);
-        request.removeAttribute(EDITOR_STATES_ATTR_NAME);
-      }
-    } else {
-      chain.doFilter(request, response);
     }
+    chain.doFilter(request, response);
   }
 }

@@ -39,7 +39,12 @@
 
   var getEditorButton = function(editorLink) {
     return "<li class='hidden-tabletL'><a href='" + editorLink + "' target='_blank'>"
-        + "<i class='uiIconEcmsOfficeOnlineOpen uiIconEcmsLightGray uiIconEdit'></i>Edit</a></li>";
+        + "<i class='uiIconEcmsOfficeOnlineOpen uiIconEcmsLightGray uiIconEdit'></i>Edit in MS</a></li>";
+  };
+
+  var getNoPreviewEditorButton = function(editorLink) {
+    return "<a class='btn editInOfficeOnline hidden-tabletL' href='#' onclick='javascript:window.open(\"" + editorLink + "\");'>"
+        + "<i class='uiIconEcmsOfficeOnlineOpen uiIconEcmsLightGray uiIconEdit'></i>Edit in MS</a>";
   };
 
   /**
@@ -55,7 +60,7 @@
       } else {
         log("Cannot find .noPreview element");
       }
-    } else if ($elem.find("a.editOnlineBtn").length == 0) {
+    } else if ($elem.find("a.editInOfficeOnline").length == 0) {
       var $detailContainer = $elem.find(".detailContainer");
       var $downloadBtn = $detailContainer.find(".uiIconDownload").closest("a.btn");
       if ($downloadBtn.length != 0) {
@@ -79,7 +84,7 @@
         log("Cannot find element " + $elem);
       }
     } else {
-      $elem.append("<div class='officeOnlineEditBtn'>" + getEditorButton(editorLink) + "</div>");
+      $elem.append("<div class='editInOfficeOnline'>" + getEditorButton(editorLink) + "</div>");
     }
   };
 
@@ -95,6 +100,25 @@
         tryAddEditorButtonNoPreview(editorLink, 600, 250);
       }, 100);
     });
+  };
+  
+  /**
+   * Ads the 'Edit Online' button to the JCRExplorer when a document is displayed.
+   */
+  var addEditorButtonToExplorer = function(editorLink) {
+    var $button = $("#UIJCRExplorer #uiActionsBarContainer i.uiIconEcmsOfficeOnlineOpen");
+    $button.addClass("uiIconEdit");
+    $button.closest("li").addClass("hidden-tabletL");
+    var $noPreviewContainer = $("#UIJCRExplorer .navigationContainer.noPreview");
+    if (editorLink != null && $noPreviewContainer.length != 0) {
+      var $detailContainer = $noPreviewContainer.find(".detailContainer");
+      var $downloadBtn = $detailContainer.find(".uiIconDownload").closest("a.btn");
+      if ($downloadBtn.length != 0) {
+        $downloadBtn.after(getNoPreviewEditorButton(editorLink));
+      } else {
+        $detailContainer.append(getNoPreviewEditorButton(editorLink));
+      }
+    }
   };
 
   /**
@@ -143,6 +167,14 @@
       if (editorLink) {
         addEditorButtonToPreview(editorLink, clickSelector);
       }
+    };
+    
+    /**
+     * Initializes JCRExplorer when a document is displayed.
+     */
+    this.initExplorer = function(docId, editorLink) {
+      log("Initialize explorer with document: " + docId);
+      addEditorButtonToExplorer(editorLink);
     };
 
   }

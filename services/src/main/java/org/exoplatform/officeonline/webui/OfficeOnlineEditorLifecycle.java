@@ -36,6 +36,8 @@ import org.exoplatform.webui.core.UIContainer;
  * This listener should hide navigation toolbar in the Platform page.<br>
  * Created by The eXo Platform SAS.
  * 
+ * Adopted from org.exoplatform.onlyoffice.webui.OnlyofficeEditorLifecycle
+ * 
  * @author <a href="mailto:pnedonosko@exoplatform.com">Peter Nedonosko</a>
  * @version $Id: OfficeOnlineEditorLifecycle.java 00000 Mar 22, 2019 pnedonosko $
  */

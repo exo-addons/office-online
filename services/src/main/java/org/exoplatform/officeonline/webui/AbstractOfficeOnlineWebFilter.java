@@ -26,6 +26,8 @@ import org.exoplatform.web.filter.Filter;
 /**
  * Created by The eXo Platform SAS
  * 
+ * Adopted from org.exoplatform.onlyoffice.webui.AbstractOnlyofficeWebFilter
+ * 
  * @author <a href="mailto:pnedonosko@exoplatform.com">Peter Nedonosko</a>
  * @version $Id: AbstractOfficeOnlineWebFilter.java 00000 Apr 27, 2019 pnedonosko
  *          $
