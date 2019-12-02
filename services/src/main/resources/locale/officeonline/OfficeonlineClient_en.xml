@@ -1,5 +1,18 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <bundle>
+  <!-- For menu caption in Action Bar -->
+  <UIActionBar>
+    <tooltip>
+      <OfficeOnlineOpen>Edit in MS</OfficeOnlineOpen>
+    </tooltip>
+  </UIActionBar>
+  <!-- Used in Administration-Content-Explorer in Views settings a popup with actions list -->
+  <UITabForm>
+    <label>
+      <officeOnlineOpen>Edit in MS</officeOnlineOpen>
+    </label>
+  </UITabForm>
+
   <!-- For client UI -->
   <OfficeonlineEditorClient>
     <EditButtonTitle>Edit Online</EditButtonTitle>
@@ -21,7 +34,7 @@
       <FileNotFound>File not found. Please retry.</FileNotFound>
       <WrongExtension>Wrong file extension. Please retry.</WrongExtension>
       <ActionNotFound>Action not found. Please retry.</ActionNotFound>
-      <CannotReadDocument>Cannot read the document. Please retry.</CannotReadDocument>      
+      <CannotReadDocument>Cannot read the document. Please retry.</CannotReadDocument>
       <DocumentIdRequired>Wrong request: document ID required.</DocumentIdRequired>
     </error>
   </OfficeonlineEditor>

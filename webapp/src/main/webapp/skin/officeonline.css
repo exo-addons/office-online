@@ -6,3 +6,7 @@
 .maskLayer .uiDocumentPreview .previewBtn .officeOnlineEditBtn .uiIconEcmsOfficeOnlineOpen {
   color: #ffffff;
 }
+
+.detailContainer .officeOnlineEditBtn {
+  margin-left: 6px !important;
+}

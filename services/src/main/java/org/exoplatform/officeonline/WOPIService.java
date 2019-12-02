@@ -679,7 +679,7 @@ public class WOPIService extends AbstractOfficeOnlineService {
    * @return true, if is document supported
    * @throws RepositoryException the repository exception
    */
-  protected boolean isDocumentSupported(Node node) throws RepositoryException {
+  public boolean isDocumentSupported(Node node) throws RepositoryException {
     if (node != null) {
       if (node.getName().endsWith(WOPITEST) || node.getName().endsWith(WOPITESTX)) {
         return true;

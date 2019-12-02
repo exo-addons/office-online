@@ -497,6 +497,31 @@
         </object-param>
       </init-params>
     </component-plugin>
+    <component-plugin>
+      <name>Office Online Documents integration filter plugin</name>
+      <set-method>addFilterDefinitions</set-method>
+      <type>org.exoplatform.web.filter.FilterDefinitionPlugin</type>
+      <init-params>
+        <object-param>
+          <name>Onlyoffice Documents integration filter</name>
+          <object type="org.exoplatform.web.filter.FilterDefinition">
+            <field name="filter">
+              <object type="org.exoplatform.officeonline.webui.OfficeOnlineDocumentsFilter" />
+            </field>
+            <field name="patterns">
+              <collection type="java.util.ArrayList" item-type="java.lang.String">
+                <value>
+                  <string>/intranet/documents.*</string>
+                </value>
+                <value>
+                  <string>/g/.*/documents.*</string>
+                </value>
+              </collection>
+            </field>
+          </object>
+        </object-param>
+      </init-params>
+    </component-plugin>
   </external-component-plugins>
   
   
@@ -588,7 +613,7 @@
                     </field>
                     <field name="buttons">
                       <string>
-                        officeonlineOpen
+                        officeOnlineOpen
                       </string>
                     </field>
                   </object>
@@ -613,7 +638,7 @@
                     </field>
                     <field name="buttons">
                       <string>
-                        officeonlineOpen
+                        officeOnlineOpen
                       </string>
                     </field>
                   </object>
@@ -638,7 +663,7 @@
                     </field>
                     <field name="buttons">
                       <string>
-                        officeonlineOpen
+                        officeOnlineOpen
                       </string>
                     </field>
                   </object>
@@ -663,7 +688,7 @@
                     </field>
                     <field name="buttons">
                       <string>
-                        officeonlineOpen
+                        officeOnlineOpen
                       </string>
                     </field>
                   </object>
@@ -688,7 +713,7 @@
                     </field>
                     <field name="buttons">
                       <string>
-                        officeonlineOpen
+                        officeOnlineOpen
                       </string>
                     </field>
                   </object>
