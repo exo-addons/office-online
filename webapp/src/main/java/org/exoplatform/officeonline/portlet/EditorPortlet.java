@@ -35,9 +35,6 @@ import org.exoplatform.ws.frameworks.json.impl.JsonException;
  */
 public class EditorPortlet extends GenericPortlet {
 
-  /** The Constant DEFAULT_ACTION. */
-  private static final String   DEFAULT_ACTION = "edit";
-
   /** The Constant LOG. */
   private static final Log      LOG            = ExoLogger.getLogger(EditorPortlet.class);
 
@@ -90,7 +87,7 @@ public class EditorPortlet extends GenericPortlet {
         EditorConfig config = editorService.createEditorConfig(request.getRemoteUser(), fileId, null, requestInfo);
         AccessToken token = config.getAccessToken();
 
-        String actionURL = wopiService.getActionUrl(requestInfo, fileId, null, DEFAULT_ACTION);
+        String actionURL = wopiService.getActionUrl(requestInfo, fileId, null, WOPIService.EDIT_ACTION);
         require.addScripts("officeonline.initEditor(" + token.toJSON() + ", \"" + actionURL + "\");");
       } catch (RepositoryException e) {
         LOG.error("Error reading document node by ID: {}", fileId, e);

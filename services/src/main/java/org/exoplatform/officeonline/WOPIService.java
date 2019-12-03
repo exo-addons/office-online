@@ -22,6 +22,7 @@ import javax.crypto.SecretKey;
 import javax.crypto.spec.SecretKeySpec;
 import javax.jcr.AccessDeniedException;
 import javax.jcr.Node;
+import javax.jcr.PathNotFoundException;
 import javax.jcr.RepositoryException;
 import javax.jcr.Session;
 
@@ -208,6 +209,15 @@ public class WOPIService extends AbstractOfficeOnlineService {
 
   /** The Constant USERIONFO_CACHE_NAME. */
   public static final String         USERINFO_CACHE_NAME                 = "officeonline.userinfo.Cache".intern();
+
+  /** The Constant EDIT_ACTION. */
+  public static final String         EDIT_ACTION                         = "edit";
+
+  /** The Constant EDIT_ACTION. */
+  public static final String         EDITNEW_ACTION                      = "editnew";
+
+  /** The Constant VIEW_ACTION. */
+  public static final String         VIEW_ACTION                         = "view";
 
   /** The trash service. */
   protected final TrashService       trashService;
@@ -477,6 +487,15 @@ public class WOPIService extends AbstractOfficeOnlineService {
     if (extension.equals(WOPITEST)) {
       action = WOPITEST_ACTION;
     }
+
+    if (isNewDocument(node)) {
+      action = EDITNEW_ACTION;
+    }
+
+    if (!canEdit(node)) {
+      action = VIEW_ACTION;
+    }
+
     String actionURL = discoveryPlugin.getActionUrl(extension, action);
     if (actionURL != null) {
       return new StringBuilder(actionURL).append(PLACEHOLDER_WOPISRC)
@@ -489,6 +508,11 @@ public class WOPIService extends AbstractOfficeOnlineService {
     } else {
       throw new ActionNotFoundException("Cannot find actionURL for file extension " + extension + " and action: " + action);
     }
+  }
+
+  protected boolean isNewDocument(Node node) throws RepositoryException {
+    Node content = node.getNode("jcr:content");
+    return content.getProperty("jcr:data").getLength() == 0;
   }
 
   /**
