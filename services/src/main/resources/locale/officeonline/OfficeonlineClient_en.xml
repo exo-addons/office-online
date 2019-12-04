@@ -4,7 +4,7 @@
   <UIActionBar>
     <tooltip>
       <OfficeOnlineOpen>Edit in MS</OfficeOnlineOpen>
-      <NewDocument>New Document</NewDocument>
+      <NewMSDocument>New MS Document</NewMSDocument>
     </tooltip>
   </UIActionBar>
   <!-- Used in Administration-Content-Explorer in Views settings a popup with actions list -->
@@ -28,7 +28,7 @@
    <!-- For new document popup window -->
   <UIPopupWindow>
     <title>
-      <UINewMSDocumentForm>New Document</UINewMSDocumentForm>
+      <UINewMSDocumentForm>New MS Document</UINewMSDocumentForm>
     </title>
   </UIPopupWindow>
    <!-- For new document form -->
