@@ -22,7 +22,6 @@ import javax.crypto.SecretKey;
 import javax.crypto.spec.SecretKeySpec;
 import javax.jcr.AccessDeniedException;
 import javax.jcr.Node;
-import javax.jcr.PathNotFoundException;
 import javax.jcr.RepositoryException;
 import javax.jcr.Session;
 
@@ -475,28 +474,39 @@ public class WOPIService extends AbstractOfficeOnlineService {
    * @param requestInfo the request info
    * @param fileId the file id
    * @param workspace the workspace
-   * @param action the action
+   * @param prefferedAction the action
    * @return the action url
    * @throws RepositoryException the repository exception
    * @throws OfficeOnlineException the office online exception
    */
-  public String getActionUrl(RequestInfo requestInfo, String fileId, String workspace, String action) throws RepositoryException,
-                                                                                                      OfficeOnlineException {
+  public String getActionUrl(RequestInfo requestInfo,
+                             String fileId,
+                             String workspace,
+                             String prefferedAction) throws RepositoryException, OfficeOnlineException {
     Node node = nodeByUUID(fileId, workspace);
     String extension = getFileExtension(node);
+    // Special action for WOPITEST
     if (extension.equals(WOPITEST)) {
-      action = WOPITEST_ACTION;
+      prefferedAction = WOPITEST_ACTION;
     }
-
+    // For new documents
     if (isNewDocument(node)) {
-      action = EDITNEW_ACTION;
+      prefferedAction = EDITNEW_ACTION;
     }
 
-    if (!canEdit(node)) {
-      action = VIEW_ACTION;
+    // View mode in case of lack permissions
+    if ((prefferedAction.equals(EDIT_ACTION) || prefferedAction.equals(EDITNEW_ACTION)) && !canEdit(node)) {
+      prefferedAction = VIEW_ACTION;
     }
 
-    String actionURL = discoveryPlugin.getActionUrl(extension, action);
+    String actionURL = discoveryPlugin.getActionUrl(extension, prefferedAction);
+
+    // Try to get VIEW action if the EDIT action is not found for that extension (for e.g. doc, xls, ppt)
+    if (actionURL == null && prefferedAction.equals(EDIT_ACTION)) {
+      prefferedAction = VIEW_ACTION;
+    }
+
+    actionURL = discoveryPlugin.getActionUrl(extension, prefferedAction);
     if (actionURL != null) {
       return new StringBuilder(actionURL).append(PLACEHOLDER_WOPISRC)
                                          .append(getWOPISrc(requestInfo, fileId))
@@ -506,7 +516,8 @@ public class WOPIService extends AbstractOfficeOnlineService {
                                          .append(requestInfo.getLocale().toString())
                                          .toString();
     } else {
-      throw new ActionNotFoundException("Cannot find actionURL for file extension " + extension + " and action: " + action);
+      throw new ActionNotFoundException("Cannot find actionURL for file extension " + extension + " and action: "
+          + prefferedAction);
     }
   }
 
@@ -645,31 +656,9 @@ public class WOPIService extends AbstractOfficeOnlineService {
    * @param baseUrl the base url
    * @return the editor URL
    */
-  public String getEditorURL(String fileId, String workspace, String baseUrl) throws RepositoryException, FileNotFoundException {
+  public String getEditorLink(String fileId, String workspace, String baseUrl) throws RepositoryException, FileNotFoundException {
     Node node = nodeByUUID(fileId, workspace);
-    return getEditorURL(node, baseUrl);
-  }
-
-  /**
-   * Gets the editor URL.
-   *
-   * @param node the node
-   * @param baseUrl the base url
-   * @return the editor URL
-   */
-  public String getEditorURL(Node node, String baseUrl) {
-    try {
-      if (isDocumentSupported(node)) {
-        return new StringBuilder(baseUrl).append('/')
-                                         .append(CommonsUtils.getCurrentPortalOwner())
-                                         .append("/mseditor?fileId=")
-                                         .append(node.getUUID())
-                                         .toString();
-      }
-    } catch (RepositoryException e) {
-      LOG.error("Cannot get editor link", e);
-    }
-    return null;
+    return getEditorLink(node, baseUrl);
   }
 
   /**
@@ -679,16 +668,31 @@ public class WOPIService extends AbstractOfficeOnlineService {
    * @return the editor URL
    */
   public String getEditorLink(Node node) {
+    PortletRequestContext pcontext = (PortletRequestContext) WebuiRequestContext.getCurrentInstance();
+    String baseUrl = platformUrl(pcontext.getRequest().getScheme(),
+                                 pcontext.getRequest().getServerName(),
+                                 pcontext.getRequest().getServerPort()).toString();
+    return getEditorLink(node, baseUrl);
+  }
+
+  /**
+   * Gets the editor URL.
+   *
+   * @param node the node
+   * @param baseUrl the base url
+   * @return the editor URL
+   */
+  public String getEditorLink(Node node, String baseUrl) {
     try {
       if (isDocumentSupported(node)) {
-        PortletRequestContext pcontext = (PortletRequestContext) WebuiRequestContext.getCurrentInstance();
-        return platformUrl(pcontext.getRequest().getScheme(),
-                           pcontext.getRequest().getServerName(),
-                           pcontext.getRequest().getServerPort()).append('/')
-                                                                 .append(CommonsUtils.getCurrentPortalOwner())
-                                                                 .append("/mseditor?fileId=")
-                                                                 .append(node.getUUID())
-                                                                 .toString();
+        StringBuilder link = new StringBuilder(baseUrl).append('/')
+                                                       .append(CommonsUtils.getCurrentPortalOwner())
+                                                       .append("/mseditor?fileId=")
+                                                       .append(node.getUUID());
+        if (!canEdit(node)) {
+          link.append("&action=view");
+        }
+        return link.toString();
       }
     } catch (RepositoryException e) {
       LOG.error("Cannot get editor link", e);
@@ -836,7 +840,15 @@ public class WOPIService extends AbstractOfficeOnlineService {
   }
 
   public boolean canEdit(Node node) throws RepositoryException {
-    return isDocumentSupported(node) && PermissionUtil.canSetProperty(node);
+    String actionUrl = null;
+    // Check if WOPI has edit action for such file extension
+    try {
+      String extension = getFileExtension(node);
+      actionUrl = discoveryPlugin.getActionUrl(extension, EDIT_ACTION);
+    } catch (FileExtensionNotFoundException e) {
+      LOG.error("Cannot get file extension from node: " + node.getUUID());
+    }
+    return isDocumentSupported(node) && PermissionUtil.canSetProperty(node) && actionUrl != null;
   }
 
   /**
@@ -867,9 +879,9 @@ public class WOPIService extends AbstractOfficeOnlineService {
                                                            .append(accessToken.getToken())
                                                            .toString();
     map.put(DOWNLOAD_URL, downloadURL);
-    map.put(HOST_EDIT_URL, getEditorURL(node, baseUrl));
+    map.put(HOST_EDIT_URL, getEditorLink(node, baseUrl));
     // TODO: change to view action
-    map.put(HOST_VIEW_URL, getEditorURL(node, baseUrl));
+    map.put(HOST_VIEW_URL, getEditorLink(node, baseUrl));
     map.put(FILE_URL, downloadURL);
 
   }

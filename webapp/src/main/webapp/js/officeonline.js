@@ -38,13 +38,23 @@
   };
 
   var getEditorButton = function(editorLink) {
+    // TODO: i18n
+    var label = "Edit in MS";
+    if (editorLink.indexOf("&action=view") > -1) {
+      label = "View in MS";
+    }
     return "<li class='hidden-tabletL'><a href='" + editorLink + "' target='_blank'>"
-        + "<i class='uiIconEcmsOfficeOnlineOpen uiIconEcmsLightGray uiIconEdit'></i>Edit in MS</a></li>";
+        + "<i class='uiIconEcmsOfficeOnlineOpen uiIconEcmsLightGray uiIconEdit'></i>" + label + "</a></li>";
   };
 
   var getNoPreviewEditorButton = function(editorLink) {
+    // TODO: i18n
+    var label = "Edit in MS";
+    if (editorLink.indexOf("&action=view") > -1) {
+      label = "View in MS";
+    }
     return "<a class='btn editInOfficeOnline hidden-tabletL' href='#' onclick='javascript:window.open(\"" + editorLink + "\");'>"
-        + "<i class='uiIconEcmsOfficeOnlineOpen uiIconEcmsLightGray uiIconEdit'></i>Edit in MS</a>";
+        + "<i class='uiIconEcmsOfficeOnlineOpen uiIconEcmsLightGray uiIconEdit'></i>" + label + "</a>";
   };
 
   /**
@@ -127,7 +137,7 @@
   function Editor() {
 
     var editorWindow;
-    
+
     this.initEditor = function(accessToken, actionURL) {
 
       $('#office_form').attr('action', actionURL);

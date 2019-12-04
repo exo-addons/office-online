@@ -75,6 +75,7 @@ public class EditorPortlet extends GenericPortlet {
 
     WebuiRequestContext webuiContext = WebuiRequestContext.getCurrentInstance();
     String fileId = webuiContext.getRequestParameter("fileId");
+    String actionParam = webuiContext.getRequestParameter("action");
     JavascriptManager js = webuiContext.getJavascriptManager();
     RequireJS require = js.require("SHARED/officeonline", "officeonline");
     if (fileId != null) {
@@ -86,8 +87,12 @@ public class EditorPortlet extends GenericPortlet {
                                                   request.getLocale());
         EditorConfig config = editorService.createEditorConfig(request.getRemoteUser(), fileId, null, requestInfo);
         AccessToken token = config.getAccessToken();
-
-        String actionURL = wopiService.getActionUrl(requestInfo, fileId, null, WOPIService.EDIT_ACTION);
+        
+        String action = WOPIService.EDIT_ACTION;
+        if(actionParam != null && actionParam.equals(WOPIService.VIEW_ACTION)) {
+          action = WOPIService.VIEW_ACTION;
+        }
+        String actionURL = wopiService.getActionUrl(requestInfo, fileId, null, action);
         require.addScripts("officeonline.initEditor(" + token.toJSON() + ", \"" + actionURL + "\");");
       } catch (RepositoryException e) {
         LOG.error("Error reading document node by ID: {}", fileId, e);

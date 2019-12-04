@@ -1005,7 +1005,7 @@ public class WOPIResource implements ResourceContainer {
       String url = new StringBuilder(wopiService.getWOPISrc(requestInfo, fileId)).append("?access_token=")
                                                                                  .append(config.getAccessToken().getToken())
                                                                                  .toString();
-      String editUrl = wopiService.getEditorURL(fileId, config.getWorkspace(), config.getBaseUrl());
+      String editUrl = wopiService.getEditorLink(fileId, config.getWorkspace(), config.getBaseUrl());
       // TODO: introduce viewUrl
       String viewUrl = editUrl;
       if (LOG.isDebugEnabled()) {
