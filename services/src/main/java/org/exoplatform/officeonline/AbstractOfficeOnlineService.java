@@ -39,7 +39,6 @@ import org.exoplatform.services.organization.OrganizationService;
 import org.exoplatform.services.organization.User;
 import org.exoplatform.services.wcm.core.NodetypeConstant;
 
-
 /**
  * The Class AbstractOfficeOnlineService.
  */
@@ -159,7 +158,7 @@ public abstract class AbstractOfficeOnlineService implements Startable {
    * @throws FileNotFoundException the file not found exception
    * @throws RepositoryException the repository exception
    */
-  protected Node nodeByUUID(String uuid, String workspace) throws FileNotFoundException, RepositoryException {
+  public Node nodeByUUID(String uuid, String workspace) throws FileNotFoundException, RepositoryException {
     try {
       Session userSession = getUserSession(workspace);
       return userSession.getNodeByUUID(uuid);
@@ -431,7 +430,6 @@ public abstract class AbstractOfficeOnlineService implements Startable {
       throw new OfficeOnlineException("Couldn't generate token from editor config.");
     }
   }
-  
 
   /**
    * Gets the node.

@@ -173,7 +173,7 @@ public class UINewMSDocumentForm extends UIForm implements UIPopupComponent {
       }
 
       WOPIService wopiService = ExoContainerContext.getCurrentContainer().getComponentInstanceOfType(WOPIService.class);
-      String link = wopiService.getEditorLink(createdDocument);
+      String link = wopiService.getEditorLink(createdDocument, WOPIService.EDITNEW_ACTION);
       if (link != null) {
         link = "'" + link + "'";
       } else {

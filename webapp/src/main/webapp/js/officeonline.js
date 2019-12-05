@@ -117,10 +117,16 @@
    */
   var addEditorButtonToExplorer = function(editorLink) {
     var $button = $("#UIJCRExplorer #uiActionsBarContainer i.uiIconEcmsOfficeOnlineOpen");
-    $button.addClass("uiIconEdit");
+    // TODO: i18n
+    if (editorLink.indexOf("&action=view") > -1) {
+      $button.parent().text("View in MS");
+    } else {
+      $button.addClass("uiIconEdit");
+    }
+    
     $button.closest("li").addClass("hidden-tabletL");
     var $noPreviewContainer = $("#UIJCRExplorer .navigationContainer.noPreview");
-    if (editorLink != null && $noPreviewContainer.length != 0) {
+    if ($noPreviewContainer.length != 0) {
       var $detailContainer = $noPreviewContainer.find(".detailContainer");
       var $downloadBtn = $detailContainer.find(".uiIconDownload").closest("a.btn");
       if ($downloadBtn.length != 0) {
