@@ -94,6 +94,9 @@ public class EditorPortlet extends GenericPortlet {
         if (action == null) {
           action = WOPIService.EDIT_ACTION;
         }
+        if (wopiService.isNewDocument(node)) {
+          action = WOPIService.EDITNEW_ACTION;
+        }
 
         if (validAction(node, action)) {
           String actionURL = wopiService.getActionUrl(requestInfo, fileId, null, action);
