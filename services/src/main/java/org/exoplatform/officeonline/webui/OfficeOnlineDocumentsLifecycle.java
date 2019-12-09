@@ -90,7 +90,15 @@ public class OfficeOnlineDocumentsLifecycle extends AbstractOfficeOnlineLifecycl
             parentContext.setAttribute(DOCUMENT_PATH_ATTRIBUTE, nodePath);
             String editorLink;
             if (wopiService.canEdit(node)) {
-              editorLink = new StringBuilder().append('\'').append(wopiService.getEditorLink(node)).append('\'').toString();
+              editorLink = new StringBuilder().append('\'')
+                                              .append(wopiService.getEditorLink(node, WOPIService.EDIT_ACTION))
+                                              .append('\'')
+                                              .toString();
+            } else if (wopiService.canView(node)) {
+              editorLink = new StringBuilder().append('\'')
+                                              .append(wopiService.getEditorLink(node, WOPIService.VIEW_ACTION))
+                                              .append('\'')
+                                              .toString();
             } else {
               editorLink = "null".intern();
             }

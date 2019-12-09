@@ -58,6 +58,75 @@
     <type>org.exoplatform.officeonline.EditorService</type>
   </component>
 
+
+  <component>
+    <type>org.exoplatform.officeonline.documents.NewDocumentService</type>
+  </component>
+  
+  <!-- NewDocumentTypePlugin for NewDocumentService-->
+  <external-component-plugins>
+    <target-component>org.exoplatform.officeonline.documents.NewDocumentService</target-component>
+    <component-plugin>
+      <name>documentTypePlugin</name>
+      <set-method>addTypePlugin</set-method>
+      <type>org.exoplatform.officeonline.documents.NewDocumentTypePlugin</type>
+      <description>The document type plugin contains a list of mimetypes</description>
+      <init-params>
+        <object-param>
+          <name>document-types-configuration</name>
+          <object type="org.exoplatform.officeonline.documents.NewDocumentService$NewDocumentTypesConfig">
+            <field name="types">
+              <collection type="java.util.ArrayList">
+                <value>
+                  <object type="org.exoplatform.officeonline.documents.NewDocumentType">
+                    <field name="extension">
+                      <string>docx</string>
+                    </field>
+                    <field name="label">
+                      <string>MicrosoftOfficeDocument</string>
+                    </field>
+                    <field name="mimeType">
+                      <string>application/vnd.openxmlformats-officedocument.wordprocessingml.document</string>
+                    </field>
+                  </object>
+                </value>
+                <value>
+                  <object type="org.exoplatform.officeonline.documents.NewDocumentType">
+                    <field name="extension">
+                      <string>xlsx</string>
+                    </field>
+                    <field name="label">
+                      <string>MicrosoftOfficeSpreadsheet</string>
+                    </field>
+                    <field name="mimeType">
+                      <string>application/vnd.openxmlformats-officedocument.spreadsheetml.sheet</string>
+                    </field>
+                  </object>
+                </value>
+                <value>
+                  <object type="org.exoplatform.officeonline.documents.NewDocumentType">
+                    <field name="extension">
+                      <string>pptx</string>
+                    </field>
+                    <field name="label">
+                      <string>MicrosoftOfficePresentation</string>
+                    </field>
+                    <field name="mimeType">
+                      <string>application/vnd.openxmlformats-officedocument.presentationml.presentation</string>
+                    </field>
+                  </object>
+                </value>
+              </collection>
+            </field>
+          </object>
+        </object-param>
+      </init-params>
+    </component-plugin>
+  </external-component-plugins>
+  
+  
+  
+
   <!-- WOPIDiscoveryPlugin -->
   <external-component-plugins>
     <target-component>org.exoplatform.officeonline.WOPIService</target-component>
@@ -503,7 +572,7 @@
       <type>org.exoplatform.web.filter.FilterDefinitionPlugin</type>
       <init-params>
         <object-param>
-          <name>Onlyoffice Documents integration filter</name>
+          <name>Office Online Documents integration filter</name>
           <object type="org.exoplatform.web.filter.FilterDefinition">
             <field name="filter">
               <object type="org.exoplatform.officeonline.webui.OfficeOnlineDocumentsFilter" />
@@ -584,11 +653,28 @@
             </field>
           </object>
         </object-param>
+        <object-param>
+          <name>NewMSDocument</name>
+          <object type="org.exoplatform.webui.ext.UIExtension">
+            <field name="type">
+              <string>org.exoplatform.ecm.dms.UIActionBar</string>
+            </field>
+            <field name="name">
+              <string>NewMSDocument</string>
+            </field>
+            <field name="rank">
+              <int>10</int>
+            </field>
+            <field name="component">
+              <string>org.exoplatform.officeonline.webui.explorer.NewMSDocumentManageComponent</string>
+            </field>
+          </object>
+        </object-param>
       </init-params>
     </component-plugin>
   </external-component-plugins>
 
-<!-- Add OfficeOnline actions to ECMS views -->
+<!-- Add Office Online actions to ECMS views -->
   <external-component-plugins>
     <target-component>org.exoplatform.services.cms.views.ManageViewService</target-component>
     <component-plugin>
@@ -618,6 +704,18 @@
                     </field>
                   </object>
                 </value>
+                <value>
+                  <object type="org.exoplatform.services.cms.views.ViewConfig$Tab">
+                    <field name="tabName">
+                      <string>Admin</string>
+                    </field>
+                    <field name="buttons">
+                      <string>
+                        newMSDocument
+                      </string>
+                    </field>
+                  </object>
+                </value>
               </collection>
             </field>
           </object>
@@ -639,6 +737,18 @@
                     <field name="buttons">
                       <string>
                         officeOnlineOpen
+                      </string>
+                    </field>
+                  </object>
+                </value>
+                <value>
+                  <object type="org.exoplatform.services.cms.views.ViewConfig$Tab">
+                    <field name="tabName">
+                      <string>Icons</string>
+                    </field>
+                    <field name="buttons">
+                      <string>
+                        newMSDocument
                       </string>
                     </field>
                   </object>
@@ -668,6 +778,18 @@
                     </field>
                   </object>
                 </value>
+                <value>
+                  <object type="org.exoplatform.services.cms.views.ViewConfig$Tab">
+                    <field name="tabName">
+                      <string>List</string>
+                    </field>
+                    <field name="buttons">
+                      <string>
+                        newMSDocument
+                      </string>
+                    </field>
+                  </object>
+                </value>
               </collection>
             </field>
           </object>
@@ -693,6 +815,18 @@
                     </field>
                   </object>
                 </value>
+                <value>
+                  <object type="org.exoplatform.services.cms.views.ViewConfig$Tab">
+                    <field name="tabName">
+                      <string>Authoring</string>
+                    </field>
+                    <field name="buttons">
+                      <string>
+                        newMSDocument
+                      </string>
+                    </field>
+                  </object>
+                </value>
               </collection>
             </field>
           </object>
@@ -714,6 +848,18 @@
                     <field name="buttons">
                       <string>
                         officeOnlineOpen
+                      </string>
+                    </field>
+                  </object>
+                </value>
+                <value>
+                  <object type="org.exoplatform.services.cms.views.ViewConfig$Tab">
+                    <field name="tabName">
+                      <string>Collaboration</string>
+                    </field>
+                    <field name="buttons">
+                      <string>
+                        newMSDocument
                       </string>
                     </field>
                   </object>

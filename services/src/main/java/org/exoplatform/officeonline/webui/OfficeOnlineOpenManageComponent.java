@@ -96,8 +96,12 @@ public class OfficeOnlineOpenManageComponent extends UIAbstractManagerComponent 
         WOPIService wopiService = this.getApplicationComponent(WOPIService.class);
         Node node = uiExplorer.getCurrentNode();
         node = wopiService.getNode(node.getSession().getWorkspace().getName(), node.getPath());
-
-        String editorLink = wopiService.getEditorLink(node);
+        String editorLink = null;
+        if(wopiService.canEdit(node)) {
+          editorLink = wopiService.getEditorLink(node, WOPIService.EDIT_ACTION);
+        } else if (wopiService.canView(node)){
+          editorLink = wopiService.getEditorLink(node, WOPIService.VIEW_ACTION);
+        }
         if (editorLink != null && !editorLink.isEmpty()) {
           return "javascript:window.open('" + editorLink + "');";
         }

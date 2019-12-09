@@ -123,7 +123,14 @@ public class FileUIActivity extends org.exoplatform.wcm.ext.component.activity.F
    * @return the string
    */
   private String editorLink(Node node) {
-    String link = editorLinks.computeIfAbsent(node, n -> wopiService.getEditorLink(node));
+    String link = editorLinks.computeIfAbsent(node, n -> {
+      if (wopiService.canEdit(node)) {
+        return wopiService.getEditorLink(node, WOPIService.EDIT_ACTION);
+      } else if (wopiService.canView(node)) {
+        return wopiService.getEditorLink(node, WOPIService.VIEW_ACTION);
+      }
+      return null;
+    });
     if (link == null || link.isEmpty()) {
       return "null".intern();
     } else {

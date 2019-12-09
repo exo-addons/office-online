@@ -38,13 +38,23 @@
   };
 
   var getEditorButton = function(editorLink) {
+    // TODO: i18n
+    var label = "Edit in MS";
+    if (editorLink.indexOf("&action=view") > -1) {
+      label = "View in MS";
+    }
     return "<li class='hidden-tabletL'><a href='" + editorLink + "' target='_blank'>"
-        + "<i class='uiIconEcmsOfficeOnlineOpen uiIconEcmsLightGray uiIconEdit'></i>Edit in MS</a></li>";
+        + "<i class='uiIconEcmsOfficeOnlineOpen uiIconEcmsLightGray uiIconEdit'></i>" + label + "</a></li>";
   };
 
   var getNoPreviewEditorButton = function(editorLink) {
+    // TODO: i18n
+    var label = "Edit in MS";
+    if (editorLink.indexOf("&action=view") > -1) {
+      label = "View in MS";
+    }
     return "<a class='btn editInOfficeOnline hidden-tabletL' href='#' onclick='javascript:window.open(\"" + editorLink + "\");'>"
-        + "<i class='uiIconEcmsOfficeOnlineOpen uiIconEcmsLightGray uiIconEdit'></i>Edit in MS</a>";
+        + "<i class='uiIconEcmsOfficeOnlineOpen uiIconEcmsLightGray uiIconEdit'></i>" + label + "</a>";
   };
 
   /**
@@ -101,16 +111,22 @@
       }, 100);
     });
   };
-  
+
   /**
    * Ads the 'Edit Online' button to the JCRExplorer when a document is displayed.
    */
   var addEditorButtonToExplorer = function(editorLink) {
     var $button = $("#UIJCRExplorer #uiActionsBarContainer i.uiIconEcmsOfficeOnlineOpen");
-    $button.addClass("uiIconEdit");
+    // TODO: i18n
+    if (editorLink.indexOf("&action=view") > -1) {
+      $button.parent().text("View in MS");
+    } else {
+      $button.addClass("uiIconEdit");
+    }
+    
     $button.closest("li").addClass("hidden-tabletL");
     var $noPreviewContainer = $("#UIJCRExplorer .navigationContainer.noPreview");
-    if (editorLink != null && $noPreviewContainer.length != 0) {
+    if ($noPreviewContainer.length != 0) {
       var $detailContainer = $noPreviewContainer.find(".detailContainer");
       var $downloadBtn = $detailContainer.find(".uiIconDownload").closest("a.btn");
       if ($downloadBtn.length != 0) {
@@ -125,6 +141,9 @@
    * Editor core class.
    */
   function Editor() {
+
+    var editorWindow;
+
     this.initEditor = function(accessToken, actionURL) {
 
       $('#office_form').attr('action', actionURL);
@@ -168,7 +187,7 @@
         addEditorButtonToPreview(editorLink, clickSelector);
       }
     };
-    
+
     /**
      * Initializes JCRExplorer when a document is displayed.
      */
@@ -177,6 +196,28 @@
       addEditorButtonToExplorer(editorLink);
     };
 
+    /**
+     * Sets the onClick listener for Create Document button (used in creating a new document)
+     */
+    this.initNewDocument = function() {
+      $("#UINewMSDocumentForm .newMSDocumentButton").on('click', function() {
+        editorWindow = window.open();
+      });
+    };
+
+    /**
+     * Initializes the editor in the editorWindow. (used in creating a new document)
+     */
+    this.initEditorPage = function(link) {
+      if (editorWindow != null) {
+        if (link != null) {
+          editorWindow.location = link;
+        } else {
+          editorWindow.close();
+          editorWindow = null;
+        }
+      }
+    };
   }
 
   var editor = new Editor();

@@ -1,12 +1,12 @@
-.maskLayer .uiDocumentPreview .previewBtn .remoteEditBtn, .maskLayer .uiDocumentPreview .previewBtn .officeOnlineEditBtn {
+.maskLayer .uiDocumentPreview .previewBtn .remoteEditBtn, .maskLayer .uiDocumentPreview .previewBtn .editInOfficeOnline {
   float: right;
   padding-left: 15px;
 }
 
-.maskLayer .uiDocumentPreview .previewBtn .officeOnlineEditBtn .uiIconEcmsOfficeOnlineOpen {
+.maskLayer .uiDocumentPreview .previewBtn .editInOfficeOnline .uiIconEcmsOfficeOnlineOpen {
   color: #ffffff;
 }
 
-.detailContainer .officeOnlineEditBtn {
+.detailContainer .editInOfficeOnline {
   margin-left: 6px !important;
 }

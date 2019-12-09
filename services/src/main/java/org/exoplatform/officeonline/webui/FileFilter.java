@@ -60,7 +60,7 @@ public class FileFilter extends org.exoplatform.webui.ext.filter.impl.FileFilter
     }
     if (contextNode != null) {
       WOPIService wopiService = WCMCoreUtils.getService(WOPIService.class);
-      return wopiService.canEdit(contextNode);
+      return wopiService.canEdit(contextNode) || wopiService.canView(contextNode);
     }
     return false;
   }

@@ -3,6 +3,7 @@ package org.exoplatform.officeonline.portlet;
 import java.io.IOException;
 import java.util.ResourceBundle;
 
+import javax.jcr.Node;
 import javax.jcr.RepositoryException;
 import javax.portlet.GenericPortlet;
 import javax.portlet.PortletException;
@@ -35,11 +36,8 @@ import org.exoplatform.ws.frameworks.json.impl.JsonException;
  */
 public class EditorPortlet extends GenericPortlet {
 
-  /** The Constant DEFAULT_ACTION. */
-  private static final String   DEFAULT_ACTION = "edit";
-
   /** The Constant LOG. */
-  private static final Log      LOG            = ExoLogger.getLogger(EditorPortlet.class);
+  private static final Log      LOG = ExoLogger.getLogger(EditorPortlet.class);
 
   /** The Officeonline. */
   private EditorService         editorService;
@@ -78,6 +76,7 @@ public class EditorPortlet extends GenericPortlet {
 
     WebuiRequestContext webuiContext = WebuiRequestContext.getCurrentInstance();
     String fileId = webuiContext.getRequestParameter("fileId");
+    String action = webuiContext.getRequestParameter("action");
     JavascriptManager js = webuiContext.getJavascriptManager();
     RequireJS require = js.require("SHARED/officeonline", "officeonline");
     if (fileId != null) {
@@ -90,8 +89,24 @@ public class EditorPortlet extends GenericPortlet {
         EditorConfig config = editorService.createEditorConfig(request.getRemoteUser(), fileId, null, requestInfo);
         AccessToken token = config.getAccessToken();
 
-        String actionURL = wopiService.getActionUrl(requestInfo, fileId, null, DEFAULT_ACTION);
-        require.addScripts("officeonline.initEditor(" + token.toJSON() + ", \"" + actionURL + "\");");
+        Node node = wopiService.nodeByUUID(fileId, null);
+
+        if (action == null) {
+          action = WOPIService.EDIT_ACTION;
+        }
+        if (wopiService.isNewDocument(node)) {
+          action = WOPIService.EDITNEW_ACTION;
+        }
+
+        if (validAction(node, action)) {
+          String actionURL = wopiService.getActionUrl(requestInfo, fileId, null, action);
+          require.addScripts("officeonline.initEditor(" + token.toJSON() + ", \"" + actionURL + "\");");
+        } else {
+          showError(i18n.getString("OfficeonlineEditorClient.ErrorTitle"),
+                    i18n.getString("OfficeonlineEditor.error.EditorCannotBeCreated"),
+                    require);
+        }
+
       } catch (RepositoryException e) {
         LOG.error("Error reading document node by ID: {}", fileId, e);
         showError(i18n.getString("OfficeonlineEditorClient.ErrorTitle"),
@@ -136,6 +151,19 @@ public class EditorPortlet extends GenericPortlet {
 
   protected void showError(String title, String message, RequireJS require) {
     require.addScripts(new StringBuilder("officeonline.showError('").append(title).append("', '" + message + "');").toString());
+  }
+
+  protected boolean validAction(Node node, String action) throws RepositoryException {
+    if (action.equals(WOPIService.EDIT_ACTION) && wopiService.canEdit(node)) {
+      return true;
+    }
+    if (action.equals(WOPIService.EDITNEW_ACTION) && wopiService.canEdit(node) && wopiService.isNewDocument(node)) {
+      return true;
+    }
+    if (action.equals(WOPIService.VIEW_ACTION) && wopiService.canView(node)) {
+      return true;
+    }
+    return false;
   }
 
 }
