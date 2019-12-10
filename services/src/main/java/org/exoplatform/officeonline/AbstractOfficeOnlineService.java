@@ -15,8 +15,10 @@ import javax.crypto.Cipher;
 import javax.jcr.Item;
 import javax.jcr.ItemNotFoundException;
 import javax.jcr.Node;
+import javax.jcr.PathNotFoundException;
 import javax.jcr.RepositoryException;
 import javax.jcr.Session;
+import javax.jcr.ValueFormatException;
 
 import org.apache.commons.io.input.AutoCloseInputStream;
 import org.picocontainer.Startable;
@@ -30,6 +32,7 @@ import org.exoplatform.portal.config.UserACL;
 import org.exoplatform.services.cache.CacheService;
 import org.exoplatform.services.cache.ExoCache;
 import org.exoplatform.services.cms.documents.DocumentService;
+import org.exoplatform.services.cms.link.NodeFinder;
 import org.exoplatform.services.jcr.RepositoryService;
 import org.exoplatform.services.jcr.ext.app.SessionProviderService;
 import org.exoplatform.services.jcr.ext.common.SessionProvider;
@@ -125,6 +128,9 @@ public abstract class AbstractOfficeOnlineService implements Startable {
   /** The document service. */
   protected final DocumentService        documentService;
 
+  /** The node finder. */
+  protected NodeFinder                   nodeFinder;
+
   /**
    * Instantiates a new office online editor service.
    *
@@ -140,13 +146,16 @@ public abstract class AbstractOfficeOnlineService implements Startable {
                                      OrganizationService organization,
                                      DocumentService documentService,
                                      CacheService cacheService,
-                                     UserACL userACL) {
+                                     UserACL userACL,
+                                     NodeFinder nodeFinder) {
     this.sessionProviders = sessionProviders;
     this.jcrService = jcrService;
     this.organization = organization;
     this.documentService = documentService;
     this.keyCache = cacheService.getCacheInstance(KEY_CACHE_NAME);
     this.userACL = userACL;
+    this.nodeFinder = nodeFinder;
+
   }
 
   /**
@@ -445,9 +454,9 @@ public abstract class AbstractOfficeOnlineService implements Startable {
     }
     SessionProvider sp = sessionProviders.getSessionProvider(null);
     Session userSession = sp.getSession(workspace, jcrService.getCurrentRepository());
-    Item item = userSession.getItem(path);
+    Item item = nodeFinder.getItem(userSession, path, true);
     if (item != null && item.isNode()) {
-      return (Node) userSession.getItem(path);
+      return (Node) item;
     }
     return null;
   }
@@ -494,5 +503,52 @@ public abstract class AbstractOfficeOnlineService implements Startable {
     } else {
       throw new OfficeOnlineException("Decrypted token doesn't contain all required parameters");
     }
+  }
+
+  /**
+   * Addds file preferences to the node (path for opening shared doc for particular user).
+   * @param node the node
+   * @param userId the userId
+   * @param path the path
+   * @throws RepositoryException  the repositoryException
+   */
+  public void addFilePreferences(Node node, String userId, String path) throws RepositoryException {
+    Node preferences;
+    if (!node.hasNode("oo:preferences")) {
+      if (node.canAddMixin("oo:officeonlineFile")) {
+        node.addMixin("oo:officeonlineFile");
+      }
+      preferences = node.addNode("oo:preferences");
+    } else {
+      preferences = node.getNode("oo:preferences");
+    }
+
+    Node userPreferences;
+    if (!preferences.hasNode(userId)) {
+      userPreferences = preferences.addNode(userId, "oo:userPreferences");
+    } else {
+      userPreferences = preferences.getNode(userId);
+    }
+    userPreferences.setProperty("path", path);
+    node.save();
+  }
+
+  /**
+   * Gets parent folder of the file based on file preferences
+   * @param node the node
+   * @param userId the userId
+   * @return the Node
+   * @throws RepositoryException 
+   */
+  protected Node getSymlink(Node node, String userId) throws RepositoryException {
+    if (node.hasNode("oo:preferences")) {
+      Node filePreferences = node.getNode("oo:preferences");
+      if (filePreferences.hasNode(userId)) {
+        Node userPreferences = filePreferences.getNode(userId);
+        String path = userPreferences.getProperty("path").getString();
+        return (Node) node.getSession().getItem(path);
+      }
+    }
+    return null;
   }
 }

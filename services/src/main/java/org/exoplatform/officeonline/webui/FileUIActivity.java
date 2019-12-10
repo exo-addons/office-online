@@ -103,10 +103,14 @@ public class FileUIActivity extends org.exoplatform.wcm.ext.component.activity.F
       }
     }
 
+    String userId = WebuiRequestContext.getCurrentInstance().getRemoteUser();
     // Init preview links for each of file
     for (int index = 0; index < getFilesCount(); index++) {
       Node symlink = getContentNode(index);
       Node node = editorService.getNode(symlink.getSession().getWorkspace().getName(), symlink.getPath());
+      if (symlink.isNodeType("exo:symlink")) {
+        editorService.addFilePreferences(node, userId, symlink.getPath());
+      }
       if (node != null) {
         require.addScripts("officeonline.initPreview('" + node.getUUID() + "', " + editorLink(node) + " ,'"
             + new StringBuilder("#Preview").append(activityId).append('-').append(index).toString() + "');");
