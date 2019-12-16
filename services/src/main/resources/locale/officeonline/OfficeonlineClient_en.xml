@@ -12,17 +12,6 @@
       <officeOnlineOpen>Edit in MS</officeOnlineOpen>
     </label>
   </UITabForm>
-  
-  <!-- For new document form -->
-  <UINewMSDocumentForm>
-    <label>
-      <option>
-        <MicrosoftOfficeDocument>Microsoft Word Document (*.docx)</MicrosoftOfficeDocument>
-        <MicrosoftOfficeSpreadsheet>Microsoft Excel Workbook (*.xlsx)</MicrosoftOfficeSpreadsheet>
-        <MicrosoftOfficePresentation>Microsoft PowerPoint Presentation (*.pptx)</MicrosoftOfficePresentation>
-      </option>
-    </label>
-  </UINewMSDocumentForm>  
 
   <!-- For client UI -->
   <OfficeonlineEditorClient>
@@ -33,9 +22,19 @@
     <ErrorTitle>Error</ErrorTitle>
     <InfoTitle>Information</InfoTitle>
   </OfficeonlineEditorClient>
-
- 
   
+      
+  <!-- For new document form -->
+  <UINewDocumentForm>
+    <label>
+      <option>
+        <MSDocument>Microsoft Word Document (*.docx) MS</MSDocument>
+        <MSSpreadsheet>Microsoft Excel Workbook (*.xlsx) MS</MSSpreadsheet>
+        <MSPresentation>Microsoft PowerPoint Presentation (*.pptx) MS</MSPresentation>
+      </option>
+    </label>
+  </UINewDocumentForm>
+
   <!-- Messages -->
   <OfficeonlineEditor>
     <message>

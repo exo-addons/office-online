@@ -78,7 +78,7 @@
                       <string>.docx</string>
                     </field>
                     <field name="label">
-                      <string>MicrosoftOfficeDocument</string>
+                      <string>MSDocument</string>
                     </field>
                     <field name="mimeType">
                       <string>application/vnd.openxmlformats-officedocument.wordprocessingml.document</string>
@@ -91,7 +91,7 @@
                       <string>.xlsx</string>
                     </field>
                     <field name="label">
-                      <string>MicrosoftOfficeSpreadsheet</string>
+                      <string>MSSpreadsheet</string>
                     </field>
                     <field name="mimeType">
                       <string>application/vnd.openxmlformats-officedocument.spreadsheetml.sheet</string>
@@ -104,7 +104,7 @@
                       <string>.pptx</string>
                     </field>
                     <field name="label">
-                      <string>MicrosoftOfficePresentation</string>
+                      <string>MSPresentation</string>
                     </field>
                     <field name="mimeType">
                       <string>application/vnd.openxmlformats-officedocument.presentationml.presentation</string>
