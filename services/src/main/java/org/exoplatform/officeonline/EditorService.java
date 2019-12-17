@@ -1,22 +1,14 @@
 package org.exoplatform.officeonline;
 
-import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.List;
 
-import javax.jcr.Item;
-import javax.jcr.Node;
-import javax.jcr.RepositoryException;
-import javax.jcr.Session;
-
-import org.exoplatform.ecm.utils.permission.PermissionUtil;
 import org.exoplatform.officeonline.exception.OfficeOnlineException;
 import org.exoplatform.portal.config.UserACL;
 import org.exoplatform.services.cache.CacheService;
 import org.exoplatform.services.cms.documents.DocumentService;
+import org.exoplatform.services.cms.link.NodeFinder;
 import org.exoplatform.services.jcr.RepositoryService;
 import org.exoplatform.services.jcr.ext.app.SessionProviderService;
-import org.exoplatform.services.jcr.ext.common.SessionProvider;
 import org.exoplatform.services.log.ExoLogger;
 import org.exoplatform.services.log.Log;
 import org.exoplatform.services.organization.OrganizationService;
@@ -48,8 +40,17 @@ public class EditorService extends AbstractOfficeOnlineService {
                        CacheService cacheService,
                        UserACL userACL,
                        IdentityRegistry identityRegistry,
-                       Authenticator authenticator) {
-    super(sessionProviders, jcrService, organization, documentService, cacheService, userACL, identityRegistry, authenticator);
+                       Authenticator authenticator,
+                       NodeFinder nodeFinder) {
+    super(sessionProviders,
+          jcrService,
+          organization,
+          documentService,
+          cacheService,
+          userACL,
+          identityRegistry,
+          authenticator,
+          nodeFinder);
   }
 
   /**

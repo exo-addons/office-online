@@ -30,6 +30,7 @@ import org.exoplatform.portal.config.UserACL;
 import org.exoplatform.services.cache.CacheService;
 import org.exoplatform.services.cache.ExoCache;
 import org.exoplatform.services.cms.documents.DocumentService;
+import org.exoplatform.services.cms.link.NodeFinder;
 import org.exoplatform.services.jcr.RepositoryService;
 import org.exoplatform.services.jcr.ext.app.SessionProviderService;
 import org.exoplatform.services.jcr.ext.common.SessionProvider;
@@ -111,6 +112,18 @@ public abstract class AbstractOfficeOnlineService implements Startable {
   /** The Constant EXO_NAME. */
   protected static final String          EXO_NAME                = "exo:name";
 
+  /** The Constant PATH. */
+  protected static final String          PATH                    = "path";
+
+  /** The Constant EXO_USER_PREFERENCES. */
+  protected static final String          EXO_USER_PREFERENCES    = "exo:userPreferences";
+
+  /** The Constant MSOFFICE_FILE. */
+  protected static final String          MSOFFICE_FILE           = "msoffice:file";
+
+  /** The Constant MSOFFICE_PREFERENCES. */
+  protected static final String          MSOFFICE_PREFERENCES    = "msoffice:preferences";
+
   /** Cache of Editing documents. */
   protected final ExoCache<String, Key>  keyCache;
 
@@ -128,12 +141,15 @@ public abstract class AbstractOfficeOnlineService implements Startable {
 
   /** The document service. */
   protected final DocumentService        documentService;
-  
+
   /** The identity registry. */
-  protected final IdentityRegistry identityRegistry;
-  
+  protected final IdentityRegistry       identityRegistry;
+
   /** The authenticator. */
-  protected final Authenticator authenticator;
+  protected final Authenticator          authenticator;
+
+  /** The node finder. */
+  protected NodeFinder                   nodeFinder;
 
   /**
    * Instantiates a new office online editor service.
@@ -144,8 +160,12 @@ public abstract class AbstractOfficeOnlineService implements Startable {
    * @param documentService the document service
    * @param cacheService the cache service
    * @param userACL the user ACL
+  <<<<<<< HEAD
    * @param identityRegistry the identity registry
    * @param authenticator the authenticator
+  =======
+   * @param nodeFinder the node finder
+  >>>>>>> feature/symlink
    */
   public AbstractOfficeOnlineService(SessionProviderService sessionProviders,
                                      RepositoryService jcrService,
@@ -154,7 +174,8 @@ public abstract class AbstractOfficeOnlineService implements Startable {
                                      CacheService cacheService,
                                      UserACL userACL,
                                      IdentityRegistry identityRegistry,
-                                     Authenticator authenticator) {
+                                     Authenticator authenticator,
+                                     NodeFinder nodeFinder) {
     this.sessionProviders = sessionProviders;
     this.jcrService = jcrService;
     this.organization = organization;
@@ -163,6 +184,7 @@ public abstract class AbstractOfficeOnlineService implements Startable {
     this.userACL = userACL;
     this.identityRegistry = identityRegistry;
     this.authenticator = authenticator;
+    this.nodeFinder = nodeFinder;
   }
 
   /**
@@ -461,9 +483,9 @@ public abstract class AbstractOfficeOnlineService implements Startable {
     }
     SessionProvider sp = sessionProviders.getSessionProvider(null);
     Session userSession = sp.getSession(workspace, jcrService.getCurrentRepository());
-    Item item = userSession.getItem(path);
+    Item item = nodeFinder.getItem(userSession, path, true);
     if (item != null && item.isNode()) {
-      return (Node) userSession.getItem(path);
+      return (Node) item;
     }
     return null;
   }
@@ -511,7 +533,7 @@ public abstract class AbstractOfficeOnlineService implements Startable {
       throw new OfficeOnlineException("Decrypted token doesn't contain all required parameters");
     }
   }
-  
+
   /**
    * Sets ConversationState by userId.
    *
@@ -519,6 +541,7 @@ public abstract class AbstractOfficeOnlineService implements Startable {
    * @return true if successful, false when the user is not found
    */
   @SuppressWarnings("deprecation")
+
   protected boolean setUserConvoState(String userId) {
     Identity userIdentity = userIdentity(userId);
     if (userIdentity != null) {
@@ -533,7 +556,7 @@ public abstract class AbstractOfficeOnlineService implements Startable {
     LOG.warn("User identity not found " + userId + " for setting conversation state");
     return false;
   }
-  
+
   /**
    * Restores the conversation state.
    * 
@@ -544,7 +567,7 @@ public abstract class AbstractOfficeOnlineService implements Startable {
     ConversationState.setCurrent(contextState);
     sessionProviders.setSessionProvider(null, contextProvider);
   }
-  
+
   /**
    * Find or create user identity.
    *
@@ -567,5 +590,53 @@ public abstract class AbstractOfficeOnlineService implements Startable {
       }
     }
     return userIdentity;
+  }
+
+  /**
+   * Addds file preferences to the node (path for opening shared doc for particular user).
+   * @param node the node
+   * @param userId the userId
+   * @param path the path
+   * @throws RepositoryException  the repositoryException
+   */
+  public void addFilePreferences(Node node, String userId, String path) throws RepositoryException {
+    Node preferences;
+    if (!node.hasNode(MSOFFICE_PREFERENCES)) {
+      if (node.canAddMixin(MSOFFICE_FILE)) {
+        node.addMixin(MSOFFICE_FILE);
+      }
+      preferences = node.addNode(MSOFFICE_PREFERENCES);
+    } else {
+      preferences = node.getNode(MSOFFICE_PREFERENCES);
+    }
+
+    Node userPreferences;
+    if (!preferences.hasNode(userId)) {
+      userPreferences = preferences.addNode(userId, EXO_USER_PREFERENCES);
+    } else {
+      userPreferences = preferences.getNode(userId);
+    }
+    userPreferences.setProperty(PATH, path);
+    node.save();
+  }
+
+  /**
+   * Gets parent folder of the file based on file preferences.
+   *
+   * @param node the node
+   * @param userId the userId
+   * @return the Node
+   * @throws RepositoryException the repository exception
+   */
+  protected Node getSymlink(Node node, String userId) throws RepositoryException {
+    if (node.hasNode(MSOFFICE_PREFERENCES)) {
+      Node filePreferences = node.getNode(MSOFFICE_PREFERENCES);
+      if (filePreferences.hasNode(userId)) {
+        Node userPreferences = filePreferences.getNode(userId);
+        String path = userPreferences.getProperty(PATH).getString();
+        return (Node) node.getSession().getItem(path);
+      }
+    }
+    return null;
   }
 }
