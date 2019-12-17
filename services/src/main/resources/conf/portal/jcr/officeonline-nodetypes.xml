@@ -18,29 +18,27 @@
   02110-1301 USA, or see the FSF site: http://www.fsf.org.
 -->
 <nodeTypes xmlns:nt="http://www.jcp.org/jcr/nt/1.0" xmlns:mix="http://www.jcp.org/jcr/mix/1.0"
-  xmlns:jcr="http://www.jcp.org/jcr/1.0">
+  xmlns:jcr="http://www.jcp.org/jcr/1.0"
+  xmlns:exo="http://www.exoplatform.com/jcr/exo/1.0"
+  xmlns:msoffice="http://www.exoplatform.com/jcr/officeonline/1.0">
 
   <nodeType name="msoffice:file" isMixin="true" hasOrderableChildNodes="false">
     <supertypes>
       <supertype>mix:referenceable</supertype>
     </supertypes>
     <propertyDefinitions>
-      <propertyDefinition name="msoffice:versionOwner" requiredType="String" autoCreated="false" mandatory="false"
-        onParentVersion="VERSION" protected="false" multiple="false">
+      <propertyDefinition name="msoffice:versionOwner" requiredType="String" autoCreated="false"
+        mandatory="false" onParentVersion="VERSION" protected="false" multiple="false">
         <valueConstraints />
       </propertyDefinition>
       <propertyDefinition name="msoffice:isEditorVersion" requiredType="Boolean" autoCreated="false"
         mandatory="false" onParentVersion="VERSION" protected="false" multiple="false">
         <valueConstraints />
       </propertyDefinition>
-      <propertyDefinition name="msoffice:commentId" requiredType="String" autoCreated="false" mandatory="false"
-        onParentVersion="VERSION" protected="false" multiple="false">
-        <valueConstraints />
-      </propertyDefinition>
     </propertyDefinitions>
     <childNodeDefinitions>
-      <childNodeDefinition name="msoffice:preferences" defaultPrimaryType="exo:filePreferences" autoCreated="false"
-        mandatory="false" onParentVersion="VERSION" protected="false" sameNameSiblings="false">
+      <childNodeDefinition name="msoffice:preferences" defaultPrimaryType="exo:filePreferences"
+        autoCreated="false" mandatory="false" onParentVersion="VERSION" protected="false" sameNameSiblings="false">
         <requiredPrimaryTypes>
           <requiredPrimaryType>exo:filePreferences</requiredPrimaryType>
         </requiredPrimaryTypes>
