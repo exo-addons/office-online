@@ -20,6 +20,8 @@ import org.exoplatform.services.jcr.ext.common.SessionProvider;
 import org.exoplatform.services.log.ExoLogger;
 import org.exoplatform.services.log.Log;
 import org.exoplatform.services.organization.OrganizationService;
+import org.exoplatform.services.security.Authenticator;
+import org.exoplatform.services.security.IdentityRegistry;
 
 /**
  * The Class EditorService.
@@ -44,10 +46,11 @@ public class EditorService extends AbstractOfficeOnlineService {
                        OrganizationService organization,
                        DocumentService documentService,
                        CacheService cacheService,
-                       UserACL userACL) {
-    super(sessionProviders, jcrService, organization, documentService, cacheService, userACL);
+                       UserACL userACL,
+                       IdentityRegistry identityRegistry,
+                       Authenticator authenticator) {
+    super(sessionProviders, jcrService, organization, documentService, cacheService, userACL, identityRegistry, authenticator);
   }
-
 
   /**
    * WARNING: ONLY FOR TESTING PURPOSES. SHOULD BE REMOVED ON PRODUCTION
@@ -112,7 +115,6 @@ public class EditorService extends AbstractOfficeOnlineService {
       LOG.error(e);
     }
   }
-
 
   /**
    * Stop.
