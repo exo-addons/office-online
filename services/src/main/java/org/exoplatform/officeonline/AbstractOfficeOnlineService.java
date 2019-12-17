@@ -15,10 +15,8 @@ import javax.crypto.Cipher;
 import javax.jcr.Item;
 import javax.jcr.ItemNotFoundException;
 import javax.jcr.Node;
-import javax.jcr.PathNotFoundException;
 import javax.jcr.RepositoryException;
 import javax.jcr.Session;
-import javax.jcr.ValueFormatException;
 
 import org.apache.commons.io.input.AutoCloseInputStream;
 import org.picocontainer.Startable;
@@ -110,6 +108,18 @@ public abstract class AbstractOfficeOnlineService implements Startable {
   /** The Constant EXO_NAME. */
   protected static final String          EXO_NAME                = "exo:name";
 
+  /** The Constant PATH. */
+  protected static final String          PATH                    = "path";
+
+  /** The Constant EXO_USER_PREFERENCES. */
+  protected static final String          EXO_USER_PREFERENCES    = "exo:userPreferences";
+
+  /** The Constant MSOFFICE_FILE. */
+  protected static final String          MSOFFICE_FILE           = "msoffice:file";
+
+  /** The Constant MSOFFICE_PREFERENCES. */
+  protected static final String          MSOFFICE_PREFERENCES    = "msoffice:preferences";
+
   /** Cache of Editing documents. */
   protected final ExoCache<String, Key>  keyCache;
 
@@ -140,6 +150,7 @@ public abstract class AbstractOfficeOnlineService implements Startable {
    * @param documentService the document service
    * @param cacheService the cache service
    * @param userACL the user ACL
+   * @param nodeFinder the node finder
    */
   public AbstractOfficeOnlineService(SessionProviderService sessionProviders,
                                      RepositoryService jcrService,
@@ -514,38 +525,39 @@ public abstract class AbstractOfficeOnlineService implements Startable {
    */
   public void addFilePreferences(Node node, String userId, String path) throws RepositoryException {
     Node preferences;
-    if (!node.hasNode("oo:preferences")) {
-      if (node.canAddMixin("oo:officeonlineFile")) {
-        node.addMixin("oo:officeonlineFile");
+    if (!node.hasNode(MSOFFICE_PREFERENCES)) {
+      if (node.canAddMixin(MSOFFICE_FILE)) {
+        node.addMixin(MSOFFICE_FILE);
       }
-      preferences = node.addNode("oo:preferences");
+      preferences = node.addNode(MSOFFICE_PREFERENCES);
     } else {
-      preferences = node.getNode("oo:preferences");
+      preferences = node.getNode(MSOFFICE_PREFERENCES);
     }
 
     Node userPreferences;
     if (!preferences.hasNode(userId)) {
-      userPreferences = preferences.addNode(userId, "oo:userPreferences");
+      userPreferences = preferences.addNode(userId, EXO_USER_PREFERENCES);
     } else {
       userPreferences = preferences.getNode(userId);
     }
-    userPreferences.setProperty("path", path);
+    userPreferences.setProperty(PATH, path);
     node.save();
   }
 
   /**
-   * Gets parent folder of the file based on file preferences
+   * Gets parent folder of the file based on file preferences.
+   *
    * @param node the node
    * @param userId the userId
    * @return the Node
-   * @throws RepositoryException 
+   * @throws RepositoryException the repository exception
    */
   protected Node getSymlink(Node node, String userId) throws RepositoryException {
-    if (node.hasNode("oo:preferences")) {
-      Node filePreferences = node.getNode("oo:preferences");
+    if (node.hasNode(MSOFFICE_PREFERENCES)) {
+      Node filePreferences = node.getNode(MSOFFICE_PREFERENCES);
       if (filePreferences.hasNode(userId)) {
         Node userPreferences = filePreferences.getNode(userId);
-        String path = userPreferences.getProperty("path").getString();
+        String path = userPreferences.getProperty(PATH).getString();
         return (Node) node.getSession().getItem(path);
       }
     }

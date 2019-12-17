@@ -942,7 +942,7 @@
       <init-params>
         <properties-param>
           <name>namespaces</name>
-          <property name="oo" value="http://www.exoplatform.com/jcr/officeonline/1.0/" />
+          <property name="msoffice" value="http://www.exoplatform.com/jcr/officeonline/1.0/" />
         </properties-param>
       </init-params>
     </component-plugin>
@@ -953,7 +953,7 @@
       <init-params>
         <values-param>
           <name>autoCreatedInNewRepository</name>
-          <description>Onlyoffice node types configuration file</description>
+          <description>Office Online node types configuration file</description>
           <value>jar:/conf/portal/jcr/officeonline-nodetypes.xml</value>
         </values-param>
       </init-params>
