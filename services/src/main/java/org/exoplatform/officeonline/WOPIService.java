@@ -77,6 +77,7 @@ import org.exoplatform.services.wcm.utils.WCMCoreUtils;
 import org.exoplatform.webui.application.WebuiRequestContext;
 import org.exoplatform.webui.application.portlet.PortletRequestContext;
 
+// TODO: Auto-generated Javadoc
 /**
  * The Class WOPIService.
  */
@@ -291,7 +292,9 @@ public class WOPIService extends AbstractOfficeOnlineService {
    * @param userACL the user ACL
    * @param trashService the trash service
    * @param identityRegistry the identity registry
+   * @param hierarchyCreator the hierarchy creator
    * @param authenticator the authenticator
+   * @param nodeFinder the node finder
    * @param initParams the init params
    */
   public WOPIService(SessionProviderService sessionProviders,
@@ -363,20 +366,17 @@ public class WOPIService extends AbstractOfficeOnlineService {
           node.addMixin(MSOFFICE_FILE);
         }
 
-        Node frozen = node;
         boolean versionable = node.isNodeType(MIX_VERSIONABLE);
-        if (versionable && node.getBaseVersion().hasNode(JCR_FROZEN_NODE)) {
-          frozen = node.getBaseVersion().getNode(JCR_FROZEN_NODE);
-        }
-
-        Boolean onlyofficeVersion = false;
-        if (frozen.hasProperty(MSOFFICE_IS_EDITOR_VERSION)) {
-          onlyofficeVersion = frozen.getProperty(MSOFFICE_IS_EDITOR_VERSION).getBoolean();
-        }
+        Node frozen = versionable ? getFrozen(node) : node;
+        Boolean isEditorVersion = isEditorVersion(frozen);
         Calendar lastModified = node.getProperty(EXO_LAST_MODIFIED_DATE).getDate();
         Calendar versionDate = frozen.getProperty(EXO_LAST_MODIFIED_DATE).getDate();
+
         // Create a version of the manually uploaded draft if exists
-        if (versionDate.getTimeInMillis() <= lastModified.getTimeInMillis() && !onlyofficeVersion) {
+        if (versionDate.getTimeInMillis() <= lastModified.getTimeInMillis() && !isEditorVersion) {
+          if (LOG.isDebugEnabled()) {
+            LOG.debug("Creating version from draft");
+          }
           createVersionOfDraft(node);
         }
 
@@ -401,14 +401,11 @@ public class WOPIService extends AbstractOfficeOnlineService {
         content.setProperty(JCR_DATA, data);
         node.save();
 
-        String versioningUser = null;
-        if (frozen.hasProperty(MSOFFICE_VERSION_OWNER)) {
-          versioningUser = frozen.getProperty(MSOFFICE_VERSION_OWNER).getString();
-        }
+        String versioningUser = getVersioningUser(frozen);
 
         long timeout = System.currentTimeMillis() - versionDate.getTimeInMillis();
         // Version accumulation for same user
-        if (versionable && config.getUserId().equals(versioningUser) && timeout >= VERSION_TIMEOUT) {
+        if (versionable && config.getUserId().equals(versioningUser) && timeout < VERSION_TIMEOUT) {
           String versionName = node.getBaseVersion().getName();
           if (LOG.isDebugEnabled()) {
             LOG.debug("Version accumulation: removig version " + versionName + " from node " + node.getUUID());
@@ -431,7 +428,7 @@ public class WOPIService extends AbstractOfficeOnlineService {
         // Remove properties from node
         node.setProperty(MSOFFICE_VERSION_OWNER, "");
         node.setProperty(MSOFFICE_IS_EDITOR_VERSION, false);
-
+        node.save();
         if (data != null) {
           try {
             data.close();
@@ -447,6 +444,48 @@ public class WOPIService extends AbstractOfficeOnlineService {
       throw new OfficeOnlineException("Cannot perform putFile operation. FileId: " + config.getFileId() + ", workspace: "
           + config.getWorkspace());
     }
+  }
+
+  /**
+   * Gets the versioning user.
+   *
+   * @param frozen the frozen
+   * @return the versioning user
+   * @throws RepositoryException the repository exception
+   */
+  protected String getVersioningUser(Node frozen) throws RepositoryException {
+    if (frozen.hasProperty(WOPIService.MSOFFICE_VERSION_OWNER)) {
+      return frozen.getProperty(WOPIService.MSOFFICE_VERSION_OWNER).getString();
+    }
+    return null;
+  }
+
+  /**
+   * Gets the frozen.
+   *
+   * @param node the node
+   * @return the frozen
+   * @throws RepositoryException the repository exception
+   */
+  protected Node getFrozen(Node node) throws RepositoryException {
+    if (node.getBaseVersion().hasNode(WOPIService.JCR_FROZEN_NODE)) {
+      return node.getBaseVersion().getNode(WOPIService.JCR_FROZEN_NODE);
+    }
+    return node;
+  }
+
+  /**
+   * Checks if is editor version.
+   *
+   * @param frozen the frozen
+   * @return the boolean
+   * @throws RepositoryException the repository exception
+   */
+  protected Boolean isEditorVersion(Node frozen) throws RepositoryException {
+    if (frozen.hasProperty(WOPIService.MSOFFICE_IS_EDITOR_VERSION)) {
+      return frozen.getProperty(WOPIService.MSOFFICE_IS_EDITOR_VERSION).getBoolean();
+    }
+    return false;
   }
 
   /**
@@ -1060,7 +1099,7 @@ public class WOPIService extends AbstractOfficeOnlineService {
    *
    * @param map the map
    * @param node the node
-   * @param platformUrl the platform url
+   * @param config the config
    */
   protected void addBreadcrumbProperties(Map<String, Serializable> map, Node node, EditorConfig config) {
     // TODO: replace by real values
