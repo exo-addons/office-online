@@ -6,6 +6,7 @@ import org.exoplatform.container.ExoContainerContext;
 import org.exoplatform.container.component.BaseComponentPlugin;
 import org.exoplatform.container.xml.InitParams;
 import org.exoplatform.container.xml.ValueParam;
+import org.exoplatform.ecm.webui.component.explorer.documents.DocumentTemplate;
 import org.exoplatform.ecm.webui.component.explorer.documents.NewDocumentEditorPlugin;
 import org.exoplatform.officeonline.WOPIService;
 import org.exoplatform.services.log.ExoLogger;
@@ -56,8 +57,9 @@ public class OfficeOnlineNewDocumentEditorPlugin extends BaseComponentPlugin imp
    * @throws Exception the exception
    */
   @Override
-  public void onDocumentCreated(Node node) throws Exception {
+  public void onDocumentCreated(String workspace, String path) throws Exception {
     WOPIService wopiService = ExoContainerContext.getCurrentContainer().getComponentInstanceOfType(WOPIService.class);
+    Node node = wopiService.getNode(workspace, path);
     String link = wopiService.getEditorLink(node, WOPIService.EDITNEW_ACTION);
     if (link != null) {
       link = "'" + link + "'";
@@ -73,7 +75,7 @@ public class OfficeOnlineNewDocumentEditorPlugin extends BaseComponentPlugin imp
    * On document create.
    */
   @Override
-  public void beforeDocumentCreate() {
+  public void beforeDocumentCreate(DocumentTemplate template, String parentPath, String title) {
     WebuiRequestContext requestContext = WebuiRequestContext.getCurrentInstance();
     JavascriptManager js = requestContext.getJavascriptManager();
     js.require("SHARED/officeonline", "officeonline").addScripts("officeonline.initNewDocument();");
