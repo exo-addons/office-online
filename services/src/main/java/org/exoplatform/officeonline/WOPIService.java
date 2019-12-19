@@ -77,7 +77,6 @@ import org.exoplatform.services.wcm.utils.WCMCoreUtils;
 import org.exoplatform.webui.application.WebuiRequestContext;
 import org.exoplatform.webui.application.portlet.PortletRequestContext;
 
-// TODO: Auto-generated Javadoc
 /**
  * The Class WOPIService.
  */
@@ -91,6 +90,12 @@ public class WOPIService extends AbstractOfficeOnlineService {
 
   /** The Constant JCR_FROZEN_NODE. */
   protected static final String      JCR_FROZEN_NODE                     = "jcr:frozenNode";
+
+  /** The Constant NT_RESOURCE. */
+  protected static final String      NT_RESOURCE                         = "nt:resource";
+
+  /** The Constant NT_FILE. */
+  protected static final String      NT_FILE                             = "nt:file";
 
   /** The Constant MSOFFICE_FILE. */
   protected static final String      MSOFFICE_FILE                       = "msoffice:file";
@@ -499,7 +504,7 @@ public class WOPIService extends AbstractOfficeOnlineService {
   protected void createVersionOfDraft(Node node) throws RepositoryException, OfficeOnlineException {
     ConversationState contextState = ConversationState.getCurrent();
     SessionProvider contextProvider = sessionProviders.getSessionProvider(null);
-    String userId = node.getProperty("exo:lastModifier").getString();
+    String userId = node.getProperty(EXO_LAST_MODIFIER).getString();
     if (setUserConvoState(userId)) {
       if (LOG.isDebugEnabled()) {
         LOG.debug("Creating a version from draft. Path: " + node.getPath() + " user: " + userId);
@@ -1010,7 +1015,7 @@ public class WOPIService extends AbstractOfficeOnlineService {
    */
   public boolean canEdit(Node node) {
     try {
-      if (node.isNodeType("nt:file")) {
+      if (node.isNodeType(NT_FILE)) {
         String actionUrl = null;
         // Check if WOPI has edit action for such file extension
         try {
@@ -1035,7 +1040,7 @@ public class WOPIService extends AbstractOfficeOnlineService {
    */
   public boolean canView(Node node) {
     try {
-      if (node.isNodeType("nt:file")) {
+      if (node.isNodeType(NT_FILE)) {
         String actionUrl = null;
         // Check if WOPI has edit action for such file extension
         try {
@@ -1336,24 +1341,24 @@ public class WOPIService extends AbstractOfficeOnlineService {
       long editedTime = System.currentTimeMillis();
       Node content = targetNode.getNode(JCR_CONTENT);
 
-      content.setProperty("jcr:lastModified", editedTime);
-      if (content.hasProperty("exo:dateModified")) {
-        content.setProperty("exo:dateModified", editedTime);
+      content.setProperty(JCR_LAST_MODIFIED, editedTime);
+      if (content.hasProperty(EXO_DATE_MODIFIED)) {
+        content.setProperty(EXO_DATE_MODIFIED, editedTime);
       }
-      if (content.hasProperty("exo:lastModifiedDate")) {
-        content.setProperty("exo:lastModifiedDate", editedTime);
+      if (content.hasProperty(EXO_LAST_MODIFIED_DATE)) {
+        content.setProperty(EXO_LAST_MODIFIED_DATE, editedTime);
       }
-      if (targetNode.hasProperty("exo:lastModifiedDate")) {
-        targetNode.setProperty("exo:lastModifiedDate", editedTime);
+      if (targetNode.hasProperty(EXO_LAST_MODIFIED_DATE)) {
+        targetNode.setProperty(EXO_LAST_MODIFIED_DATE, editedTime);
       }
 
-      if (targetNode.hasProperty("exo:dateModified")) {
-        targetNode.setProperty("exo:dateModified", editedTime);
+      if (targetNode.hasProperty(EXO_DATE_MODIFIED)) {
+        targetNode.setProperty(EXO_DATE_MODIFIED, editedTime);
       }
-      if (targetNode.hasProperty("exo:lastModifier")) {
-        targetNode.setProperty("exo:lastModifier", config.getUserId());
+      if (targetNode.hasProperty(EXO_LAST_MODIFIER)) {
+        targetNode.setProperty(EXO_LAST_MODIFIER, config.getUserId());
       }
-      content.setProperty("jcr:data", data);
+      content.setProperty(JCR_DATA, data);
       parent.save();
       try {
         data.close();
@@ -1389,17 +1394,17 @@ public class WOPIService extends AbstractOfficeOnlineService {
     if (addedNode.canAddMixin(MIX_VERSIONABLE)) {
       addedNode.addMixin(MIX_VERSIONABLE);
     }
-    if (addedNode.hasProperty("exo:name")) {
-      addedNode.setProperty("exo:name", filename);
+    if (addedNode.hasProperty(EXO_NAME)) {
+      addedNode.setProperty(EXO_NAME, filename);
     }
     addedNode.setProperty(Utils.EXO_TITLE, filename);
 
-    Node content = addedNode.addNode("jcr:content", "nt:resource");
+    Node content = addedNode.addNode(JCR_CONTENT, NT_RESOURCE);
 
-    content.setProperty("jcr:data", data);
+    content.setProperty(JCR_DATA, data);
     String extension = filename.substring(filename.lastIndexOf(".") + 1);
-    content.setProperty("jcr:mimeType", getMimeTypeByExtension(extension));
-    content.setProperty("jcr:lastModified", new GregorianCalendar());
+    content.setProperty(JCR_MIME_TYPE, getMimeTypeByExtension(extension));
+    content.setProperty(JCR_LAST_MODIFIED, new GregorianCalendar());
     ListenerService listenerService = WCMCoreUtils.getService(ListenerService.class);
     try {
       listenerService.broadcast(ActivityCommonService.FILE_CREATED_ACTIVITY, null, addedNode);

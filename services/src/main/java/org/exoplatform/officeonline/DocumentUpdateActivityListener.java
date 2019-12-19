@@ -4,7 +4,6 @@ import java.util.Calendar;
 
 import javax.jcr.Node;
 import javax.jcr.Property;
-import javax.jcr.RepositoryException;
 
 import org.apache.commons.chain.Context;
 
@@ -27,9 +26,6 @@ import org.exoplatform.wcm.ext.component.activity.listener.FileUpdateActivityLis
  */
 public class DocumentUpdateActivityListener extends FileUpdateActivityListener {
 
-  /** The Constant LOG. */
-  protected static final Log  LOG = ExoLogger.getLogger(DocumentUpdateActivityListener.class);
-
   protected final WOPIService wopiService;
 
   public DocumentUpdateActivityListener() {
@@ -47,36 +43,19 @@ public class DocumentUpdateActivityListener extends FileUpdateActivityListener {
     Context context = event.getSource();
     Property currentProperty = (Property) context.get(InvocationContext.CURRENT_ITEM);
     Node node = currentProperty.getParent().getParent();
-
     boolean isVersionable = node.isNodeType(WOPIService.MIX_VERSIONABLE);
     Node frozen = isVersionable ? wopiService.getFrozen(node) : node;
     if (wopiService.isEditorVersion(frozen)) {
       Calendar versionDate = frozen.getProperty(WOPIService.EXO_LAST_MODIFIED_DATE).getDate();
       String modifier = frozen.getProperty(WOPIService.EXO_LAST_MODIFIER).getString();
       long timeout = System.currentTimeMillis() - versionDate.getTimeInMillis();
-
       String versioningUser = wopiService.getVersioningUser(frozen);
       // Version accumulation for same user
       if (!modifier.equals(versioningUser) || timeout >= WOPIService.VERSION_TIMEOUT) {
         super.onEvent(event);
-      } 
+      }
     } else {
       super.onEvent(event);
     }
-  }
-
-  /**
-   * Checks if a node has comment.
-   *
-   * @param node the node
-   * @return true if the node is commented
-   * @throws RepositoryException the repository exception
-   */
-  protected boolean isCommentedNode(Node node) throws RepositoryException {
-    if (node.hasProperty("eoo:commentId")) {
-      String commentId = node.getProperty("eoo:commentId").getString();
-      return commentId != null && !commentId.isEmpty();
-    }
-    return false;
   }
 }
