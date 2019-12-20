@@ -3,13 +3,13 @@
   <!-- For menu caption in Action Bar -->
   <UIActionBar>
     <tooltip>
-      <OfficeOnlineOpen>Edit in MS</OfficeOnlineOpen>
+      <OfficeOnlineOpen>Edit in Office Online</OfficeOnlineOpen>
     </tooltip>
   </UIActionBar>
   <!-- Used in Administration-Content-Explorer in Views settings a popup with actions list -->
   <UITabForm>
     <label>
-      <officeOnlineOpen>Edit in MS</officeOnlineOpen>
+      <officeOnlineOpen>Edit in Office Online</officeOnlineOpen>
     </label>
   </UITabForm>
 
@@ -28,9 +28,9 @@
   <UINewDocumentForm>
     <label>
       <option>
-        <MSDocument>Microsoft Word Document (*.docx) MS</MSDocument>
-        <MSSpreadsheet>Microsoft Excel Workbook (*.xlsx) MS</MSSpreadsheet>
-        <MSPresentation>Microsoft PowerPoint Presentation (*.pptx) MS</MSPresentation>
+        <MSDocument>Microsoft Word Document (*.docx) *</MSDocument>
+        <MSSpreadsheet>Microsoft Excel Workbook (*.xlsx) *</MSSpreadsheet>
+        <MSPresentation>Microsoft PowerPoint Presentation *</MSPresentation>
       </option>
     </label>
   </UINewDocumentForm>
