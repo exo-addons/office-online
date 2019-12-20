@@ -1,4 +1,3 @@
-
 package org.exoplatform.officeonline;
 
 import java.io.InputStream;
@@ -152,7 +151,7 @@ public abstract class AbstractOfficeOnlineService implements Startable {
   protected NodeFinder                   nodeFinder;
 
   /**
-   * Instantiates a new office online editor service.
+   * Instantiates a new abstract office online service.
    *
    * @param sessionProviders the session providers
    * @param jcrService the jcr service
@@ -160,12 +159,9 @@ public abstract class AbstractOfficeOnlineService implements Startable {
    * @param documentService the document service
    * @param cacheService the cache service
    * @param userACL the user ACL
-  <<<<<<< HEAD
    * @param identityRegistry the identity registry
    * @param authenticator the authenticator
-  =======
    * @param nodeFinder the node finder
-  >>>>>>> feature/symlink
    */
   public AbstractOfficeOnlineService(SessionProviderService sessionProviders,
                                      RepositoryService jcrService,
