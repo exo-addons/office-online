@@ -2,7 +2,6 @@ package org.exoplatform.officeonline.documents;
 
 import javax.jcr.Node;
 
-import org.exoplatform.container.ExoContainerContext;
 import org.exoplatform.container.component.BaseComponentPlugin;
 import org.exoplatform.container.xml.InitParams;
 import org.exoplatform.container.xml.ValueParam;
@@ -28,16 +27,21 @@ public class OfficeOnlineNewDocumentEditorPlugin extends BaseComponentPlugin imp
   /** The provider. */
   protected String              provider;
 
+  /** The wopi service. */
+  protected final WOPIService   wopiService;
+
   /**
-   * Instantiates a new only office new document editor plugin.
+   * Instantiates a new office online new document editor plugin.
    *
+   * @param wopiService the wopi service
    * @param initParams the init params
    */
-  public OfficeOnlineNewDocumentEditorPlugin(InitParams initParams) {
+  public OfficeOnlineNewDocumentEditorPlugin(WOPIService wopiService, InitParams initParams) {
     ValueParam providerParam = initParams.getValueParam(PROVIDER_PARAM);
     if (providerParam != null) {
       this.provider = providerParam.getValue();
     }
+    this.wopiService = wopiService;
   }
 
   /**
@@ -53,12 +57,12 @@ public class OfficeOnlineNewDocumentEditorPlugin extends BaseComponentPlugin imp
   /**
    * On document created.
    *
-   * @param node the node
+   * @param workspace the workspace
+   * @param path the path
    * @throws Exception the exception
    */
   @Override
   public void onDocumentCreated(String workspace, String path) throws Exception {
-    WOPIService wopiService = ExoContainerContext.getCurrentContainer().getComponentInstanceOfType(WOPIService.class);
     Node node = wopiService.getNode(workspace, path);
     String link = wopiService.getEditorLink(node, WOPIService.EDITNEW_ACTION);
     if (link != null) {
@@ -73,6 +77,10 @@ public class OfficeOnlineNewDocumentEditorPlugin extends BaseComponentPlugin imp
 
   /**
    * On document create.
+   *
+   * @param template the template
+   * @param parentPath the parent path
+   * @param title the title
    */
   @Override
   public void beforeDocumentCreate(DocumentTemplate template, String parentPath, String title) {
