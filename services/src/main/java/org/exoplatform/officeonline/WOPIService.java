@@ -769,7 +769,7 @@ public class WOPIService extends AbstractOfficeOnlineService {
     try {
       parent = (NodeImpl) node.getParent();
     } catch (AccessDeniedException e) {
-      LOG.warn("Cannot get access to the parent node ", e.getMessage());
+      LOG.warn("Cannot get access to the parent node {}", e.getMessage());
       return false;
     }
     return parent.hasPermission(PermissionType.READ) && parent.hasPermission(PermissionType.ADD_NODE)
