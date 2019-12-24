@@ -17,3 +17,9 @@ body {
   border: none;
   display: block;
 }
+
+.officeonlineContainer .alert {
+  display: inline-block; 
+  float: right;
+  margin-right: 40px;
+}

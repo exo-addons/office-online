@@ -39,9 +39,9 @@
 
   var getEditorButton = function(editorLink) {
     // TODO: i18n
-    var label = "Edit in MS";
+    var label = "Edit in Office Online";
     if (editorLink.indexOf("&action=view") > -1) {
-      label = "View in MS";
+      label = "View in Office Online";
     }
     return "<li class='hidden-tabletL'><a href='" + editorLink + "' target='_blank'>"
         + "<i class='uiIconEcmsOfficeOnlineOpen uiIconEcmsLightGray uiIconEdit'></i>" + label + "</a></li>";
@@ -49,9 +49,9 @@
 
   var getNoPreviewEditorButton = function(editorLink) {
     // TODO: i18n
-    var label = "Edit in MS";
+    var label = "Edit in Office Online";
     if (editorLink.indexOf("&action=view") > -1) {
-      label = "View in MS";
+      label = "View in Office Online";
     }
     return "<a class='btn editInOfficeOnline hidden-tabletL' href='#' onclick='javascript:window.open(\"" + editorLink + "\");'>"
         + "<i class='uiIconEcmsOfficeOnlineOpen uiIconEcmsLightGray uiIconEdit'></i>" + label + "</a>";
@@ -119,7 +119,7 @@
     var $button = $("#UIJCRExplorer #uiActionsBarContainer i.uiIconEcmsOfficeOnlineOpen");
     // TODO: i18n
     if (editorLink.indexOf("&action=view") > -1) {
-      $button.parent().text("View in MS");
+      $button.parent().text("View in Office Online");
     } else {
       $button.addClass("uiIconEdit");
     }
@@ -167,8 +167,7 @@
     };
 
     this.showError = function(title, message) {
-      // TODO: show as a popup/notification
-      alert(title + " " + message);
+      $(".officeonlineContainer").prepend('<div class="alert alert-error"><i class="uiIconError"></i>' + title + ': '+ message + '</div>');
     };
 
     this.initActivity = function(fileId, editorLink, activityId) {
