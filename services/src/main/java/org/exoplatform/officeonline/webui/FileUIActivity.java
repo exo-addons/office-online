@@ -18,6 +18,8 @@
  */
 package org.exoplatform.officeonline.webui;
 
+import static org.exoplatform.officeonline.webui.OfficeOnlineContext.callModule;
+
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -28,8 +30,6 @@ import org.exoplatform.officeonline.WOPIService;
 import org.exoplatform.services.log.ExoLogger;
 import org.exoplatform.services.log.Log;
 import org.exoplatform.social.webui.activity.BaseUIActivity;
-import org.exoplatform.web.application.JavascriptManager;
-import org.exoplatform.web.application.RequireJS;
 import org.exoplatform.webui.application.WebuiRequestContext;
 import org.exoplatform.webui.config.annotation.ComponentConfig;
 import org.exoplatform.webui.config.annotation.ComponentConfigs;
@@ -91,15 +91,11 @@ public class FileUIActivity extends org.exoplatform.wcm.ext.component.activity.F
   public void end() throws Exception {
     String activityId = getActivity().getId();
 
-    WebuiRequestContext webuiContext = WebuiRequestContext.getCurrentInstance();
-    JavascriptManager js = webuiContext.getJavascriptManager();
-    RequireJS require = js.require("SHARED/officeonline", "officeonline");
-
     if (getFilesCount() == 1) {
       Node node = getContentNode(0);
       node = editorService.getNode(node.getSession().getWorkspace().getName(), node.getPath());
       if (node != null) {
-        require.addScripts("officeonline.initActivity('" + node.getUUID() + "', " + editorLink(node) + ",'" + activityId + "');");
+        callModule("initActivity('" + node.getUUID() + "', " + editorLink(node) + ",'" + activityId + "');");
       }
     }
 
@@ -112,7 +108,7 @@ public class FileUIActivity extends org.exoplatform.wcm.ext.component.activity.F
         editorService.addFilePreferences(node, userId, symlink.getPath());
       }
       if (node != null) {
-        require.addScripts("officeonline.initPreview('" + node.getUUID() + "', " + editorLink(node) + " ,'"
+        callModule("initPreview('" + node.getUUID() + "', " + editorLink(node) + " ,'"
             + new StringBuilder("#Preview").append(activityId).append('-').append(index).toString() + "');");
       }
     }

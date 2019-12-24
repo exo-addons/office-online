@@ -1,5 +1,9 @@
 package org.exoplatform.officeonline.portlet;
 
+import static org.exoplatform.officeonline.webui.OfficeOnlineContext.callModule;
+import static org.exoplatform.officeonline.webui.OfficeOnlineContext.showError;
+import static org.exoplatform.onlyoffice.webui.OnlyofficeContext.callModule;
+import static org.exoplatform.officeonline.webui.OfficeOnlineContext.requireJS;
 import java.io.IOException;
 import java.util.ResourceBundle;
 
@@ -31,6 +35,7 @@ import org.exoplatform.web.application.RequireJS;
 import org.exoplatform.webui.application.WebuiRequestContext;
 import org.exoplatform.ws.frameworks.json.impl.JsonException;
 
+// TODO: Auto-generated Javadoc
 /**
  * The Class EditorPortlet.
  */
@@ -71,14 +76,12 @@ public class EditorPortlet extends GenericPortlet {
   @RenderMode(name = "view")
   public void view(RenderRequest request, RenderResponse response) throws IOException, PortletException {
 
-    ResourceBundle i18n = i18nService.getResourceBundle(new String[] { "locale.officeonline.OfficeonlineClient" },
+    ResourceBundle i18n = i18nService.getResourceBundle(new String[] { "locale.officeonline.OfficeOnlineClient" },
                                                         request.getLocale());
 
     WebuiRequestContext webuiContext = WebuiRequestContext.getCurrentInstance();
     String fileId = webuiContext.getRequestParameter("fileId");
     String action = webuiContext.getRequestParameter("action");
-    JavascriptManager js = webuiContext.getJavascriptManager();
-    RequireJS require = js.require("SHARED/officeonline", "officeonline");
     if (fileId != null) {
       try {
         RequestInfo requestInfo = new RequestInfo(request.getScheme(),
@@ -100,59 +103,54 @@ public class EditorPortlet extends GenericPortlet {
 
         if (validAction(node, action)) {
           String actionURL = wopiService.getActionUrl(requestInfo, fileId, null, action);
-          require.addScripts("officeonline.initEditor(" + token.toJSON() + ", \"" + actionURL + "\");");
+          callModule("initEditor(" + token.toJSON() + ", \"" + actionURL + "\");");
         } else {
           showError(i18n.getString("OfficeonlineEditorClient.ErrorTitle"),
-                    i18n.getString("OfficeonlineEditor.error.EditorCannotBeCreated"),
-                    require);
+                    i18n.getString("OfficeonlineEditor.error.EditorCannotBeCreated"));
         }
 
       } catch (RepositoryException e) {
         LOG.error("Error reading document node by ID: {}", fileId, e);
         showError(i18n.getString("OfficeonlineEditorClient.ErrorTitle"),
-                  i18n.getString("OfficeonlineEditor.error.CannotReadDocument"),
-                  require);
+                  i18n.getString("OfficeonlineEditor.error.CannotReadDocument"));
       } catch (JsonException e) {
         LOG.error("Error creating JSON from access token for node by ID: {}", fileId, e);
         showError(i18n.getString("OfficeonlineEditorClient.ErrorTitle"),
-                  i18n.getString("OfficeonlineEditor.error.EditorCannotBeCreated"),
-                  require);
+                  i18n.getString("OfficeonlineEditor.error.EditorCannotBeCreated"));
       } catch (FileNotFoundException e) {
         LOG.error("Error creating editor config. File not found {}", fileId, e);
-        showError(i18n.getString("OfficeonlineEditorClient.ErrorTitle"),
-                  i18n.getString("OfficeonlineEditor.error.FileNotFound"),
-                  require);
+        showError(i18n.getString("OfficeonlineEditorClient.ErrorTitle"), i18n.getString("OfficeonlineEditor.error.FileNotFound"));
       } catch (FileExtensionNotFoundException e) {
         LOG.error("Error while getting file extension. ID: {}", fileId, e);
         showError(i18n.getString("OfficeonlineEditorClient.ErrorTitle"),
-                  i18n.getString("OfficeonlineEditor.error.WrongExtension"),
-                  require);
+                  i18n.getString("OfficeonlineEditor.error.WrongExtension"));
       } catch (ActionNotFoundException e) {
         LOG.error("Error getting actionURL by fileId and action. FileId: {}", fileId, e);
         showError(i18n.getString("OfficeonlineEditorClient.ErrorTitle"),
-                  i18n.getString("OfficeonlineEditor.error.ActionNotFound"),
-                  require);
+                  i18n.getString("OfficeonlineEditor.error.ActionNotFound"));
       } catch (OfficeOnlineException e) {
         LOG.error("Error creating document editor for node by ID: {}", fileId, e);
         showError(i18n.getString("OfficeonlineEditorClient.ErrorTitle"),
-                  i18n.getString("OfficeonlineEditor.error.EditorCannotBeCreated"),
-                  require);
+                  i18n.getString("OfficeonlineEditor.error.EditorCannotBeCreated"));
       }
     } else {
       LOG.error("Error initializing editor configuration for node by ID: {}", fileId);
       showError(i18n.getString("OfficeonlineEditorClient.ErrorTitle"),
-                i18n.getString("OfficeonlineEditor.error.DocumentIdRequired"),
-                require);
+                i18n.getString("OfficeonlineEditor.error.DocumentIdRequired"));
     }
 
     PortletRequestDispatcher prDispatcher = getPortletContext().getRequestDispatcher("/WEB-INF/pages/editor.jsp");
     prDispatcher.include(request, response);
   }
 
-  protected void showError(String title, String message, RequireJS require) {
-    require.addScripts(new StringBuilder("officeonline.showError('").append(title).append("', '" + message + "');").toString());
-  }
-
+  /**
+   * Valid action.
+   *
+   * @param node the node
+   * @param action the action
+   * @return true, if successful
+   * @throws RepositoryException the repository exception
+   */
   protected boolean validAction(Node node, String action) throws RepositoryException {
     if (action.equals(WOPIService.EDIT_ACTION) && wopiService.canEdit(node)) {
       return true;
