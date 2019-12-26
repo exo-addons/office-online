@@ -1,4 +1,3 @@
-
 package org.exoplatform.officeonline;
 
 import java.io.IOException;
@@ -51,7 +50,6 @@ import org.exoplatform.officeonline.exception.PermissionDeniedException;
 import org.exoplatform.officeonline.exception.SizeMismatchException;
 import org.exoplatform.officeonline.exception.UpdateConflictException;
 import org.exoplatform.officeonline.exception.WopiDiscoveryNotFoundException;
-import org.exoplatform.onlyoffice.OnlyofficeEditorListener;
 import org.exoplatform.portal.config.UserACL;
 import org.exoplatform.services.cache.CacheService;
 import org.exoplatform.services.cache.ExoCache;
@@ -439,7 +437,8 @@ public class WOPIService extends AbstractOfficeOnlineService {
           // actions in ECMS appear on it
           node.checkout();
         }
-
+        
+        onSaved(config);
         // Remove properties from node
         node.setProperty(MSOFFICE_VERSION_OWNER, "");
         node.setProperty(MSOFFICE_IS_EDITOR_VERSION, false);
@@ -1084,7 +1083,7 @@ public class WOPIService extends AbstractOfficeOnlineService {
     URI explorerUri = explorerUri(baseUrl, explorerLink);
     if (explorerUri != null) {
       map.put(CLOSE_URL, explorerUri.toString());
-      map.put(FILE_VERSION_URL, explorerUri.toString());
+      map.put(FILE_VERSION_URL, explorerUri.toString() + "&versions=true");
     }
     String platformRestURL =
                            new StringBuilder(baseUrl).append('/').append(PortalContainer.getCurrentRestContextName()).toString();

@@ -34,6 +34,10 @@
   </component>
 
   <component>
+    <type>org.exoplatform.officeonline.cometd.CometdOfficeOnlineService</type>
+  </component>
+
+  <component>
     <key>org.exoplatform.officeonline.WOPIService</key>
     <type>org.exoplatform.officeonline.WOPIService</type>
     <init-params>

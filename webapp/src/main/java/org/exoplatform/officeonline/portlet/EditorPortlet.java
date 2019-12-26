@@ -2,8 +2,7 @@ package org.exoplatform.officeonline.portlet;
 
 import static org.exoplatform.officeonline.webui.OfficeOnlineContext.callModule;
 import static org.exoplatform.officeonline.webui.OfficeOnlineContext.showError;
-import static org.exoplatform.onlyoffice.webui.OnlyofficeContext.callModule;
-import static org.exoplatform.officeonline.webui.OfficeOnlineContext.requireJS;
+
 import java.io.IOException;
 import java.util.ResourceBundle;
 
@@ -30,8 +29,6 @@ import org.exoplatform.officeonline.exception.OfficeOnlineException;
 import org.exoplatform.services.log.ExoLogger;
 import org.exoplatform.services.log.Log;
 import org.exoplatform.services.resources.ResourceBundleService;
-import org.exoplatform.web.application.JavascriptManager;
-import org.exoplatform.web.application.RequireJS;
 import org.exoplatform.webui.application.WebuiRequestContext;
 import org.exoplatform.ws.frameworks.json.impl.JsonException;
 

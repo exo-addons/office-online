@@ -45,7 +45,7 @@ import org.exoplatform.services.log.ExoLogger;
 import org.exoplatform.services.log.Log;
 
 /**
- * The CometdOnlyofficeService.
+ * The CometdOfficeOnlineService.
  */
 public class CometdOfficeOnlineService implements Startable {
 
@@ -186,7 +186,7 @@ public class CometdOfficeOnlineService implements Startable {
      * @param comment the comment
      */
     protected void publishSavedEvent(String fileId, String userId) {
-      ServerChannel channel = bayeux.getChannel(CHANNEL_NAME + docId);
+      ServerChannel channel = bayeux.getChannel(CHANNEL_NAME + fileId);
       if (channel != null) {
         StringBuilder data = new StringBuilder();
         data.append('{');
@@ -194,7 +194,7 @@ public class CometdOfficeOnlineService implements Startable {
         data.append(DOCUMENT_SAVED_EVENT);
         data.append("\", ");
         data.append("\"fileId\": \"");
-        data.append(docId);
+        data.append(fileId);
         data.append("\", ");
         data.append("\"userId\": \"");
         data.append(userId);

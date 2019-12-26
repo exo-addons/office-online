@@ -3,20 +3,21 @@
   <!-- For menu caption in Action Bar -->
   <UIActionBar>
     <tooltip>
-      <OfficeOnlineOpen>Edit in MS</OfficeOnlineOpen>
+      <OfficeOnlineOpen>Edit in Office Online</OfficeOnlineOpen>
       <NewMSDocument>New MS Document</NewMSDocument>
     </tooltip>
   </UIActionBar>
   <!-- Used in Administration-Content-Explorer in Views settings a popup with actions list -->
   <UITabForm>
     <label>
-      <officeOnlineOpen>Edit in MS</officeOnlineOpen>
+      <officeOnlineOpen>Edit in Office Online</officeOnlineOpen>
     </label>
   </UITabForm>
 
   <!-- For client UI -->
   <OfficeonlineEditorClient>
-    <EditButtonTitle>Edit Online</EditButtonTitle>
+    <EditButtonTitle>Edit in Office Online</EditButtonTitle>
+    <ViewButtonTitle>View in Office Online</ViewButtonTitle>
     <UpdateBannerTitle>The document has been updated.</UpdateBannerTitle>
     <ReloadButtonTitle>Reload</ReloadButtonTitle>
 

@@ -11,6 +11,7 @@ import java.util.Base64;
 import java.util.List;
 
 import javax.crypto.Cipher;
+import javax.jcr.AccessDeniedException;
 import javax.jcr.Item;
 import javax.jcr.ItemNotFoundException;
 import javax.jcr.Node;
@@ -597,23 +598,28 @@ public abstract class AbstractOfficeOnlineService implements Startable {
    */
   public void addFilePreferences(Node node, String userId, String path) throws RepositoryException {
     Node preferences;
-    if (!node.hasNode(MSOFFICE_PREFERENCES)) {
-      if (node.canAddMixin(MSOFFICE_FILE)) {
-        node.addMixin(MSOFFICE_FILE);
+    try {
+      if (!node.hasNode(MSOFFICE_PREFERENCES)) {
+        if (node.canAddMixin(MSOFFICE_FILE)) {
+          node.addMixin(MSOFFICE_FILE);
+        }
+        preferences = node.addNode(MSOFFICE_PREFERENCES);
+      } else {
+        preferences = node.getNode(MSOFFICE_PREFERENCES);
       }
-      preferences = node.addNode(MSOFFICE_PREFERENCES);
-    } else {
-      preferences = node.getNode(MSOFFICE_PREFERENCES);
-    }
 
-    Node userPreferences;
-    if (!preferences.hasNode(userId)) {
-      userPreferences = preferences.addNode(userId, EXO_USER_PREFERENCES);
-    } else {
-      userPreferences = preferences.getNode(userId);
+      Node userPreferences;
+      if (!preferences.hasNode(userId)) {
+        userPreferences = preferences.addNode(userId, EXO_USER_PREFERENCES);
+      } else {
+        userPreferences = preferences.getNode(userId);
+      }
+      userPreferences.setProperty(PATH, path);
+      node.save();
+    } catch (AccessDeniedException e ) {
+      LOG.warn("Cannot add user preferences to the file. {}", e.getMessage());
     }
-    userPreferences.setProperty(PATH, path);
-    node.save();
+    
   }
 
   /**
