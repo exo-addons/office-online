@@ -39,20 +39,24 @@
 
   var getEditorButton = function(editorLink) {
     var label = message("OfficeonlineEditorClient.EditButtonTitle");
+    var iconClass = "uiIconEdit";
     if (editorLink.indexOf("&action=view") > -1) {
       label = message("OfficeonlineEditorClient.ViewButtonTitle");
+      iconClass = "uiIconView";
     }
     return "<li class='hidden-tabletL'><a href='" + editorLink + "' target='_blank'>"
-        + "<i class='uiIconEcmsOfficeOnlineOpen uiIconEcmsLightGray uiIconEdit'></i>" + label + "</a></li>";
+        + "<i class='uiIconEcmsOfficeOnlineOpen uiIconEcmsLightGray " + iconClass + "'></i>" + label + "</a></li>";
   };
 
   var getNoPreviewEditorButton = function(editorLink) {
     var label = message("OfficeonlineEditorClient.EditButtonTitle");
+    var iconClass = "uiIconEdit";
     if (editorLink.indexOf("&action=view") > -1) {
       label = message("OfficeonlineEditorClient.ViewButtonTitle");
+      iconClass = "uiIconView";
     }
     return "<a class='btn editInOfficeOnline hidden-tabletL' href='#' onclick='javascript:window.open(\"" + editorLink + "\");'>"
-        + "<i class='uiIconEcmsOfficeOnlineOpen uiIconEcmsLightGray uiIconEdit'></i>" + label + "</a>";
+        + "<i class='uiIconEcmsOfficeOnlineOpen uiIconEcmsLightGray " + iconClass + "'></i>" + label + "</a>";
   };
 
   /**
@@ -124,11 +128,14 @@
   var addEditorButtonToExplorer = function(editorLink) {
     var $button = $("#UIJCRExplorer #uiActionsBarContainer i.uiIconEcmsOfficeOnlineOpen");
     if (editorLink.indexOf("&action=view") > -1) {
-      $button.parent().text(message("OfficeonlineEditorClient.ViewButtonTitle"));
+     var buttonHtml = $button[0].outerHTML;
+     $button.parent().html(buttonHtml + " " + message("OfficeonlineEditorClient.ViewButtonTitle"));
+     $button = $("#UIJCRExplorer #uiActionsBarContainer i.uiIconEcmsOfficeOnlineOpen");     
+     $button.addClass("uiIconView");
     } else {
       $button.addClass("uiIconEdit");
     }
-
+    
     $button.closest("li").addClass("hidden-tabletL");
     var $noPreviewContainer = $("#UIJCRExplorer .navigationContainer.noPreview");
     if ($noPreviewContainer.length != 0) {
@@ -165,6 +172,69 @@
       $(".documentRefreshBanner .refreshBannerLink").click(function() {
         refreshPDFPreview();
       });
+    }
+  };
+  
+  var refreshActivityPreview = function(activityId, $banner) {
+    $banner.find(".refreshBannerContent")
+        .append("<div class='loading'><i class='uiLoadingIconSmall uiIconEcmsGray'></i></div>");
+    var $refreshLink = $banner.find(".refreshBannerLink");
+    $refreshLink.addClass("disabled");
+    $refreshLink.on('click', function() {
+      return false;
+    });
+    $refreshLink.attr("href", "#");
+    var $img = $("#Preview" + activityId + "-0 #MediaContent" + activityId + "-0 img");
+    if ($img.length !== 0) {
+      var src = $img.attr("src");
+      if (src.includes("version=")) {
+        src = src.substring(0, src.indexOf("version="));
+      }
+      var timestamp = new Date().getTime();
+
+      src += "version=oview_" + timestamp;
+      src += "&lastModified=" + timestamp;
+
+      $img.on('load', function() {
+        $banner.remove();
+      });
+      $img.attr("src", src);
+
+      // Hide banner when there no preview image
+      var $mediaContent = $("#Preview" + activityId + "-0 #MediaContent" + activityId + "-0");
+      var observer = new MutationObserver(function(mutations) {
+        mutations.forEach(function(mutation) {
+          if (mutation.attributeName === "class") {
+            var attributeValue = $(mutation.target).prop(mutation.attributeName);
+            if (attributeValue.includes("NoPreview")) {
+              log("Cannot load preview for activity " + activityId + ". Hiding refresh banner");
+              $banner.remove();
+            }
+          }
+        });
+      });
+      observer.observe($mediaContent[0], {
+        attributes : true
+      });
+    }
+  };
+  
+  var addRefreshBannerActivity = function(activityId) {
+    var $previewParent = $("#Preview" + activityId + "-0").parent();
+    // If there is no preview
+    if ($previewParent.length === 0 || $previewParent.find(".mediaContent.docTypeContent.NoPreview").length !== 0) {
+      return;
+    }
+    // If the activity contains only one preview
+    if ($previewParent.find("#Preview" + activityId + "-1").length === 0) {
+      if ($previewParent.find(".documentRefreshBanner").length === 0) {
+        $previewParent.prepend(getRefreshBanner());
+        var $banner = $previewParent.find(".documentRefreshBanner");
+        $(".documentRefreshBanner .refreshBannerLink").click(function() {
+          refreshActivityPreview(activityId, $banner);
+        });
+      }
+      log("Activity document: " + activityId + " has been updated");
     }
   };
 
@@ -311,6 +381,15 @@
     };
 
     this.initActivity = function(fileId, editorLink, activityId) {
+      log("Initialize activity " + activityId + " with document: " + fileId);
+      // Listen to document updates
+      store.subscribe(function() {
+        var state = store.getState();
+        if (state.type === DOCUMENT_SAVED && state.fileId === fileId) {
+          addRefreshBannerActivity(activityId);
+        }
+      });
+      subscribeDocument(fileId);
       if (editorLink) {
         $("#activityContainer" + activityId).find("div[id^='ActivityContextBox'] > .actionBar .statusAction.pull-left").append(
             getEditorButton(editorLink));
@@ -348,6 +427,16 @@
       log("Init preview called");
       $(clickSelector).click(function() {
         log("Initialize preview " + clickSelector + " of document: " + fileId);
+        // We set timeout here to avoid the case when the element is rendered but is going to be updated soon
+        setTimeout(function() {
+          store.subscribe(function() {
+            var state = store.getState();
+            if (state.type === DOCUMENT_SAVED && state.fileId === fileId) {
+              addRefreshBannerPDF();
+            }
+          });
+        }, 100);
+        subscribeDocument(fileId);
       });
       if (editorLink) {
         addEditorButtonToPreview(editorLink, clickSelector);

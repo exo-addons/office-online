@@ -437,7 +437,7 @@ public class WOPIService extends AbstractOfficeOnlineService {
           // actions in ECMS appear on it
           node.checkout();
         }
-        
+
         onSaved(config);
         // Remove properties from node
         node.setProperty(MSOFFICE_VERSION_OWNER, "");
@@ -566,7 +566,7 @@ public class WOPIService extends AbstractOfficeOnlineService {
     addHostCapabilitiesProperties(map);
     addUserMetadataProperties(map);
     addUserPermissionsProperties(map, node);
-    addFileURLProperties(map, node, config.getAccessToken(), config.getBaseUrl());
+    addFileURLProperties(map, node, config);
     addBreadcrumbProperties(map, node, config);
     return map;
   }
@@ -1024,7 +1024,7 @@ public class WOPIService extends AbstractOfficeOnlineService {
    */
   public boolean canEdit(Node node) {
     try {
-      if (node.isNodeType(NT_FILE)) {
+      if (node.isNodeType(NT_FILE) && isDocumentSupported(node) && PermissionUtil.canSetProperty(node)) {
         String actionUrl = null;
         // Check if WOPI has edit action for such file extension
         try {
@@ -1033,7 +1033,7 @@ public class WOPIService extends AbstractOfficeOnlineService {
         } catch (FileExtensionNotFoundException e) {
           LOG.error("Cannot get file extension from node: " + node.getUUID());
         }
-        return isDocumentSupported(node) && PermissionUtil.canSetProperty(node) && actionUrl != null;
+        return actionUrl != null;
       }
     } catch (RepositoryException e) {
       LOG.error("Cannot check file edit permissions", e);
@@ -1049,7 +1049,7 @@ public class WOPIService extends AbstractOfficeOnlineService {
    */
   public boolean canView(Node node) {
     try {
-      if (node.isNodeType(NT_FILE)) {
+      if (node.isNodeType(NT_FILE) && isDocumentSupported(node)) {
         String actionUrl = null;
         // Check if WOPI has edit action for such file extension
         try {
@@ -1058,7 +1058,7 @@ public class WOPIService extends AbstractOfficeOnlineService {
         } catch (FileExtensionNotFoundException e) {
           LOG.error("Cannot get file extension from node: " + node.getUUID());
         }
-        return isDocumentSupported(node) && actionUrl != null;
+        return actionUrl != null;
       }
     } catch (RepositoryException e) {
       LOG.error("Cannot check file view permissions", e);
@@ -1071,31 +1071,36 @@ public class WOPIService extends AbstractOfficeOnlineService {
    *
    * @param map the map
    * @param node the node
-   * @param accessToken the access token
-   * @param baseUrl the base url
+   * @param config the config
    * @throws RepositoryException the repository exception
    */
-  protected void addFileURLProperties(Map<String, Serializable> map,
-                                      Node node,
-                                      AccessToken accessToken,
-                                      String baseUrl) throws RepositoryException {
-    String explorerLink = explorerLink(node.getPath());
-    URI explorerUri = explorerUri(baseUrl, explorerLink);
+  protected void addFileURLProperties(Map<String, Serializable> map, Node node, EditorConfig config) throws RepositoryException {
+    Node symlink = null;
+    if (node.getPath().startsWith(usersPath)) {
+      // Shared document
+      if (!config.getUserId().equals(getUserId(node.getPath()))) {
+        symlink = getSymlink(node, config.getUserId());
+      }
+    }
+
+    String explorerLink = symlink != null ? explorerLink(symlink.getPath()) : explorerLink(node.getPath());
+    URI explorerUri = explorerUri(config.getBaseUrl(), explorerLink);
     if (explorerUri != null) {
       map.put(CLOSE_URL, explorerUri.toString());
       map.put(FILE_VERSION_URL, explorerUri.toString() + "&versions=true");
     }
-    String platformRestURL =
-                           new StringBuilder(baseUrl).append('/').append(PortalContainer.getCurrentRestContextName()).toString();
+    String platformRestURL = new StringBuilder(config.getBaseUrl()).append('/')
+                                                                   .append(PortalContainer.getCurrentRestContextName())
+                                                                   .toString();
 
     String downloadURL = new StringBuilder(platformRestURL).append("/officeonline/editor/content/")
                                                            .append(node.getUUID())
                                                            .append("?access_token=")
-                                                           .append(accessToken.getToken())
+                                                           .append(config.getAccessToken().getToken())
                                                            .toString();
     map.put(DOWNLOAD_URL, downloadURL);
-    String editLink = getEditorLink(node, baseUrl, EDIT_ACTION);
-    String viewLink = getEditorLink(node, baseUrl, VIEW_ACTION);
+    String editLink = getEditorLink(node, config.getBaseUrl(), EDIT_ACTION);
+    String viewLink = getEditorLink(node, config.getBaseUrl(), VIEW_ACTION);
     try {
       editLink = URLEncoder.encode(editLink, "UTF-8");
       viewLink = URLEncoder.encode(viewLink, "UTF-8");
