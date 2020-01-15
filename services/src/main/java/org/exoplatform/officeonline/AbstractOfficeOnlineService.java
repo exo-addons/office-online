@@ -46,79 +46,79 @@ import org.exoplatform.services.wcm.core.NodetypeConstant;
 public abstract class AbstractOfficeOnlineService implements Startable {
 
   /** The Constant LOG. */
-  protected static final Log             LOG                     = ExoLogger.getLogger(AbstractOfficeOnlineService.class);
+  protected static final Log             LOG                       = ExoLogger.getLogger(AbstractOfficeOnlineService.class);
 
   /** The Constant KEY_CACHE_NAME. */
-  public static final String             KEY_CACHE_NAME          = "officeonline.key.Cache".intern();
+  public static final String             KEY_CACHE_NAME            = "officeonline.key.Cache".intern();
 
   /** The Constant SECRET_KEY. */
-  protected static final String          SECRET_KEY              = "secret-key";
+  protected static final String          SECRET_KEY                = "secret-key";
 
   /** The Constant ALGORITHM. */
-  protected static final String          ALGORITHM               = "AES";
+  protected static final String          ALGORITHM                 = "AES";
 
   /** The Constant TOKEN_DELIMITER. */
-  protected static final String          TOKEN_DELIMITER         = "+";
+  protected static final String          TOKEN_DELIMITER           = "+";
 
   /** The Constant TOKEN_DELIMITER_PATTERN. */
-  protected static final String          TOKEN_DELIMITER_PATTERN = "\\+";
+  protected static final String          TOKEN_DELIMITER_PATTERN   = "\\+";
 
   /** The Constant TOKEN_EXPIRES. */
-  protected static final long            TOKEN_EXPIRES           = 30 * 60000;
+  protected static final long            TOKEN_EXPIRES             = 30 * 60000;
 
   /** The Constant JCR_CONTENT. */
-  protected static final String          JCR_CONTENT             = "jcr:content";
+  protected static final String          JCR_CONTENT               = "jcr:content";
 
   /** The Constant WOPITESTX. */
-  protected static final String          WOPITESTX               = "wopitestx";
+  protected static final String          WOPITESTX                 = "wopitestx";
 
   /** The Constant WOPITEST. */
-  protected static final String          WOPITEST                = "wopitest";
+  protected static final String          WOPITEST                  = "wopitest";
 
   /** The Constant JCR_DATA. */
-  protected static final String          JCR_DATA                = "jcr:data";
+  protected static final String          JCR_DATA                  = "jcr:data";
 
   /** The Constant EXO_LAST_MODIFIER. */
-  protected static final String          EXO_LAST_MODIFIER       = "exo:lastModifier";
+  protected static final String          EXO_LAST_MODIFIER         = "exo:lastModifier";
 
   /** The Constant EXO_LAST_MODIFIED_DATE. */
-  protected static final String          EXO_LAST_MODIFIED_DATE  = "exo:lastModifiedDate";
+  protected static final String          EXO_LAST_MODIFIED_DATE    = "exo:lastModifiedDate";
 
   /** The Constant EXO_DATE_MODIFIED. */
-  protected static final String          EXO_DATE_MODIFIED       = "exo:dateModified";
+  protected static final String          EXO_DATE_MODIFIED         = "exo:dateModified";
 
   /** The Constant JCR_LAST_MODIFIED. */
-  protected static final String          JCR_LAST_MODIFIED       = "jcr:lastModified";
+  protected static final String          JCR_LAST_MODIFIED         = "jcr:lastModified";
 
   /** The Constant MIX_VERSIONABLE. */
-  protected static final String          MIX_VERSIONABLE         = "mix:versionable";
+  protected static final String          MIX_VERSIONABLE           = "mix:versionable";
 
   /** The Constant EXO_OWNER. */
-  protected static final String          EXO_OWNER               = "exo:owner";
+  protected static final String          EXO_OWNER                 = "exo:owner";
 
   /** The Constant EXO_TITLE. */
-  protected static final String          EXO_TITLE               = "exo:title";
+  protected static final String          EXO_TITLE                 = "exo:title";
 
   /** The Constant EXO_PRIVILEGEABLE. */
-  protected static final String          EXO_PRIVILEGEABLE       = "exo:privilegeable";
+  protected static final String          EXO_PRIVILEGEABLE         = "exo:privilegeable";
 
   /** The Constant JCR_MIME_TYPE. */
-  protected static final String          JCR_MIME_TYPE           = "jcr:mimeType";
+  protected static final String          JCR_MIME_TYPE             = "jcr:mimeType";
 
   /** The Constant EXO_NAME. */
-  protected static final String          EXO_NAME                = "exo:name";
+  protected static final String          EXO_NAME                  = "exo:name";
 
   /** The Constant PATH. */
-  protected static final String          PATH                    = "path";
+  protected static final String          PATH                      = "path";
 
-  /** The Constant EXO_USER_PREFERENCES. */
-  protected static final String          EXO_USER_PREFERENCES    = "exo:userPreferences";
+  /** The Constant MSOFFICE_USER_PREFERENCES. */
+  protected static final String          MSOFFICE_USER_PREFERENCES = "msoffice:userPreferences";
 
   /** The Constant MSOFFICE_FILE. */
-  protected static final String          MSOFFICE_FILE           = "msoffice:file";
+  protected static final String          MSOFFICE_FILE             = "msoffice:file";
 
   /** The Constant MSOFFICE_PREFERENCES. */
-  protected static final String          MSOFFICE_PREFERENCES    = "msoffice:preferences";
+  protected static final String          MSOFFICE_PREFERENCES      = "msoffice:preferences";
 
   /** Cache of Editing documents. */
   protected final ExoCache<String, Key>  keyCache;
@@ -536,7 +536,7 @@ public abstract class AbstractOfficeOnlineService implements Startable {
 
     Node userPreferences;
     if (!preferences.hasNode(userId)) {
-      userPreferences = preferences.addNode(userId, EXO_USER_PREFERENCES);
+      userPreferences = preferences.addNode(userId, MSOFFICE_USER_PREFERENCES);
     } else {
       userPreferences = preferences.getNode(userId);
     }
