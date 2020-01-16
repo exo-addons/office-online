@@ -11,10 +11,12 @@ import java.net.URI;
 import java.net.URLEncoder;
 import java.security.Key;
 import java.security.NoSuchAlgorithmException;
+import java.util.Arrays;
 import java.util.Base64;
 import java.util.Calendar;
 import java.util.GregorianCalendar;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.stream.Collectors;
@@ -53,12 +55,15 @@ import org.exoplatform.officeonline.exception.WopiDiscoveryNotFoundException;
 import org.exoplatform.portal.config.UserACL;
 import org.exoplatform.services.cache.CacheService;
 import org.exoplatform.services.cache.ExoCache;
+import org.exoplatform.services.cms.BasePath;
 import org.exoplatform.services.cms.documents.DocumentService;
 import org.exoplatform.services.cms.documents.TrashService;
 import org.exoplatform.services.cms.jcrext.activity.ActivityCommonService;
+import org.exoplatform.services.cms.link.NodeFinder;
 import org.exoplatform.services.jcr.RepositoryService;
 import org.exoplatform.services.jcr.access.PermissionType;
 import org.exoplatform.services.jcr.ext.app.SessionProviderService;
+import org.exoplatform.services.jcr.ext.hierarchy.NodeHierarchyCreator;
 import org.exoplatform.services.jcr.impl.core.NodeImpl;
 import org.exoplatform.services.listener.ListenerService;
 import org.exoplatform.services.log.ExoLogger;
@@ -226,6 +231,9 @@ public class WOPIService extends AbstractOfficeOnlineService {
   /** The Constant EDITNEW_PARAM. */
   protected static final String      EDITNEW_PARAM                       = "&action=editnew";
 
+  /** The user drives paths in JCR. */
+  protected final String             usersPath;
+
   /** The trash service. */
   protected final TrashService       trashService;
 
@@ -256,6 +264,7 @@ public class WOPIService extends AbstractOfficeOnlineService {
   /** The documentTypePlugin. */
   protected DocumentTypePlugin       documentTypePlugin;
 
+
   /**
    * Instantiates a new WOPI service.
    *
@@ -275,8 +284,10 @@ public class WOPIService extends AbstractOfficeOnlineService {
                      CacheService cacheService,
                      UserACL userACL,
                      TrashService trashService,
+                     NodeHierarchyCreator hierarchyCreator,
+                     NodeFinder nodeFinder,
                      InitParams initParams) {
-    super(sessionProviders, jcrService, organization, documentService, cacheService, userACL);
+    super(sessionProviders, jcrService, organization, documentService, cacheService, userACL, nodeFinder);
     this.trashService = trashService;
     PropertiesParam tokenParam = initParams.getPropertiesParam(TOKEN_CONFIGURATION_PROPERTIES);
     String secretKey = tokenParam.getProperty(SECRET_KEY);
@@ -294,6 +305,8 @@ public class WOPIService extends AbstractOfficeOnlineService {
 
     PropertiesParam wopiFilesUrlParam = initParams.getPropertiesParam(WOPI_CONFIGURATION_PROPERTIES);
     wopiUrl = wopiFilesUrlParam.getProperty(WOPI_URL);
+
+    usersPath = hierarchyCreator.getJcrPath(BasePath.CMS_USERS_PATH);
   }
 
   /**
@@ -398,7 +411,7 @@ public class WOPIService extends AbstractOfficeOnlineService {
     addUserMetadataProperties(map);
     addUserPermissionsProperties(map, node);
     addFileURLProperties(map, node, config.getAccessToken(), config.getBaseUrl());
-    addBreadcrumbProperties(map, node, config.getBaseUrl());
+    addBreadcrumbProperties(map, node, config);
     return map;
   }
 
@@ -609,7 +622,7 @@ public class WOPIService extends AbstractOfficeOnlineService {
     try {
       parent = (NodeImpl) node.getParent();
     } catch (AccessDeniedException e) {
-      LOG.warn("Cannot get access to the parent node ", e);
+      LOG.warn("Cannot get access to the parent node ", e.getMessage());
       return false;
     }
     return parent.hasPermission(PermissionType.READ) && parent.hasPermission(PermissionType.ADD_NODE)
@@ -943,18 +956,32 @@ public class WOPIService extends AbstractOfficeOnlineService {
    * @param node the node
    * @param platformUrl the platform url
    */
-  protected void addBreadcrumbProperties(Map<String, Serializable> map, Node node, String platformUrl) {
+  protected void addBreadcrumbProperties(Map<String, Serializable> map, Node node, EditorConfig config) {
     // TODO: replace by real values
     map.put(BREADCRUMB_BRAND_NAME, brandName);
-    map.put(BREADCRUMB_BRAND_URL, platformUrl);
+    map.put(BREADCRUMB_BRAND_URL, config.getBaseUrl());
+
     try {
-      Node parent = node.getParent();
-      String url = explorerUri(platformUrl, explorerLink(parent.getPath())).toString();
+      Node parent = null;
+      if (node.getPath().startsWith(usersPath)) {
+        // Shared document
+        if (!config.getUserId().equals(getUserId(node.getPath()))) {
+          Node symlink = getSymlink(node, config.getUserId());
+          if (symlink != null) {
+            parent = symlink.getParent();
+          }
+        }
+      }
+      if (parent == null) {
+        parent = node.getParent();
+      }
+
       if (parent.hasProperty(EXO_TITLE)) {
         map.put(BREADCRUMB_FOLDER_NAME, parent.getProperty(EXO_TITLE).getString());
       } else if (parent.hasProperty(EXO_NAME)) {
         map.put(BREADCRUMB_FOLDER_NAME, parent.getProperty(EXO_NAME).getString());
       }
+      String url = explorerUri(config.getBaseUrl(), explorerLink(parent.getPath())).toString();
       map.put(BREADCRUMB_FOLDER_URL, url);
     } catch (RepositoryException e) {
       LOG.error("Couldn't add breadcrump properties:", e);
@@ -1393,6 +1420,21 @@ public class WOPIService extends AbstractOfficeOnlineService {
     public void setFileExtensions(Map<String, String> fileExtensions) {
       this.fileExtensions = fileExtensions;
     }
+  }
+
+  /**
+   * Gets userId from node path.
+   * 
+   * @param path the node path
+   * @return the userId
+   */
+  protected String getUserId(String path) {
+    List<String> elems = Arrays.asList(path.split("/"));
+    int position = 2;
+    while (elems.get(position).endsWith("_")) {
+      position++;
+    }
+    return elems.get(position);
   }
 
 }
