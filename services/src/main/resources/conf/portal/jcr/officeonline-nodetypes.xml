@@ -18,9 +18,57 @@
   02110-1301 USA, or see the FSF site: http://www.fsf.org.
 -->
 <nodeTypes xmlns:nt="http://www.jcp.org/jcr/nt/1.0" xmlns:mix="http://www.jcp.org/jcr/mix/1.0"
-  xmlns:jcr="http://www.jcp.org/jcr/1.0"
-  xmlns:exo="http://www.exoplatform.com/jcr/exo/1.0"
+  xmlns:jcr="http://www.jcp.org/jcr/1.0" xmlns:exo="http://www.exoplatform.com/jcr/exo/1.0"
   xmlns:msoffice="http://www.exoplatform.com/jcr/officeonline/1.0">
+
+
+  <nodeType name="msoffice:filePreferences" isMixin="false" hasOrderableChildNodes="true" primaryItemName="">
+    <supertypes>
+      <supertype>nt:base</supertype>
+    </supertypes>
+    <propertyDefinitions>
+      <propertyDefinition name="*" requiredType="Undefined" autoCreated="false" mandatory="false"
+        onParentVersion="COPY" protected="false" multiple="false">
+        <valueConstraints />
+      </propertyDefinition>
+      <propertyDefinition name="*" requiredType="Undefined" autoCreated="false" mandatory="false"
+        onParentVersion="COPY" protected="false" multiple="true">
+        <valueConstraints />
+      </propertyDefinition>
+    </propertyDefinitions>
+    <childNodeDefinitions>
+      <childNodeDefinition name="*" defaultPrimaryType="" autoCreated="false" mandatory="false"
+        onParentVersion="VERSION" protected="false" sameNameSiblings="false">
+        <requiredPrimaryTypes>
+          <requiredPrimaryType>nt:base</requiredPrimaryType>
+        </requiredPrimaryTypes>
+      </childNodeDefinition>
+    </childNodeDefinitions>
+  </nodeType>
+
+  <nodeType name="msoffice:userPreferences" isMixin="false" hasOrderableChildNodes="true" primaryItemName="">
+    <supertypes>
+      <supertype>nt:base</supertype>
+    </supertypes>
+    <propertyDefinitions>
+      <propertyDefinition name="*" requiredType="Undefined" autoCreated="false" mandatory="false"
+        onParentVersion="COPY" protected="false" multiple="false">
+        <valueConstraints />
+      </propertyDefinition>
+      <propertyDefinition name="*" requiredType="Undefined" autoCreated="false" mandatory="false"
+        onParentVersion="COPY" protected="false" multiple="true">
+        <valueConstraints />
+      </propertyDefinition>
+    </propertyDefinitions>
+    <childNodeDefinitions>
+      <childNodeDefinition name="*" defaultPrimaryType="" autoCreated="false" mandatory="false"
+        onParentVersion="VERSION" protected="false" sameNameSiblings="false">
+        <requiredPrimaryTypes>
+          <requiredPrimaryType>nt:base</requiredPrimaryType>
+        </requiredPrimaryTypes>
+      </childNodeDefinition>
+    </childNodeDefinitions>
+  </nodeType>
 
   <nodeType name="msoffice:file" isMixin="true" hasOrderableChildNodes="false">
     <supertypes>
@@ -37,10 +85,10 @@
       </propertyDefinition>
     </propertyDefinitions>
     <childNodeDefinitions>
-      <childNodeDefinition name="msoffice:preferences" defaultPrimaryType="exo:filePreferences"
+      <childNodeDefinition name="msoffice:preferences" defaultPrimaryType="msoffice:filePreferences"
         autoCreated="false" mandatory="false" onParentVersion="VERSION" protected="false" sameNameSiblings="false">
         <requiredPrimaryTypes>
-          <requiredPrimaryType>exo:filePreferences</requiredPrimaryType>
+          <requiredPrimaryType>msoffice:filePreferences</requiredPrimaryType>
         </requiredPrimaryTypes>
       </childNodeDefinition>
     </childNodeDefinitions>
