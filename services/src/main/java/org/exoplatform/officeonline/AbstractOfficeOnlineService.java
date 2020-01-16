@@ -1,4 +1,3 @@
-
 package org.exoplatform.officeonline;
 
 import java.io.InputStream;
@@ -38,6 +37,10 @@ import org.exoplatform.services.log.ExoLogger;
 import org.exoplatform.services.log.Log;
 import org.exoplatform.services.organization.OrganizationService;
 import org.exoplatform.services.organization.User;
+import org.exoplatform.services.security.Authenticator;
+import org.exoplatform.services.security.ConversationState;
+import org.exoplatform.services.security.Identity;
+import org.exoplatform.services.security.IdentityRegistry;
 import org.exoplatform.services.wcm.core.NodetypeConstant;
 
 /**
@@ -138,11 +141,17 @@ public abstract class AbstractOfficeOnlineService implements Startable {
   /** The document service. */
   protected final DocumentService        documentService;
 
+  /** The identity registry. */
+  protected final IdentityRegistry       identityRegistry;
+
+  /** The authenticator. */
+  protected final Authenticator          authenticator;
+
   /** The node finder. */
   protected NodeFinder                   nodeFinder;
 
   /**
-   * Instantiates a new office online editor service.
+   * Instantiates a new abstract office online service.
    *
    * @param sessionProviders the session providers
    * @param jcrService the jcr service
@@ -150,6 +159,8 @@ public abstract class AbstractOfficeOnlineService implements Startable {
    * @param documentService the document service
    * @param cacheService the cache service
    * @param userACL the user ACL
+   * @param identityRegistry the identity registry
+   * @param authenticator the authenticator
    * @param nodeFinder the node finder
    */
   public AbstractOfficeOnlineService(SessionProviderService sessionProviders,
@@ -158,6 +169,8 @@ public abstract class AbstractOfficeOnlineService implements Startable {
                                      DocumentService documentService,
                                      CacheService cacheService,
                                      UserACL userACL,
+                                     IdentityRegistry identityRegistry,
+                                     Authenticator authenticator,
                                      NodeFinder nodeFinder) {
     this.sessionProviders = sessionProviders;
     this.jcrService = jcrService;
@@ -165,8 +178,9 @@ public abstract class AbstractOfficeOnlineService implements Startable {
     this.documentService = documentService;
     this.keyCache = cacheService.getCacheInstance(KEY_CACHE_NAME);
     this.userACL = userACL;
+    this.identityRegistry = identityRegistry;
+    this.authenticator = authenticator;
     this.nodeFinder = nodeFinder;
-
   }
 
   /**
@@ -514,6 +528,64 @@ public abstract class AbstractOfficeOnlineService implements Startable {
     } else {
       throw new OfficeOnlineException("Decrypted token doesn't contain all required parameters");
     }
+  }
+
+  /**
+   * Sets ConversationState by userId.
+   *
+   * @param userId the userId
+   * @return true if successful, false when the user is not found
+   */
+  @SuppressWarnings("deprecation")
+
+  protected boolean setUserConvoState(String userId) {
+    Identity userIdentity = userIdentity(userId);
+    if (userIdentity != null) {
+      ConversationState state = new ConversationState(userIdentity);
+      // Keep subject as attribute in ConversationState.
+      state.setAttribute(ConversationState.SUBJECT, userIdentity.getSubject());
+      ConversationState.setCurrent(state);
+      SessionProvider userProvider = new SessionProvider(state);
+      sessionProviders.setSessionProvider(null, userProvider);
+      return true;
+    }
+    LOG.warn("User identity not found " + userId + " for setting conversation state");
+    return false;
+  }
+
+  /**
+   * Restores the conversation state.
+   * 
+   * @param contextState the contextState
+   * @param contextProvider the contextProvider
+   */
+  protected void restoreConvoState(ConversationState contextState, SessionProvider contextProvider) {
+    ConversationState.setCurrent(contextState);
+    sessionProviders.setSessionProvider(null, contextProvider);
+  }
+
+  /**
+   * Find or create user identity.
+   *
+   * @param userId the user id
+   * @return the identity can be null if not found and cannot be created via
+   *         current authenticator
+   */
+  protected Identity userIdentity(String userId) {
+    Identity userIdentity = identityRegistry.getIdentity(userId);
+    if (userIdentity == null) {
+      // We create user identity by authenticator, but not register it in the
+      // registry
+      try {
+        if (LOG.isDebugEnabled()) {
+          LOG.debug("User identity not registered, trying to create it for: " + userId);
+        }
+        userIdentity = authenticator.createIdentity(userId);
+      } catch (Exception e) {
+        LOG.warn("Failed to create user identity: " + userId, e);
+      }
+    }
+    return userIdentity;
   }
 
   /**
