@@ -77,8 +77,8 @@
                     <field name="extension">
                       <string>.docx</string>
                     </field>
-                    <field name="label">
-                      <string>MSDocument</string>
+                    <field name="name">
+                      <string>MicrosoftBlankWordOpenXMLDocument</string>
                     </field>
                     <field name="mimeType">
                       <string>application/vnd.openxmlformats-officedocument.wordprocessingml.document</string>
@@ -90,8 +90,8 @@
                     <field name="extension">
                       <string>.xlsx</string>
                     </field>
-                    <field name="label">
-                      <string>MSSpreadsheet</string>
+                    <field name="name">
+                      <string>MicrosoftBlankExcelOpenXMLDocument</string>
                     </field>
                     <field name="mimeType">
                       <string>application/vnd.openxmlformats-officedocument.spreadsheetml.sheet</string>
@@ -103,8 +103,8 @@
                     <field name="extension">
                       <string>.pptx</string>
                     </field>
-                    <field name="label">
-                      <string>MSPresentation</string>
+                    <field name="name">
+                      <string>MicrosoftBlankPowerPointOpenXMLDocument</string>
                     </field>
                     <field name="mimeType">
                       <string>application/vnd.openxmlformats-officedocument.presentationml.presentation</string>
@@ -112,9 +112,6 @@
                   </object>
                 </value>
               </collection>
-            </field>
-            <field name="provider">
-              <string>officeonline</string>
             </field>
           </object>
         </object-param>
@@ -131,12 +128,6 @@
       <set-method>addDocumentEditorPlugin</set-method>
       <type>org.exoplatform.officeonline.documents.OfficeOnlineNewDocumentEditorPlugin</type>
       <description>The document editor plugin</description>
-      <init-params>
-        <value-param>
-          <name>provider</name>
-          <value>officeonline</value>
-        </value-param>
-      </init-params>
     </component-plugin>
   </external-component-plugins>
   

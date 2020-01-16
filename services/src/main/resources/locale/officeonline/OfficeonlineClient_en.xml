@@ -28,9 +28,9 @@
   <UINewDocumentForm>
     <label>
       <option>
-        <MSDocument>Microsoft Word Document (*.docx) *</MSDocument>
-        <MSSpreadsheet>Microsoft Excel Workbook (*.xlsx) *</MSSpreadsheet>
-        <MSPresentation>Microsoft PowerPoint Presentation *</MSPresentation>
+        <MicrosoftBlankWordOpenXMLDocument>Microsoft Word Document (*.docx) *</MicrosoftBlankWordOpenXMLDocument>
+        <MicrosoftBlankExcelOpenXMLDocument>Microsoft Excel Workbook (*.xlsx) *</MicrosoftBlankExcelOpenXMLDocument>
+        <MicrosoftBlankPowerPointOpenXMLDocument>Microsoft PowerPoint Presentation *</MicrosoftBlankPowerPointOpenXMLDocument>
       </option>
     </label>
   </UINewDocumentForm>

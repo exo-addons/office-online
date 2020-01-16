@@ -10,6 +10,7 @@ import org.exoplatform.container.xml.InitParams;
 import org.exoplatform.container.xml.ObjectParameter;
 import org.exoplatform.services.cms.documents.DocumentService;
 import org.exoplatform.services.cms.documents.DocumentTemplate;
+import org.exoplatform.services.cms.documents.NewDocumentEditorPlugin;
 import org.exoplatform.services.cms.documents.NewDocumentTemplatePlugin;
 import org.exoplatform.services.log.ExoLogger;
 import org.exoplatform.services.log.Log;
@@ -29,9 +30,6 @@ public class OfficeOnlineNewDocumentTemplatePlugin extends BaseComponentPlugin i
   /** The document types. */
   protected List<DocumentTemplate> templates                        = Collections.emptyList();
 
-  /** The provider. */
-  protected String                 provider;
-
   /** The document service. */
   protected final DocumentService  documentService;
 
@@ -47,22 +45,11 @@ public class OfficeOnlineNewDocumentTemplatePlugin extends BaseComponentPlugin i
       if (obj != null && DocumentService.DocumentTemplatesConfig.class.isAssignableFrom(obj.getClass())) {
         DocumentService.DocumentTemplatesConfig config = DocumentService.DocumentTemplatesConfig.class.cast(obj);
         this.templates = config.getTemplates();
-        this.provider = config.getProvider();
       } else {
         LOG.error("The document templates are not set");
       }
     }
     this.documentService = documentService;
-  }
-
-  /**
-   * Gets the provider.
-   *
-   * @return the provider
-   */
-  @Override
-  public String getProvider() {
-    return provider;
   }
 
   /**
@@ -88,6 +75,20 @@ public class OfficeOnlineNewDocumentTemplatePlugin extends BaseComponentPlugin i
   public Node createDocument(Node parent, String title, DocumentTemplate template) throws Exception {
     LOG.debug("Creating new document {} from template {}", title, template);
     return documentService.createDocumentFromTemplate(parent, title, template);
+  }
+
+  @Override
+  public DocumentTemplate getTemplate(String name) {
+    return templates.stream().filter(t -> t.getName().equals(name)).findFirst().get();
+  }
+
+  @Override
+  public NewDocumentEditorPlugin getEditor() {
+    return documentService.getRegisteredEditorPlugins()
+                   .stream()
+                   .filter(plugin -> plugin.getProviderName().equals(OfficeOnlineNewDocumentEditorPlugin.PROVIDER_NAME))
+                   .findAny()
+                   .orElse(null);
   }
 
 }
