@@ -5,7 +5,9 @@ import java.io.InputStream;
 import java.io.Serializable;
 import java.io.UnsupportedEncodingException;
 import java.net.URI;
+import java.net.URLDecoder;
 import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.security.Key;
 import java.security.NoSuchAlgorithmException;
 import java.util.Arrays;
@@ -956,7 +958,13 @@ public class WOPIService extends AbstractOfficeOnlineService {
    * @throws RepositoryException the repository exception
    */
   protected void addRequiredProperties(Map<String, Serializable> map, Node node) throws RepositoryException {
-    map.put(BASE_FILE_NAME, node.getProperty(EXO_TITLE).getString());
+    String fileName = node.getProperty(EXO_TITLE).getString();
+    try {
+      fileName = URLDecoder.decode(fileName, StandardCharsets.UTF_8.name());
+    } catch (UnsupportedEncodingException e) {
+      LOG.warn("Cannot decode filename. {}", e.getMessage());
+    }
+    map.put(BASE_FILE_NAME, fileName);
     map.put(OWNER_ID, node.getProperty(EXO_OWNER).getString());
     map.put(SIZE, getSize(node));
     map.put(USER_ID, ConversationState.getCurrent().getIdentity().getUserId());
