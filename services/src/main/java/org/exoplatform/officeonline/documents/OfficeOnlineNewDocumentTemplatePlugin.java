@@ -79,7 +79,7 @@ public class OfficeOnlineNewDocumentTemplatePlugin extends BaseComponentPlugin i
 
   @Override
   public DocumentTemplate getTemplate(String name) {
-    return templates.stream().filter(t -> t.getName().equals(name)).findFirst().get();
+    return templates.stream().filter(t -> t.getName().equals(name)).findAny().orElse(null);
   }
 
   @Override
