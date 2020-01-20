@@ -1,4 +1,3 @@
-
 package org.exoplatform.officeonline;
 
 import java.io.IOException;
@@ -6,7 +5,9 @@ import java.io.InputStream;
 import java.io.Serializable;
 import java.io.UnsupportedEncodingException;
 import java.net.URI;
+import java.net.URLDecoder;
 import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.security.Key;
 import java.security.NoSuchAlgorithmException;
 import java.util.Arrays;
@@ -17,6 +18,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.stream.Collectors;
 
 import javax.crypto.KeyGenerator;
@@ -77,214 +79,222 @@ import org.exoplatform.services.wcm.utils.WCMCoreUtils;
 import org.exoplatform.webui.application.WebuiRequestContext;
 import org.exoplatform.webui.application.portlet.PortletRequestContext;
 
+// TODO: Auto-generated Javadoc
 /**
  * The Class WOPIService.
  */
 public class WOPIService extends AbstractOfficeOnlineService {
 
   /** The Constant LOG. */
-  protected static final Log         LOG                                 = ExoLogger.getLogger(WOPIService.class);
+  protected static final Log                                  LOG                                 =
+                                                                  ExoLogger.getLogger(WOPIService.class);
 
   /** The Constant MSOFFICE_VERSION_OWNER. */
-  protected static final String      MSOFFICE_VERSION_OWNER              = "msoffice:versionOwner";
+  protected static final String                               MSOFFICE_VERSION_OWNER              = "msoffice:versionOwner";
 
   /** The Constant JCR_FROZEN_NODE. */
-  protected static final String      JCR_FROZEN_NODE                     = "jcr:frozenNode";
+  protected static final String                               JCR_FROZEN_NODE                     = "jcr:frozenNode";
 
   /** The Constant NT_RESOURCE. */
-  protected static final String      NT_RESOURCE                         = "nt:resource";
+  protected static final String                               NT_RESOURCE                         = "nt:resource";
 
   /** The Constant NT_FILE. */
-  protected static final String      NT_FILE                             = "nt:file";
+  protected static final String                               NT_FILE                             = "nt:file";
 
   /** The Constant MSOFFICE_FILE. */
-  protected static final String      MSOFFICE_FILE                       = "msoffice:file";
+  protected static final String                               MSOFFICE_FILE                       = "msoffice:file";
 
   /** The Constant MSOFFICE_IS_EDITOR_VERSION. */
-  protected static final String      MSOFFICE_IS_EDITOR_VERSION          = "msoffice:isEditorVersion";
+  protected static final String                               MSOFFICE_IS_EDITOR_VERSION          = "msoffice:isEditorVersion";
 
   /** The Constant BASE_FILE_NAME. */
-  protected static final String      BASE_FILE_NAME                      = "BaseFileName";
+  protected static final String                               BASE_FILE_NAME                      = "BaseFileName";
 
   /** The Constant DEFAULT_FILENAME. */
-  protected static final String      DEFAULT_FILENAME                    = "Untitled";
+  protected static final String                               DEFAULT_FILENAME                    = "Untitled";
 
   /** The Constant OWNER_ID. */
-  protected static final String      OWNER_ID                            = "OwnerId";
+  protected static final String                               OWNER_ID                            = "OwnerId";
 
   /** The Constant FILES_ENDPOINT. */
-  protected static final String      FILES_ENDPOINT                      = "/wopi/files/";
+  protected static final String                               FILES_ENDPOINT                      = "/wopi/files/";
 
   /** The Constant SIZE. */
-  protected static final String      SIZE                                = "Size";
+  protected static final String                               SIZE                                = "Size";
 
   /** The Constant USER_ID. */
-  protected static final String      USER_ID                             = "UserId";
+  protected static final String                               USER_ID                             = "UserId";
 
   /** The Constant VERSION. */
-  protected static final String      VERSION                             = "Version";
+  protected static final String                               VERSION                             = "Version";
 
   /** The Constant BREADCRUMB_BRAND_NAME. */
-  protected static final String      BREADCRUMB_BRAND_NAME               = "BreadcrumbBrandName";
+  protected static final String                               BREADCRUMB_BRAND_NAME               = "BreadcrumbBrandName";
 
   /** The Constant BREADCRUMB_BRAND_URL. */
-  protected static final String      BREADCRUMB_BRAND_URL                = "BreadcrumbBrandUrl";
+  protected static final String                               BREADCRUMB_BRAND_URL                = "BreadcrumbBrandUrl";
 
   /** The Constant BREADCRUMB_FOLDER_NAME. */
-  protected static final String      BREADCRUMB_FOLDER_NAME              = "BreadcrumbFolderName";
+  protected static final String                               BREADCRUMB_FOLDER_NAME              = "BreadcrumbFolderName";
 
   /** The Constant BREADCRUMB_FOLDER_URL. */
-  protected static final String      BREADCRUMB_FOLDER_URL               = "BreadcrumbFolderUrl";
+  protected static final String                               BREADCRUMB_FOLDER_URL               = "BreadcrumbFolderUrl";
 
   /** The Constant CLOSE_URL. */
-  protected static final String      CLOSE_URL                           = "CloseUrl";
+  protected static final String                               CLOSE_URL                           = "CloseUrl";
 
   /** The Constant DOWNLOAD_URL. */
-  protected static final String      DOWNLOAD_URL                        = "DownloadUrl";
+  protected static final String                               DOWNLOAD_URL                        = "DownloadUrl";
 
   /** The Constant FILE_URL. */
-  protected static final String      FILE_URL                            = "FileUrl";
+  protected static final String                               FILE_URL                            = "FileUrl";
 
   /** The Constant FILE_VERSION_URL. */
-  protected static final String      FILE_VERSION_URL                    = "FileVersionUrl";
+  protected static final String                               FILE_VERSION_URL                    = "FileVersionUrl";
 
   /** The Constant HOST_EDIT_URL. */
-  protected static final String      HOST_EDIT_URL                       = "HostEditUrl";
+  protected static final String                               HOST_EDIT_URL                       = "HostEditUrl";
 
   /** The Constant HOST_VIEW_URL. */
-  protected static final String      HOST_VIEW_URL                       = "HostViewUrl";
+  protected static final String                               HOST_VIEW_URL                       = "HostViewUrl";
 
   /** The Constant SIGNOUT_URL. */
-  protected static final String      SIGNOUT_URL                         = "SignoutUrl";
+  protected static final String                               SIGNOUT_URL                         = "SignoutUrl";
 
   /** The Constant SUPPORTS_EXTENDED_LOCK_LENGTH. */
-  protected static final String      SUPPORTS_EXTENDED_LOCK_LENGTH       = "SupportsExtendedLockLength";
+  protected static final String                               SUPPORTS_EXTENDED_LOCK_LENGTH       = "SupportsExtendedLockLength";
 
   /** The Constant SUPPORTS_GET_LOCK. */
-  protected static final String      SUPPORTS_GET_LOCK                   = "SupportsGetLock";
+  protected static final String                               SUPPORTS_GET_LOCK                   = "SupportsGetLock";
 
   /** The Constant SUPPORTS_LOCKS. */
-  protected static final String      SUPPORTS_LOCKS                      = "SupportsLocks";
+  protected static final String                               SUPPORTS_LOCKS                      = "SupportsLocks";
 
   /** The Constant SUPPORTS_RENAME. */
-  protected static final String      SUPPORTS_RENAME                     = "SupportsRename";
+  protected static final String                               SUPPORTS_RENAME                     = "SupportsRename";
 
   /** The Constant SUPPORTS_UPDATE. */
-  protected static final String      SUPPORTS_UPDATE                     = "SupportsUpdate";
+  protected static final String                               SUPPORTS_UPDATE                     = "SupportsUpdate";
 
   /** The Constant SUPPORTS_DELETE_FILE. */
-  protected static final String      SUPPORTS_DELETE_FILE                = "SupportsDeleteFile";
+  protected static final String                               SUPPORTS_DELETE_FILE                = "SupportsDeleteFile";
 
   /** The Constant SUPPORTS_USER_INFO. */
-  protected static final String      SUPPORTS_USER_INFO                  = "SupportsUserInfo";
+  protected static final String                               SUPPORTS_USER_INFO                  = "SupportsUserInfo";
 
   /** The Constant SUPPORTED_SHARE_URL_TYPES. */
-  protected static final String      SUPPORTED_SHARE_URL_TYPES           = "SupportedShareUrlTypes";
+  protected static final String                               SUPPORTED_SHARE_URL_TYPES           = "SupportedShareUrlTypes";
 
   /** The Constant IS_ANONYMOUS_USER. */
-  protected static final String      IS_ANONYMOUS_USER                   = "IsAnonymousUser";
+  protected static final String                               IS_ANONYMOUS_USER                   = "IsAnonymousUser";
 
   /** The Constant USER_INFO. */
-  protected static final String      USER_INFO                           = "UserInfo";
+  protected static final String                               USER_INFO                           = "UserInfo";
 
   /** The Constant LICENSE_CHECK_FOR_EDIT_IS_ENABLED. */
-  protected static final String      LICENSE_CHECK_FOR_EDIT_IS_ENABLED   = "LicenseCheckForEditIsEnabled";
+  protected static final String                               LICENSE_CHECK_FOR_EDIT_IS_ENABLED   =
+                                                                                                "LicenseCheckForEditIsEnabled";
 
   /** The Constant USER_FRIENDLY_NAME. */
-  protected static final String      USER_FRIENDLY_NAME                  = "UserFriendlyName";
+  protected static final String                               USER_FRIENDLY_NAME                  = "UserFriendlyName";
 
   /** The Constant PLACEHOLDER_WOPISRC. */
-  protected static final String      PLACEHOLDER_WOPISRC                 = "&wopisrc=";
+  protected static final String                               PLACEHOLDER_WOPISRC                 = "&wopisrc=";
 
   /** The Constant PLACEHOLDER_DC_LLCC. */
-  protected static final String      PLACEHOLDER_DC_LLCC                 = "&DC_LLCC=";
+  protected static final String                               PLACEHOLDER_DC_LLCC                 = "&DC_LLCC=";
 
   /** The Constant PLACEHOLDER_UI_LLCC. */
-  protected static final String      PLACEHOLDER_UI_LLCC                 = "&UI_LLCC=";
+  protected static final String                               PLACEHOLDER_UI_LLCC                 = "&UI_LLCC=";
 
   /** The Constant SHARE_URL. */
-  protected static final String      SHARE_URL                           = "ShareUrl";
+  protected static final String                               SHARE_URL                           = "ShareUrl";
 
   /** The Constant SHARE_URL_READ_ONLY. */
-  protected static final String      SHARE_URL_READ_ONLY                 = "ReadOnly";
+  protected static final String                               SHARE_URL_READ_ONLY                 = "ReadOnly";
 
   /** The Constant SHARE_URL_READ_WRITE. */
-  protected static final String      SHARE_URL_READ_WRITE                = "ReadWrite";
+  protected static final String                               SHARE_URL_READ_WRITE                = "ReadWrite";
 
   /** The Constant TOKEN_CONFIGURATION_PROPERTIES. */
-  protected static final String      TOKEN_CONFIGURATION_PROPERTIES      = "token-configuration";
+  protected static final String                               TOKEN_CONFIGURATION_PROPERTIES      = "token-configuration";
 
   /** The Constant BREADCRUMB_CONFIGURATION_PROPERTIES. */
-  protected static final String      BREADCRUMB_CONFIGURATION_PROPERTIES = "breadcrumb-configuration";
+  protected static final String                               BREADCRUMB_CONFIGURATION_PROPERTIES = "breadcrumb-configuration";
 
   /** The Constant WOPI_CONFIGURATION_PROPERTIES. */
-  protected static final String      WOPI_CONFIGURATION_PROPERTIES       = "wopi-configuration";
+  protected static final String                               WOPI_CONFIGURATION_PROPERTIES       = "wopi-configuration";
 
   /** The Constant WOPI_URL. */
-  protected static final String      WOPI_URL                            = "wopi-url";
+  protected static final String                               WOPI_URL                            = "wopi-url";
 
   /** The Constant BRAND_NAME. */
-  protected static final String      BRAND_NAME                          = "brand-name";
+  protected static final String                               BRAND_NAME                          = "brand-name";
 
   /** The Constant MAX_FILENAME_LENGHT. */
-  protected static final int         MAX_FILENAME_LENGHT                 = 510;
+  protected static final int                                  MAX_FILENAME_LENGHT                 = 510;
 
   /** The Constant USERIONFO_CACHE_NAME. */
-  public static final String         USERINFO_CACHE_NAME                 = "officeonline.userinfo.Cache".intern();
+  public static final String                                  USERINFO_CACHE_NAME                 =
+                                                                                  "officeonline.userinfo.Cache".intern();
 
   /** The Constant EDIT_ACTION. */
-  public static final String         EDIT_ACTION                         = "edit";
+  public static final String                                  EDIT_ACTION                         = "edit";
 
   /** The Constant EDIT_ACTION. */
-  public static final String         EDITNEW_ACTION                      = "editnew";
+  public static final String                                  EDITNEW_ACTION                      = "editnew";
 
   /** The Constant VIEW_ACTION. */
-  public static final String         VIEW_ACTION                         = "view";
+  public static final String                                  VIEW_ACTION                         = "view";
 
   /** The Constant VIEW_PARAM. */
-  protected static final String      VIEW_PARAM                          = "&action=view";
+  protected static final String                               VIEW_PARAM                          = "&action=view";
 
   /** The Constant EDIT_PARAM. */
-  protected static final String      EDIT_PARAM                          = "&action=edit";
+  protected static final String                               EDIT_PARAM                          = "&action=edit";
 
   /** The Constant EDITNEW_PARAM. */
-  protected static final String      EDITNEW_PARAM                       = "&action=editnew";
+  protected static final String                               EDITNEW_PARAM                       = "&action=editnew";
 
   /** The Constant VERSION_TIMEOUT. */
-  protected static final long        VERSION_TIMEOUT                     = 600000;
+  protected static final long                                 VERSION_TIMEOUT                     = 600000;
 
   /** The user drives paths in JCR. */
-  protected final String             usersPath;
+  protected final String                                      usersPath;
 
   /** The trash service. */
-  protected final TrashService       trashService;
+  protected final TrashService                                trashService;
 
   /** The discovery plugin. */
-  protected WOPIDiscoveryPlugin      discoveryPlugin;
+  protected WOPIDiscoveryPlugin                               discoveryPlugin;
 
   /** The lock manager. */
-  protected WOPILockManagerPlugin    lockManager;
+  protected WOPILockManagerPlugin                             lockManager;
 
   /** The brand name. */
-  protected String                   brandName;
+  protected String                                            brandName;
 
   /** The wopi files url. */
-  protected String                   wopiUrl;
+  protected String                                            wopiUrl;
 
   /** The platform scheme. */
-  protected String                   platformScheme;
+  protected String                                            platformScheme;
 
   /** The platform host. */
-  protected String                   platformHost;
+  protected String                                            platformHost;
 
   /** The platform port. */
-  protected int                      platformPort;
+  protected int                                               platformPort;
 
   /** The user info cache. */
-  protected ExoCache<String, String> userInfoCache;
+  protected ExoCache<String, String>                          userInfoCache;
 
   /** The documentTypePlugin. */
-  protected DocumentTypePlugin       documentTypePlugin;
+  protected DocumentTypePlugin                                documentTypePlugin;
+
+  /** The listeners. */
+  protected final ConcurrentLinkedQueue<OfficeOnlineListener> listeners                           =
+                                                                        new ConcurrentLinkedQueue<OfficeOnlineListener>();
 
   /**
    * Instantiates a new WOPI service.
@@ -430,6 +440,7 @@ public class WOPIService extends AbstractOfficeOnlineService {
           node.checkout();
         }
 
+        onSaved(config);
         // Remove properties from node
         node.setProperty(MSOFFICE_VERSION_OWNER, "");
         node.setProperty(MSOFFICE_IS_EDITOR_VERSION, false);
@@ -557,7 +568,7 @@ public class WOPIService extends AbstractOfficeOnlineService {
     addHostCapabilitiesProperties(map);
     addUserMetadataProperties(map);
     addUserPermissionsProperties(map, node);
-    addFileURLProperties(map, node, config.getAccessToken(), config.getBaseUrl());
+    addFileURLProperties(map, node, config);
     addBreadcrumbProperties(map, node, config);
     return map;
   }
@@ -947,7 +958,13 @@ public class WOPIService extends AbstractOfficeOnlineService {
    * @throws RepositoryException the repository exception
    */
   protected void addRequiredProperties(Map<String, Serializable> map, Node node) throws RepositoryException {
-    map.put(BASE_FILE_NAME, node.getProperty(EXO_TITLE).getString());
+    String fileName = node.getProperty(EXO_TITLE).getString();
+    try {
+      fileName = URLDecoder.decode(fileName, StandardCharsets.UTF_8.name());
+    } catch (UnsupportedEncodingException e) {
+      LOG.warn("Cannot decode filename. {}", e.getMessage());
+    }
+    map.put(BASE_FILE_NAME, fileName);
     map.put(OWNER_ID, node.getProperty(EXO_OWNER).getString());
     map.put(SIZE, getSize(node));
     map.put(USER_ID, ConversationState.getCurrent().getIdentity().getUserId());
@@ -1015,7 +1032,7 @@ public class WOPIService extends AbstractOfficeOnlineService {
    */
   public boolean canEdit(Node node) {
     try {
-      if (node.isNodeType(NT_FILE)) {
+      if (node.isNodeType(NT_FILE) && isDocumentSupported(node) && PermissionUtil.canSetProperty(node)) {
         String actionUrl = null;
         // Check if WOPI has edit action for such file extension
         try {
@@ -1024,7 +1041,7 @@ public class WOPIService extends AbstractOfficeOnlineService {
         } catch (FileExtensionNotFoundException e) {
           LOG.error("Cannot get file extension from node: " + node.getUUID());
         }
-        return isDocumentSupported(node) && PermissionUtil.canSetProperty(node) && actionUrl != null;
+        return actionUrl != null;
       }
     } catch (RepositoryException e) {
       LOG.error("Cannot check file edit permissions", e);
@@ -1040,7 +1057,7 @@ public class WOPIService extends AbstractOfficeOnlineService {
    */
   public boolean canView(Node node) {
     try {
-      if (node.isNodeType(NT_FILE)) {
+      if (node.isNodeType(NT_FILE) && isDocumentSupported(node)) {
         String actionUrl = null;
         // Check if WOPI has edit action for such file extension
         try {
@@ -1049,7 +1066,7 @@ public class WOPIService extends AbstractOfficeOnlineService {
         } catch (FileExtensionNotFoundException e) {
           LOG.error("Cannot get file extension from node: " + node.getUUID());
         }
-        return isDocumentSupported(node) && actionUrl != null;
+        return actionUrl != null;
       }
     } catch (RepositoryException e) {
       LOG.error("Cannot check file view permissions", e);
@@ -1062,27 +1079,32 @@ public class WOPIService extends AbstractOfficeOnlineService {
    *
    * @param map the map
    * @param node the node
-   * @param accessToken the access token
-   * @param baseUrl the base url
+   * @param config the config
    * @throws RepositoryException the repository exception
    */
-  protected void addFileURLProperties(Map<String, Serializable> map,
-                                      Node node,
-                                      AccessToken accessToken,
-                                      String baseUrl) throws RepositoryException {
-    String explorerLink = explorerLink(node.getPath());
-    URI explorerUri = explorerUri(baseUrl, explorerLink);
+  protected void addFileURLProperties(Map<String, Serializable> map, Node node, EditorConfig config) throws RepositoryException {
+    Node symlink = null;
+    if (node.getPath().startsWith(usersPath)) {
+      // Shared document
+      if (!config.getUserId().equals(getUserId(node.getPath()))) {
+        symlink = getSymlink(node, config.getUserId());
+      }
+    }
+
+    String explorerLink = symlink != null ? explorerLink(symlink.getPath()) : explorerLink(node.getPath());
+    URI explorerUri = explorerUri(config.getBaseUrl(), explorerLink);
     if (explorerUri != null) {
       map.put(CLOSE_URL, explorerUri.toString());
-      map.put(FILE_VERSION_URL, explorerUri.toString());
+      map.put(FILE_VERSION_URL, explorerUri.toString() + "&versions=true");
     }
-    String platformRestURL =
-                           new StringBuilder(baseUrl).append('/').append(PortalContainer.getCurrentRestContextName()).toString();
+    String platformRestURL = new StringBuilder(config.getBaseUrl()).append('/')
+                                                                   .append(PortalContainer.getCurrentRestContextName())
+                                                                   .toString();
 
     String downloadURL = new StringBuilder(platformRestURL).append("/officeonline/editor/content/")
                                                            .append(node.getUUID())
                                                            .append("?access_token=")
-                                                           .append(accessToken.getToken())
+                                                           .append(config.getAccessToken().getToken())
                                                            .toString();
     map.put(DOWNLOAD_URL, downloadURL);
     map.put(HOST_EDIT_URL, getEditorLink(node, baseUrl, EDIT_ACTION));
@@ -1577,6 +1599,34 @@ public class WOPIService extends AbstractOfficeOnlineService {
       position++;
     }
     return elems.get(position);
+  }
+
+  /**
+   * Adds the listener.
+   *
+   * @param listener the listener
+   */
+  public void addListener(OfficeOnlineListener listener) {
+    this.listeners.add(listener);
+  }
+
+  /**
+   * Removes the listener.
+   *
+   * @param listener the listener
+   */
+  public void removeListener(OfficeOnlineListener listener) {
+    this.listeners.remove(listener);
+  }
+
+  public void onSaved(EditorConfig config) {
+    for (OfficeOnlineListener l : listeners) {
+      try {
+        l.onSaved(config);
+      } catch (Throwable t) {
+        LOG.warn("Saving listener error", t);
+      }
+    }
   }
 
 }
