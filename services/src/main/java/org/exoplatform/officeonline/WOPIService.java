@@ -1107,16 +1107,8 @@ public class WOPIService extends AbstractOfficeOnlineService {
                                                            .append(config.getAccessToken().getToken())
                                                            .toString();
     map.put(DOWNLOAD_URL, downloadURL);
-    String editLink = getEditorLink(node, config.getBaseUrl(), EDIT_ACTION);
-    String viewLink = getEditorLink(node, config.getBaseUrl(), VIEW_ACTION);
-    try {
-      editLink = URLEncoder.encode(editLink, "UTF-8");
-      viewLink = URLEncoder.encode(viewLink, "UTF-8");
-    } catch (UnsupportedEncodingException e) {
-      LOG.error("Cannot encode editor links", e);
-    }
-    map.put(HOST_EDIT_URL, editLink);
-    map.put(HOST_VIEW_URL, viewLink);
+    map.put(HOST_EDIT_URL, getEditorLink(node, baseUrl, EDIT_ACTION));
+    map.put(HOST_VIEW_URL, getEditorLink(node, baseUrl, VIEW_ACTION));
     map.put(FILE_URL, downloadURL);
 
   }
