@@ -18,8 +18,10 @@
  */
 
 package org.exoplatform.officeonline.webui;
+import static org.exoplatform.officeonline.webui.OfficeOnlineContext.callModule;
 
 import javax.jcr.Node;
+
 
 import org.exoplatform.ecm.webui.component.explorer.UIJCRExplorer;
 import org.exoplatform.officeonline.WOPIService;
@@ -46,15 +48,6 @@ public class OfficeOnlineDocumentsLifecycle extends AbstractOfficeOnlineLifecycl
 
   /** The Constant LOG. */
   protected static final Log    LOG                          = ExoLogger.getLogger(OfficeOnlineDocumentsLifecycle.class);
-
-  /** The Constant USERID_ATTRIBUTE. */
-  protected static final String USERID_ATTRIBUTE             = "OfficeOnlineContext.userId";
-
-  /** The Constant DOCUMENT_WORKSPACE_ATTRIBUTE. */
-  protected static final String DOCUMENT_WORKSPACE_ATTRIBUTE = "OfficeOnlineContext.document.workspace";
-
-  /** The Constant DOCUMENT_PATH_ATTRIBUTE. */
-  protected static final String DOCUMENT_PATH_ATTRIBUTE      = "OfficeOnlineContext.document.path";
 
   /**
    * Instantiates a new Onlyoffice documents lifecycle.
@@ -85,9 +78,9 @@ public class OfficeOnlineDocumentsLifecycle extends AbstractOfficeOnlineLifecycl
             if (LOG.isDebugEnabled()) {
               LOG.debug("Init documents explorer for {}, node: {}:{}, context: {}", userName, nodeWs, nodePath, parentContext);
             }
-            parentContext.setAttribute(USERID_ATTRIBUTE, userName);
-            parentContext.setAttribute(DOCUMENT_WORKSPACE_ATTRIBUTE, nodeWs);
-            parentContext.setAttribute(DOCUMENT_PATH_ATTRIBUTE, nodePath);
+            parentContext.setAttribute(OfficeOnlineContext.USERID_ATTRIBUTE, userName);
+            parentContext.setAttribute(OfficeOnlineContext.DOCUMENT_WORKSPACE_ATTRIBUTE, nodeWs);
+            parentContext.setAttribute(OfficeOnlineContext.DOCUMENT_PATH_ATTRIBUTE, nodePath);
             String editorLink;
             if (wopiService.canEdit(node)) {
               editorLink = new StringBuilder().append('\'')
@@ -102,11 +95,9 @@ public class OfficeOnlineDocumentsLifecycle extends AbstractOfficeOnlineLifecycl
             } else {
               editorLink = "null".intern();
             }
-            JavascriptManager js = context.getJavascriptManager();
-            RequireJS require = js.require("SHARED/officeonline", "officeonline");
             // This will init explorer even for docs that cannot be edited
             // by the user (lack of permissions)
-            require.addScripts("officeonline.initExplorer('" + node.getUUID() + "', " + editorLink + ");");
+            callModule("officeonline.initExplorer('" + node.getUUID() + "', " + editorLink + ");");
           } else if (LOG.isDebugEnabled()) {
             LOG.debug("Document not initialized or not editable for {}, node: {}:{}, context: {}",
                       userName,
@@ -142,8 +133,8 @@ public class OfficeOnlineDocumentsLifecycle extends AbstractOfficeOnlineLifecycl
    * @return true, if is not same user document
    */
   private boolean isNotSameUserDocument(String userName, String nodeWs, String nodePath, RequestContext parentContext) {
-    return !(userName.equals(parentContext.getAttribute(USERID_ATTRIBUTE))
-        && nodeWs.equals(parentContext.getAttribute(DOCUMENT_WORKSPACE_ATTRIBUTE))
-        && nodePath.equals(parentContext.getAttribute(DOCUMENT_PATH_ATTRIBUTE)));
+    return !(userName.equals(parentContext.getAttribute(OfficeOnlineContext.USERID_ATTRIBUTE))
+        && nodeWs.equals(parentContext.getAttribute(OfficeOnlineContext.DOCUMENT_WORKSPACE_ATTRIBUTE))
+        && nodePath.equals(parentContext.getAttribute(OfficeOnlineContext.DOCUMENT_PATH_ATTRIBUTE)));
   }
 }
