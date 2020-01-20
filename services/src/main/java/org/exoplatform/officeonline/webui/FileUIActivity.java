@@ -95,7 +95,7 @@ public class FileUIActivity extends org.exoplatform.wcm.ext.component.activity.F
       Node node = getContentNode(0);
       node = editorService.getNode(node.getSession().getWorkspace().getName(), node.getPath());
       if (node != null) {
-        callModule("initActivity('" + node.getUUID() + "', " + editorLink(node) + ",'" + activityId + "');");
+        callModule("officeonline.initActivity('" + node.getUUID() + "', " + editorLink(node) + ",'" + activityId + "');");
       }
     }
 
@@ -108,7 +108,7 @@ public class FileUIActivity extends org.exoplatform.wcm.ext.component.activity.F
         editorService.addFilePreferences(node, userId, symlink.getPath());
       }
       if (node != null) {
-        callModule("initPreview('" + node.getUUID() + "', " + editorLink(node) + " ,'"
+        callModule("officeonline.initPreview('" + node.getUUID() + "', " + editorLink(node) + " ,'"
             + new StringBuilder("#Preview").append(activityId).append('-').append(index).toString() + "');");
       }
     }

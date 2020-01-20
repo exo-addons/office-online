@@ -97,7 +97,7 @@ public class OfficeOnlineDocumentsLifecycle extends AbstractOfficeOnlineLifecycl
             }
             // This will init explorer even for docs that cannot be edited
             // by the user (lack of permissions)
-            callModule("initExplorer('" + node.getUUID() + "', " + editorLink + ");");
+            callModule("officeonline.initExplorer('" + node.getUUID() + "', " + editorLink + ");");
           } else if (LOG.isDebugEnabled()) {
             LOG.debug("Document not initialized or not editable for {}, node: {}:{}, context: {}",
                       userName,

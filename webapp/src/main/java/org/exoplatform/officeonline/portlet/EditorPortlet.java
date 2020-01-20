@@ -32,7 +32,6 @@ import org.exoplatform.services.resources.ResourceBundleService;
 import org.exoplatform.webui.application.WebuiRequestContext;
 import org.exoplatform.ws.frameworks.json.impl.JsonException;
 
-// TODO: Auto-generated Javadoc
 /**
  * The Class EditorPortlet.
  */
@@ -100,7 +99,7 @@ public class EditorPortlet extends GenericPortlet {
 
         if (validAction(node, action)) {
           String actionURL = wopiService.getActionUrl(requestInfo, fileId, null, action);
-          callModule("initEditor(" + token.toJSON() + ", \"" + actionURL + "\");");
+          callModule("officeonline.initEditor(" + token.toJSON() + ", \"" + actionURL + "\");");
         } else {
           showError(i18n.getString("OfficeonlineEditorClient.ErrorTitle"),
                     i18n.getString("OfficeonlineEditor.error.EditorCannotBeCreated"));

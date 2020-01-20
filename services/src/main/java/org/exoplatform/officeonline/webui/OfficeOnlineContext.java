@@ -115,7 +115,7 @@ public class OfficeOnlineContext {
                                                  cometdService.getUserToken(userId),
                                                  PortalContainer.getCurrentPortalContainerName());
       try {
-        callOnModule("init('" + userId + "', " + cometdConf.toJSON() + ", " + messagesJson + ");");
+        require.addScripts("officeonline.init('" + userId + "', " + cometdConf.toJSON() + ", " + messagesJson + ");");
       } catch (JsonException e) {
         LOG.warn("Cannot create JSON from cometd config: {}", e.getMessage());
         throw new OfficeOnlineException("Failed to convert cometd config to JSON", e);
@@ -135,22 +135,13 @@ public class OfficeOnlineContext {
   }
 
   /**
-   * Call on module.
-   *
-   * @param code the code
-   */
-  private void callOnModule(String code) {
-    require.addScripts(new StringBuilder("officeonline.").append(code).append("\n").toString());
-  }
-
-  /**
    * Show client error.
    *
    * @param title the title
    * @param message the message
    */
   private void showClientError(String title, String message) {
-    callOnModule(new StringBuilder("showError('").append(title).append("', '" + message + "');").toString());
+    require.addScripts(new StringBuilder("officeonline.showError('").append(title).append("', '" + message + "');").toString());
   }
 
   /**
@@ -198,7 +189,7 @@ public class OfficeOnlineContext {
    * @throws OfficeOnlineException the exception
    */
   public static void callModule(String code) throws OfficeOnlineException {
-    context().callOnModule(code);
+    context().appRequireJS().addScripts(code); 
   }
 
   /**
