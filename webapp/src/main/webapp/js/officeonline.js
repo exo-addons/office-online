@@ -474,9 +474,7 @@
      * Sets the onClick listener for Create Document button (used in creating a new document)
      */
     this.initNewDocument = function() {
-      $("#UINewMSDocumentForm .newMSDocumentButton").on('click', function() {
-        editorWindow = window.open();
-      });
+      editorWindow = window.open();
     };
 
     /**

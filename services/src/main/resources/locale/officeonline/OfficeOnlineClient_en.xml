@@ -4,7 +4,6 @@
   <UIActionBar>
     <tooltip>
       <OfficeOnlineOpen>Edit in Office Online</OfficeOnlineOpen>
-      <NewMSDocument>New MS Document</NewMSDocument>
     </tooltip>
   </UIActionBar>
   <!-- Used in Administration-Content-Explorer in Views settings a popup with actions list -->
@@ -23,42 +22,20 @@
 
     <ErrorTitle>Error</ErrorTitle>
     <InfoTitle>Information</InfoTitle>
-
   </OfficeonlineEditorClient>
   
-   <!-- For new document popup window -->
-  <UIPopupWindow>
-    <title>
-      <UINewMSDocumentForm>New MS Document</UINewMSDocumentForm>
-    </title>
-  </UIPopupWindow>
-   <!-- For new document form -->
-  <UINewMSDocumentForm>
-    <action>
-      <Cancel>#{word.cancel}</Cancel>
-      <Save>Create Document</Save>
-    </action>
+      
+  <!-- For new document form -->
+  <UINewDocumentForm>
     <label>
-      <titleTextBox>Document Name:</titleTextBox>
-      <typeSelectBox>Document Type:</typeSelectBox>
       <option>
-        <MicrosoftOfficeDocument>Microsoft Word Document (*.docx)</MicrosoftOfficeDocument>
-        <MicrosoftOfficeSpreadsheet>Microsoft Excel Workbook (*.xlsx)</MicrosoftOfficeSpreadsheet>
-        <MicrosoftOfficePresentation>Microsoft PowerPoint Presentation (*.pptx)</MicrosoftOfficePresentation>
+        <MicrosoftBlankWordOpenXMLDocument>Microsoft Word Document (*.docx) *</MicrosoftBlankWordOpenXMLDocument>
+        <MicrosoftBlankExcelOpenXMLDocument>Microsoft Excel Workbook (*.xlsx) *</MicrosoftBlankExcelOpenXMLDocument>
+        <MicrosoftBlankPowerPointOpenXMLDocument>Microsoft PowerPoint Presentation *</MicrosoftBlankPowerPointOpenXMLDocument>
       </option>
     </label>
-    <msg>
-      <name-invalid>Please enter the document name.</name-invalid>
-      <constraint-violation>You can't add a document of type '{0}' here.</constraint-violation>
-      <repository-exception>An unexpected error occurred. Please contact your administrator for more details.</repository-exception>
-      <repository-exception-permission>You don't have the permission to add a new document here.</repository-exception-permission>
-      <numberformat-exception>You cannot save this document. The name provided must be in numerical format.</numberformat-exception>
-      <!--DMS 2.4.x; ECM-3553-->
-      <not-allow-sameNameSibling>You can't save the document. An item with the same name already exists.</not-allow-sameNameSibling>
-    </msg>
-  </UINewMSDocumentForm>  
-  
-  
+  </UINewDocumentForm>
+
   <!-- Messages -->
   <OfficeonlineEditor>
     <message>

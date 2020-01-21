@@ -48,8 +48,8 @@
     <maven.compiler.source>1.8</maven.compiler.source>
     <maven.compiler.target>1.8</maven.compiler.target>
 
-    <!-- eXo Modules -->
-    <org.exoplatform.platform.version>5.2.0</org.exoplatform.platform.version>
+     <!-- eXo Modules -->
+    <org.exoplatform.platform.version>6.0.x-SNAPSHOT</org.exoplatform.platform.version>
 
     <!-- for tests -->
     <junit.version>4.12</junit.version>
