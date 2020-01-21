@@ -1107,8 +1107,8 @@ public class WOPIService extends AbstractOfficeOnlineService {
                                                            .append(config.getAccessToken().getToken())
                                                            .toString();
     map.put(DOWNLOAD_URL, downloadURL);
-    map.put(HOST_EDIT_URL, getEditorLink(node, baseUrl, EDIT_ACTION));
-    map.put(HOST_VIEW_URL, getEditorLink(node, baseUrl, VIEW_ACTION));
+    map.put(HOST_EDIT_URL, getEditorLink(node, config.getBaseUrl(), EDIT_ACTION));
+    map.put(HOST_VIEW_URL, getEditorLink(node, config.getBaseUrl(), VIEW_ACTION));
     map.put(FILE_URL, downloadURL);
 
   }
