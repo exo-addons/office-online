@@ -15,7 +15,8 @@
 
   <!-- For client UI -->
   <OfficeonlineEditorClient>
-    <EditButtonTitle>Edit Online</EditButtonTitle>
+    <EditButtonTitle>Edit in Office Online</EditButtonTitle>
+    <ViewButtonTitle>View in Office Online</ViewButtonTitle>
     <UpdateBannerTitle>The document has been updated.</UpdateBannerTitle>
     <ReloadButtonTitle>Reload</ReloadButtonTitle>
 

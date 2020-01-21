@@ -25,6 +25,18 @@
 
   <!-- Javascript for Office Online editor in WCM -->
   <module>
+    <name>officeonlineRedux</name>
+    <load-group>officeonlineGRP</load-group>
+    <script>
+      <minify>false</minify>
+      <path>/js/redux.min.js</path>
+    </script>
+    <depends>
+      <module>redux</module>
+      <as>Redux</as>
+    </depends>
+  </module>
+  <module>
     <name>officeonline</name>
     <load-group>officeonlineGRP</load-group>
     <script>
@@ -32,6 +44,12 @@
     </script>
     <depends>
       <module>jquery</module>
+    </depends>
+    <depends>
+      <module>commons-cometd3</module>
+    </depends>
+    <depends>
+      <module>officeonlineRedux</module>
     </depends>
   </module>
 

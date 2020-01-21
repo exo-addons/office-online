@@ -25,10 +25,12 @@ import javax.jcr.Node;
 
 import org.exoplatform.ecm.webui.component.explorer.UIJCRExplorer;
 import org.exoplatform.ecm.webui.component.explorer.control.listener.UIActionBarActionListener;
+import org.exoplatform.officeonline.EditorService;
 import org.exoplatform.officeonline.WOPIService;
 import org.exoplatform.services.log.ExoLogger;
 import org.exoplatform.services.log.Log;
 import org.exoplatform.web.application.Parameter;
+import org.exoplatform.webui.application.WebuiRequestContext;
 import org.exoplatform.webui.config.annotation.ComponentConfig;
 import org.exoplatform.webui.config.annotation.EventConfig;
 import org.exoplatform.webui.core.lifecycle.UIContainerLifecycle;
@@ -96,10 +98,14 @@ public class OfficeOnlineOpenManageComponent extends UIAbstractManagerComponent 
         WOPIService wopiService = this.getApplicationComponent(WOPIService.class);
         Node node = uiExplorer.getCurrentNode();
         node = wopiService.getNode(node.getSession().getWorkspace().getName(), node.getPath());
+        Node symlink = (Node) uiExplorer.getSession().getItem(uiExplorer.getCurrentPath());
+        if (symlink.isNodeType("exo:symlink")) {
+          wopiService.addFilePreferences(node, WebuiRequestContext.getCurrentInstance().getRemoteUser(), symlink.getPath());
+        }
         String editorLink = null;
-        if(wopiService.canEdit(node)) {
+        if (wopiService.canEdit(node)) {
           editorLink = wopiService.getEditorLink(node, WOPIService.EDIT_ACTION);
-        } else if (wopiService.canView(node)){
+        } else if (wopiService.canView(node)) {
           editorLink = wopiService.getEditorLink(node, WOPIService.VIEW_ACTION);
         }
         if (editorLink != null && !editorLink.isEmpty()) {

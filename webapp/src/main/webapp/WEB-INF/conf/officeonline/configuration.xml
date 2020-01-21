@@ -34,6 +34,10 @@
   </component>
 
   <component>
+    <type>org.exoplatform.officeonline.cometd.CometdOfficeOnlineService</type>
+  </component>
+
+  <component>
     <key>org.exoplatform.officeonline.WOPIService</key>
     <type>org.exoplatform.officeonline.WOPIService</type>
     <init-params>
@@ -58,7 +62,12 @@
     <type>org.exoplatform.officeonline.EditorService</type>
   </component>
 
-  <!-- NewDocumentTemplatePlugin for DocumentService-->
+  <component>
+    <key>org.exoplatform.services.cms.link.NodeFinder</key>
+    <type>org.exoplatform.services.cms.link.impl.NodeFinderImpl</type>
+  </component>
+  
+  <!-- NewDocumentTypePlugin for DocumentService-->
   <external-component-plugins>
     <target-component>org.exoplatform.services.cms.documents.DocumentService</target-component>
     <component-plugin>
@@ -119,8 +128,7 @@
     </component-plugin>
   </external-component-plugins>
   
-    
-    <!-- NewDocumentEditorPlugin for DocumentService-->
+  <!-- NewDocumentEditorPlugin for DocumentService-->
   <external-component-plugins>
     <target-component>org.exoplatform.services.cms.documents.DocumentService</target-component>
     <component-plugin>
@@ -130,7 +138,6 @@
       <description>The document editor plugin</description>
     </component-plugin>
   </external-component-plugins>
-  
   
   <!-- WOPIDiscoveryPlugin -->
   <external-component-plugins>
@@ -844,14 +851,41 @@
         <values-param>
           <name>init.resources</name>
           <description>Store the following resources into the db for the first launch</description>
-          <value>locale.officeonline.OfficeonlineClient</value>
+          <value>locale.officeonline.OfficeOnlineClient</value>
           <value>locale.navigation.portal.intranet</value>
         </values-param>
         <values-param>
           <name>portal.resource.names</name>
           <description>The properties files of the portal , those file will be merged into one ResoruceBundle properties</description>
-          <value>locale.officeonline.OfficeonlineClient</value>
+          <value>locale.officeonline.OfficeOnlineClient</value>
           <value>locale.navigation.portal.intranet</value>
+        </values-param>
+      </init-params>
+    </component-plugin>
+  </external-component-plugins>
+
+  <external-component-plugins>
+    <target-component>org.exoplatform.services.jcr.RepositoryService</target-component>
+    <component-plugin>
+      <name>add.namespaces</name>
+      <set-method>addPlugin</set-method>
+      <type>org.exoplatform.services.jcr.impl.AddNamespacesPlugin</type>
+      <init-params>
+        <properties-param>
+          <name>namespaces</name>
+          <property name="msoffice" value="http://www.exoplatform.com/jcr/officeonline/1.0/" />
+        </properties-param>
+      </init-params>
+    </component-plugin>
+    <component-plugin>
+      <name>add.gadget.services.nodeType</name>
+      <set-method>addPlugin</set-method>
+      <type>org.exoplatform.services.jcr.impl.AddNodeTypePlugin</type>
+      <init-params>
+        <values-param>
+          <name>autoCreatedInNewRepository</name>
+          <description>Office Online node types configuration file</description>
+          <value>jar:/conf/portal/jcr/officeonline-nodetypes.xml</value>
         </values-param>
       </init-params>
     </component-plugin>

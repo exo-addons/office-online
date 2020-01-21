@@ -1,25 +1,19 @@
 package org.exoplatform.officeonline;
 
-import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.List;
 
-import javax.jcr.Item;
-import javax.jcr.Node;
-import javax.jcr.RepositoryException;
-import javax.jcr.Session;
-
-import org.exoplatform.ecm.utils.permission.PermissionUtil;
 import org.exoplatform.officeonline.exception.OfficeOnlineException;
 import org.exoplatform.portal.config.UserACL;
 import org.exoplatform.services.cache.CacheService;
 import org.exoplatform.services.cms.documents.DocumentService;
+import org.exoplatform.services.cms.link.NodeFinder;
 import org.exoplatform.services.jcr.RepositoryService;
 import org.exoplatform.services.jcr.ext.app.SessionProviderService;
-import org.exoplatform.services.jcr.ext.common.SessionProvider;
 import org.exoplatform.services.log.ExoLogger;
 import org.exoplatform.services.log.Log;
 import org.exoplatform.services.organization.OrganizationService;
+import org.exoplatform.services.security.Authenticator;
+import org.exoplatform.services.security.IdentityRegistry;
 
 /**
  * The Class EditorService.
@@ -44,10 +38,20 @@ public class EditorService extends AbstractOfficeOnlineService {
                        OrganizationService organization,
                        DocumentService documentService,
                        CacheService cacheService,
-                       UserACL userACL) {
-    super(sessionProviders, jcrService, organization, documentService, cacheService, userACL);
+                       UserACL userACL,
+                       IdentityRegistry identityRegistry,
+                       Authenticator authenticator,
+                       NodeFinder nodeFinder) {
+    super(sessionProviders,
+          jcrService,
+          organization,
+          documentService,
+          cacheService,
+          userACL,
+          identityRegistry,
+          authenticator,
+          nodeFinder);
   }
-
 
   /**
    * WARNING: ONLY FOR TESTING PURPOSES. SHOULD BE REMOVED ON PRODUCTION
@@ -112,7 +116,6 @@ public class EditorService extends AbstractOfficeOnlineService {
       LOG.error(e);
     }
   }
-
 
   /**
    * Stop.
