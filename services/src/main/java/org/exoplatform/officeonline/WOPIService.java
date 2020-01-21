@@ -6,7 +6,6 @@ import java.io.Serializable;
 import java.io.UnsupportedEncodingException;
 import java.net.URI;
 import java.net.URLDecoder;
-import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.security.Key;
 import java.security.NoSuchAlgorithmException;
@@ -79,7 +78,6 @@ import org.exoplatform.services.wcm.utils.WCMCoreUtils;
 import org.exoplatform.webui.application.WebuiRequestContext;
 import org.exoplatform.webui.application.portlet.PortletRequestContext;
 
-// TODO: Auto-generated Javadoc
 /**
  * The Class WOPIService.
  */
@@ -184,6 +182,9 @@ public class WOPIService extends AbstractOfficeOnlineService {
 
   /** The Constant SUPPORTED_SHARE_URL_TYPES. */
   protected static final String                               SUPPORTED_SHARE_URL_TYPES           = "SupportedShareUrlTypes";
+
+  /** The Constant POST_MESSAGE_ORIGIN. */
+  protected static final String                               POST_MESSAGE_ORIGIN                 = "PostMessageOrigin";
 
   /** The Constant IS_ANONYMOUS_USER. */
   protected static final String                               IS_ANONYMOUS_USER                   = "IsAnonymousUser";
@@ -1121,10 +1122,9 @@ public class WOPIService extends AbstractOfficeOnlineService {
    * @param config the config
    */
   protected void addBreadcrumbProperties(Map<String, Serializable> map, Node node, EditorConfig config) {
-    // TODO: replace by real values
     map.put(BREADCRUMB_BRAND_NAME, brandName);
     map.put(BREADCRUMB_BRAND_URL, config.getBaseUrl());
-
+    map.put(POST_MESSAGE_ORIGIN, config.getBaseUrl());
     try {
       Node parent = null;
       if (node.getPath().startsWith(usersPath)) {
@@ -1619,6 +1619,11 @@ public class WOPIService extends AbstractOfficeOnlineService {
     this.listeners.remove(listener);
   }
 
+  /**
+   * On saved.
+   *
+   * @param config the config
+   */
   public void onSaved(EditorConfig config) {
     for (OfficeOnlineListener l : listeners) {
       try {
