@@ -598,28 +598,27 @@ public abstract class AbstractOfficeOnlineService implements Startable {
    */
   public void addFilePreferences(Node node, String userId, String path) throws RepositoryException {
     Node preferences;
-    try {
-      if (!node.hasNode(MSOFFICE_PREFERENCES)) {
-        if (node.canAddMixin(MSOFFICE_FILE)) {
-          node.addMixin(MSOFFICE_FILE);
-        }
-        preferences = node.addNode(MSOFFICE_PREFERENCES);
-      } else {
-        preferences = node.getNode(MSOFFICE_PREFERENCES);
+    // XXX Using system node to set file preferences in case 
+    // when there no write rights in the current user session
+    Session systemSession = jcrService.getCurrentRepository().getSystemSession(node.getSession().getWorkspace().getName());
+    Node systemNode = systemSession.getNodeByUUID(node.getUUID());
+    if (!systemNode.hasNode(MSOFFICE_PREFERENCES)) {
+      if (systemNode.canAddMixin(MSOFFICE_FILE)) {
+        systemNode.addMixin(MSOFFICE_FILE);
       }
-
-      Node userPreferences;
-      if (!preferences.hasNode(userId)) {
-        userPreferences = preferences.addNode(userId, MSOFFICE_USER_PREFERENCES);
-      } else {
-        userPreferences = preferences.getNode(userId);
-      }
-      userPreferences.setProperty(PATH, path);
-      node.save();
-    } catch (AccessDeniedException e ) {
-      LOG.warn("Cannot add user preferences to the file. {}", e.getMessage());
+      preferences = systemNode.addNode(MSOFFICE_PREFERENCES);
+    } else {
+      preferences = systemNode.getNode(MSOFFICE_PREFERENCES);
     }
-    
+
+    Node userPreferences;
+    if (!preferences.hasNode(userId)) {
+      userPreferences = preferences.addNode(userId, MSOFFICE_USER_PREFERENCES);
+    } else {
+      userPreferences = preferences.getNode(userId);
+    }
+    userPreferences.setProperty(PATH, path);
+    systemNode.save();
   }
 
   /**
