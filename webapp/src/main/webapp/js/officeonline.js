@@ -372,7 +372,7 @@
       if(!filename.endsWith(extension)) {
         filename += extension;
       }
-      window.document.title = filename + " - Online Editor";
+      window.document.title = filename + " - " + message("OfficeonlineEditorClient.EditorTitle");
     };
     
     /**
