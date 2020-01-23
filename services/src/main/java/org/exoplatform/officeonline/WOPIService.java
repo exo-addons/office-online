@@ -62,6 +62,8 @@ import org.exoplatform.services.cms.jcrext.activity.ActivityCommonService;
 import org.exoplatform.services.cms.link.NodeFinder;
 import org.exoplatform.services.jcr.RepositoryService;
 import org.exoplatform.services.jcr.access.PermissionType;
+import org.exoplatform.services.jcr.core.nodetype.ExtendedNodeTypeManager;
+import org.exoplatform.services.jcr.core.nodetype.NodeTypeDataManager;
 import org.exoplatform.services.jcr.ext.app.SessionProviderService;
 import org.exoplatform.services.jcr.ext.common.SessionProvider;
 import org.exoplatform.services.jcr.ext.hierarchy.NodeHierarchyCreator;
@@ -939,6 +941,33 @@ public class WOPIService extends AbstractOfficeOnlineService {
       LOG.debug("Excel view URL: " + wordView);
       LOG.debug("PowerPoint edit URL: " + powerPointEdit);
       LOG.debug("PowerPoint view URL: " + powerPointView);
+    }
+    
+    updateNodetypes();
+  }
+  
+  
+  /**
+   * Updates nodetypes.
+   */
+  private void updateNodetypes() {
+    InputStream is = null;
+    try {
+      String workspace = jcrService.getCurrentRepository().getConfiguration().getDefaultWorkspaceName();
+      Session session = jcrService.getCurrentRepository().getSystemSession(workspace);
+      ExtendedNodeTypeManager nodeTypeManager = (ExtendedNodeTypeManager) session.getWorkspace().getNodeTypeManager();
+      is = WOPIService.class.getResourceAsStream("/conf/portal/jcr/officeonline-nodetypes.xml");
+      nodeTypeManager.registerNodeTypes(is, ExtendedNodeTypeManager.REPLACE_IF_EXISTS, NodeTypeDataManager.TEXT_XML);
+    } catch (Exception e) {
+      LOG.error("Cannot update nodetypes.", e);
+    } finally {
+      if (is != null) {
+        try {
+          is.close();
+        } catch (IOException e) {
+          LOG.error("Cannot close InputStream", e);
+        }
+      }
     }
   }
 
