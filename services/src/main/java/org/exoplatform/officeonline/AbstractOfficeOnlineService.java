@@ -11,7 +11,6 @@ import java.util.Base64;
 import java.util.List;
 
 import javax.crypto.Cipher;
-import javax.jcr.AccessDeniedException;
 import javax.jcr.Item;
 import javax.jcr.ItemNotFoundException;
 import javax.jcr.Node;
@@ -32,8 +31,10 @@ import org.exoplatform.services.cache.ExoCache;
 import org.exoplatform.services.cms.documents.DocumentService;
 import org.exoplatform.services.cms.link.NodeFinder;
 import org.exoplatform.services.jcr.RepositoryService;
+import org.exoplatform.services.jcr.access.PermissionType;
 import org.exoplatform.services.jcr.ext.app.SessionProviderService;
 import org.exoplatform.services.jcr.ext.common.SessionProvider;
+import org.exoplatform.services.jcr.impl.core.NodeImpl;
 import org.exoplatform.services.log.ExoLogger;
 import org.exoplatform.services.log.Log;
 import org.exoplatform.services.organization.OrganizationService;
@@ -597,20 +598,10 @@ public abstract class AbstractOfficeOnlineService implements Startable {
    * @throws RepositoryException  the repositoryException
    */
   public void addFilePreferences(Node node, String userId, String path) throws RepositoryException {
-    Node preferences;
-    // XXX Using system node to set file preferences in case 
-    // when there no write rights in the current user session
-    Session systemSession = jcrService.getCurrentRepository().getSystemSession(node.getSession().getWorkspace().getName());
-    Node systemNode = systemSession.getNodeByUUID(node.getUUID());
-    if (!systemNode.hasNode(MSOFFICE_PREFERENCES)) {
-      if (systemNode.canAddMixin(MSOFFICE_FILE)) {
-        systemNode.addMixin(MSOFFICE_FILE);
-      }
-      preferences = systemNode.addNode(MSOFFICE_PREFERENCES);
-    } else {
-      preferences = systemNode.getNode(MSOFFICE_PREFERENCES);
+    if (node.canAddMixin(MSOFFICE_FILE)) {
+      addMixin(node, MSOFFICE_FILE);
     }
-
+    NodeImpl preferences = (NodeImpl) node.getNode(MSOFFICE_PREFERENCES);
     Node userPreferences;
     if (!preferences.hasNode(userId)) {
       userPreferences = preferences.addNode(userId, MSOFFICE_USER_PREFERENCES);
@@ -618,6 +609,39 @@ public abstract class AbstractOfficeOnlineService implements Startable {
       userPreferences = preferences.getNode(userId);
     }
     userPreferences.setProperty(PATH, path);
+    if (!preferences.hasPermission(PermissionType.ADD_NODE)) {
+      addWritePermissions(preferences, userId);
+    }
+    node.save();
+  }
+  
+  /**
+   * Adds the mixin.
+   *
+   * @param node the node
+   * @param mixin the mixin
+   * @throws RepositoryException the repository exception
+   */
+  private void addMixin(Node node, String mixin) throws RepositoryException {
+    Session systemSession = jcrService.getCurrentRepository().getSystemSession(node.getSession().getWorkspace().getName());
+    NodeImpl systemNode = (NodeImpl) systemSession.getItem(node.getPath());
+    systemNode.addMixin(mixin);
+    systemNode.save();
+  }
+
+  
+  /**
+   * Adds the write permissions.
+   *
+   * @param node the node
+   * @param userId the user id
+   * @throws RepositoryException the repository exception
+   */
+  private void addWritePermissions(Node node, String userId) throws RepositoryException {
+    Session systemSession = jcrService.getCurrentRepository().getSystemSession(node.getSession().getWorkspace().getName());
+    NodeImpl systemNode = (NodeImpl) systemSession.getItem(node.getPath());
+    systemNode.addMixin(EXO_PRIVILEGEABLE);
+    systemNode.setPermission(userId, new String[] { PermissionType.READ, PermissionType.ADD_NODE, PermissionType.SET_PROPERTY });
     systemNode.save();
   }
 
