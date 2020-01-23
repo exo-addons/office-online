@@ -556,7 +556,6 @@ public class WOPIResource implements ResourceContainer {
                      .type(MediaType.APPLICATION_JSON)
                      .build();
     }
-    URI requestUri = uriInfo.getRequestUri();
     try {
       EditorConfig config = getEditorConfig(context);
       Map<String, Serializable> fileInfo = wopiService.checkFileInfo(config);

@@ -19,7 +19,7 @@
     <ViewButtonTitle>View in Office Online</ViewButtonTitle>
     <UpdateBannerTitle>The document has been updated.</UpdateBannerTitle>
     <ReloadButtonTitle>Reload</ReloadButtonTitle>
-
+    <EditorTitle>Online Editor</EditorTitle>
     <ErrorTitle>Error</ErrorTitle>
     <InfoTitle>Information</InfoTitle>
   </OfficeonlineEditorClient>

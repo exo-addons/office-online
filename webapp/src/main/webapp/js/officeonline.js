@@ -287,6 +287,8 @@
 
     // Constants:
     var DOCUMENT_SAVED = "DOCUMENT_SAVED";
+    var FILE_RENAME = "File_Rename";
+    
     // Editor Window
     var editorWindow;
     // Current user ID
@@ -297,6 +299,8 @@
     var subscribedDocuments = {};
     // Explorer fileId
     var explorerFileId;
+    // The file extension
+    var extension;
 
     // Events that are dispatched to redux as actions
     var dispatchableEvents = [ DOCUMENT_SAVED ];
@@ -340,7 +344,10 @@
         }
       });
     };
-
+    
+    /**
+     * Unsubscribes document
+     */
     var unsubscribeDocument = function(fileId) {
       var subscription = subscribedDocuments.fileId;
       if (subscription) {
@@ -357,9 +364,31 @@
         });
       }
     };
-
-    this.initEditor = function(accessToken, actionURL) {
-
+    
+    /**
+     * Updates window title
+     */
+    var updateWindowTitle = function(filename) {
+      if(!filename.endsWith(extension)) {
+        filename += extension;
+      }
+      window.document.title = filename + " - " + message("OfficeonlineEditorClient.EditorTitle");
+    };
+    
+    /**
+     * Handles PostMessages from Office Online frame
+     */
+    var handlePostMessage = function(e) {
+      var msg = JSON.parse(e.data);
+      // Rename
+      if(msg.MessageId == FILE_RENAME) {
+        updateWindowTitle(msg.Values.NewName);
+      }
+    };
+ 
+    this.initEditor = function(accessToken, actionURL, filename) {
+      extension = filename.substring(filename.lastIndexOf("."));
+      updateWindowTitle(filename);
       $('#office_form').attr('action', actionURL);
       $('input[name="access_token"]').val(accessToken.token);
       $('input[name="access_token_ttl"]').val(accessToken.expires);
@@ -378,6 +407,8 @@
           'allow-scripts allow-same-origin allow-forms allow-popups allow-top-navigation allow-popups-to-escape-sandbox');
       frameholder.appendChild(office_frame);
       document.getElementById('office_form').submit();
+      window.addEventListener('message', handlePostMessage, false);
+      
     };
 
     this.initActivity = function(fileId, editorLink, activityId) {
