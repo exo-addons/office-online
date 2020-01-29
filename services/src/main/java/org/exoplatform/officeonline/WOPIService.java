@@ -80,7 +80,6 @@ import org.exoplatform.services.wcm.utils.WCMCoreUtils;
 import org.exoplatform.webui.application.WebuiRequestContext;
 import org.exoplatform.webui.application.portlet.PortletRequestContext;
 
-// TODO: Auto-generated Javadoc
 /**
  * The Class WOPIService.
  */
@@ -1125,10 +1124,10 @@ public class WOPIService extends AbstractOfficeOnlineService {
     }
 
     Node explorerNode = symlink != null ? symlink : node;
-    String explorerUrl = getExplorerURL(explorerNode, config.getBaseUrl());
+    StringBuilder explorerUrl = getExplorerURL(explorerNode, config.getBaseUrl());
     if (explorerUrl != null) {
-      map.put(CLOSE_URL, explorerUrl);
-      map.put(FILE_VERSION_URL, explorerUrl + "&versions=true");
+      map.put(CLOSE_URL, explorerUrl.toString());
+      map.put(FILE_VERSION_URL, explorerUrl.append("&versions=true").toString());
     }
     String platformRestURL = new StringBuilder(config.getBaseUrl()).append('/')
                                                                    .append(PortalContainer.getCurrentRestContextName())
@@ -1154,9 +1153,9 @@ public class WOPIService extends AbstractOfficeOnlineService {
    * @return the explorer URL
    * @throws RepositoryException the repository exception
    */
-  public String getExplorerURL(Node node, String baseUrl) throws RepositoryException {
+  public StringBuilder getExplorerURL(Node node, String baseUrl) throws RepositoryException {
     URI uri = explorerUri(baseUrl, explorerLink(node.getPath()));
-    return uri != null ? uri.toString() : null;
+    return uri != null ? new StringBuilder(uri.toString()) : null;
   }
 
   /**

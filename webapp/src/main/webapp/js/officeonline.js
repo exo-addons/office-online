@@ -286,9 +286,9 @@
   function Editor() {
 
     // Constants:
-    var DOCUMENT_SAVED = "DOCUMENT_SAVED";
-    var FILE_RENAME = "File_Rename";
-    var FILE_VERSIONS = "UI_FileVersions";
+    const DOCUMENT_SAVED = "DOCUMENT_SAVED";
+    const FILE_RENAME = "File_Rename";
+    const FILE_VERSIONS = "UI_FileVersions";
     
     // Editor Window
     var editorWindow;
