@@ -188,6 +188,9 @@ public class WOPIService extends AbstractOfficeOnlineService {
   /** The Constant POST_MESSAGE_ORIGIN. */
   protected static final String                               POST_MESSAGE_ORIGIN                 = "PostMessageOrigin";
 
+  /** The Constant FILE_VERSION_POST_MESSAGE. */
+  protected static final String                               FILE_VERSION_POST_MESSAGE           = "FileVersionPostMessage";
+
   /** The Constant IS_ANONYMOUS_USER. */
   protected static final String                               IS_ANONYMOUS_USER                   = "IsAnonymousUser";
 
@@ -943,11 +946,10 @@ public class WOPIService extends AbstractOfficeOnlineService {
       LOG.debug("PowerPoint edit URL: " + powerPointEdit);
       LOG.debug("PowerPoint view URL: " + powerPointView);
     }
-    
+
     updateNodetypes();
   }
-  
-  
+
   /**
    * Updates nodetypes.
    */
@@ -1121,11 +1123,11 @@ public class WOPIService extends AbstractOfficeOnlineService {
       }
     }
 
-    String explorerLink = symlink != null ? explorerLink(symlink.getPath()) : explorerLink(node.getPath());
-    URI explorerUri = explorerUri(config.getBaseUrl(), explorerLink);
-    if (explorerUri != null) {
-      map.put(CLOSE_URL, explorerUri.toString());
-      map.put(FILE_VERSION_URL, explorerUri.toString() + "&versions=true");
+    Node explorerNode = symlink != null ? symlink : node;
+    StringBuilder explorerUrl = getExplorerURL(explorerNode, config.getBaseUrl());
+    if (explorerUrl != null) {
+      map.put(CLOSE_URL, explorerUrl.toString());
+      map.put(FILE_VERSION_URL, explorerUrl.append("&versions=true").toString());
     }
     String platformRestURL = new StringBuilder(config.getBaseUrl()).append('/')
                                                                    .append(PortalContainer.getCurrentRestContextName())
@@ -1144,6 +1146,19 @@ public class WOPIService extends AbstractOfficeOnlineService {
   }
 
   /**
+   * Gets the explorer URL.
+   *
+   * @param node the node
+   * @param baseUrl the base url
+   * @return the explorer URL
+   * @throws RepositoryException the repository exception
+   */
+  public StringBuilder getExplorerURL(Node node, String baseUrl) throws RepositoryException {
+    URI uri = explorerUri(baseUrl, explorerLink(node.getPath()));
+    return uri != null ? new StringBuilder(uri.toString()) : null;
+  }
+
+  /**
    * Adds the breadcrumb properties.
    *
    * @param map the map
@@ -1154,6 +1169,7 @@ public class WOPIService extends AbstractOfficeOnlineService {
     map.put(BREADCRUMB_BRAND_NAME, brandName);
     map.put(BREADCRUMB_BRAND_URL, config.getBaseUrl());
     map.put(POST_MESSAGE_ORIGIN, config.getBaseUrl());
+    map.put(FILE_VERSION_POST_MESSAGE, true);
     try {
       Node parent = null;
       if (node.getPath().startsWith(usersPath)) {

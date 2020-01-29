@@ -286,8 +286,9 @@
   function Editor() {
 
     // Constants:
-    var DOCUMENT_SAVED = "DOCUMENT_SAVED";
-    var FILE_RENAME = "File_Rename";
+    const DOCUMENT_SAVED = "DOCUMENT_SAVED";
+    const FILE_RENAME = "File_Rename";
+    const FILE_VERSIONS = "UI_FileVersions";
     
     // Editor Window
     var editorWindow;
@@ -301,6 +302,8 @@
     var explorerFileId;
     // The file extension
     var extension;
+    // The versions linked
+    var versionsLink;
 
     // Events that are dispatched to redux as actions
     var dispatchableEvents = [ DOCUMENT_SAVED ];
@@ -383,12 +386,15 @@
       // Rename
       if(msg.MessageId == FILE_RENAME) {
         updateWindowTitle(msg.Values.NewName);
+      } else if (msg.MessageId == FILE_VERSIONS) {
+        window.open(versionsLink);
       }
     };
  
-    this.initEditor = function(accessToken, actionURL, filename) {
+    this.initEditor = function(accessToken, actionURL, versionsURL, filename) {
       extension = filename.substring(filename.lastIndexOf("."));
       updateWindowTitle(filename);
+      versionsLink = versionsURL;
       $('#office_form').attr('action', actionURL);
       $('input[name="access_token"]').val(accessToken.token);
       $('input[name="access_token_ttl"]').val(accessToken.expires);

@@ -100,7 +100,8 @@ public class EditorPortlet extends GenericPortlet {
         if (validAction(node, action)) {
           String actionURL = wopiService.getActionUrl(requestInfo, fileId, null, action);
           String filename = node.getName();
-          callModule("officeonline.initEditor(" + token.toJSON() + ", \"" + actionURL + "\", \"" + filename + "\");");
+          String versionsUrl = wopiService.getExplorerURL(node, config.getBaseUrl()).append("&versions=true").toString();
+          callModule("officeonline.initEditor(" + token.toJSON() + ", \"" + actionURL + "\", \"" + versionsUrl + "\", \"" + filename + "\");");
         } else {
           showError(i18n.getString("OfficeonlineEditorClient.ErrorTitle"),
                     i18n.getString("OfficeonlineEditor.error.EditorCannotBeCreated"));
