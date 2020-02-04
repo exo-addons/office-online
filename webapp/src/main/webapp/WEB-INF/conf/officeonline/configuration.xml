@@ -120,6 +120,54 @@
                     </field>
                   </object>
                 </value>
+                <value>
+                  <object type="org.exoplatform.services.cms.documents.DocumentTemplate">
+                    <field name="extension">
+                      <string>.docx</string>
+                    </field>
+                    <field name="name">
+                      <string>MicrosoftTemplateWordOpenXMLDocument</string>
+                    </field>
+                    <field name="mimeType">
+                      <string>application/vnd.openxmlformats-officedocument.wordprocessingml.document</string>
+                    </field>
+                    <field name="path">
+                      <string>classpath:templates/template.docx</string>
+                    </field>
+                  </object>
+                </value>
+                <value>
+                  <object type="org.exoplatform.services.cms.documents.DocumentTemplate">
+                    <field name="extension">
+                      <string>.xlsx</string>
+                    </field>
+                    <field name="name">
+                      <string>MicrosoftTemplateExcelOpenXMLDocument</string>
+                    </field>
+                    <field name="mimeType">
+                      <string>application/vnd.openxmlformats-officedocument.spreadsheetml.sheet</string>
+                    </field>
+                    <field name="path">
+                      <string>classpath:templates/template.xlsx</string>
+                    </field>
+                  </object>
+                </value>
+                <value>
+                  <object type="org.exoplatform.services.cms.documents.DocumentTemplate">
+                    <field name="extension">
+                      <string>.pptx</string>
+                    </field>
+                    <field name="name">
+                      <string>MicrosoftTemplatePowerPointOpenXMLDocument</string>
+                    </field>
+                    <field name="mimeType">
+                      <string>application/vnd.openxmlformats-officedocument.presentationml.presentation</string>
+                    </field>
+                    <field name="path">
+                      <string>classpath:templates/template.pptx</string>
+                    </field>
+                  </object>
+                </value>
               </collection>
             </field>
           </object>
@@ -349,9 +397,6 @@
       </init-params>
     </component-plugin>
   </external-component-plugins>
-  
-  
-  
   
   
   <!-- Cache configuration -->

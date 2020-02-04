@@ -32,6 +32,9 @@
         <MicrosoftBlankWordOpenXMLDocument>Microsoft Word Document (*.docx) *</MicrosoftBlankWordOpenXMLDocument>
         <MicrosoftBlankExcelOpenXMLDocument>Microsoft Excel Workbook (*.xlsx) *</MicrosoftBlankExcelOpenXMLDocument>
         <MicrosoftBlankPowerPointOpenXMLDocument>Microsoft PowerPoint Presentation *</MicrosoftBlankPowerPointOpenXMLDocument>
+        <MicrosoftTemplateWordOpenXMLDocument>Microsoft Template Document (*.docx) *</MicrosoftTemplateWordOpenXMLDocument>
+        <MicrosoftTemplateExcelOpenXMLDocument>Microsoft Template Workbook (*.xlsx) *</MicrosoftTemplateExcelOpenXMLDocument>
+        <MicrosoftTemplatePowerPointOpenXMLDocument>Microsoft Template Presentation *</MicrosoftTemplatePowerPointOpenXMLDocument>
       </option>
     </label>
   </UINewDocumentForm>

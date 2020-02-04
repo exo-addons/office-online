@@ -44,7 +44,7 @@ public class OfficeOnlineNewDocumentEditorPlugin extends BaseComponentPlugin imp
   @Override
   public void onDocumentCreated(String workspace, String path) throws Exception {
     Node node = wopiService.getNode(workspace, path);
-    String link = wopiService.getEditorLink(node, WOPIService.EDITNEW_ACTION);
+    String link = wopiService.getEditorLink(node, WOPIService.EDIT_ACTION);
     if (link != null) {
       link = "'" + link + "'";
     } else {
