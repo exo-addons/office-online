@@ -1,5 +1,7 @@
 package org.exoplatform.officeonline.documents;
 
+import static org.exoplatform.officeonline.webui.OfficeOnlineContext.callModule;
+
 import java.util.Map;
 import java.util.ResourceBundle;
 import java.util.concurrent.ConcurrentHashMap;
@@ -74,7 +76,7 @@ public class OfficeOnlineDocumentEditorPlugin extends BaseComponentPlugin implem
     JavascriptManager js = requestContext.getJavascriptManager();
     js.require("SHARED/officeonline", "officeonline").addScripts("officeonline.initNewDocument();");
   }
-  
+
   /**
    * {@inheritDoc}
    */
@@ -82,7 +84,7 @@ public class OfficeOnlineDocumentEditorPlugin extends BaseComponentPlugin implem
   public String getProviderName() {
     return PROVIDER_NAME;
   }
-  
+
   /**
    * {@inheritDoc}
    */
@@ -95,13 +97,15 @@ public class OfficeOnlineDocumentEditorPlugin extends BaseComponentPlugin implem
       wopiService.addFilePreferences(node, userId, symlink.getPath());
     }
     String link = node != null ? editorLink(node) : null;
-    ResourceBundle i18n = i18nService.getResourceBundle(new String[] { "locale.officeonline.OfficeOnlineClient" },
-                                                        WebuiRequestContext.getCurrentInstance().getLocale());
-    String label = i18n.getString("OfficeonlineEditorClient.EditButtonTitle");
-    return new EditorButton(link, label, PROVIDER_NAME);
+    if (link != null) {
+      ResourceBundle i18n = i18nService.getResourceBundle(new String[] { "locale.officeonline.OfficeOnlineClient" },
+                                                          WebuiRequestContext.getCurrentInstance().getLocale());
+      String label = i18n.getString("OfficeonlineEditorClient.EditButtonTitle");
+      return new EditorButton(link, label, node.getUUID(), PROVIDER_NAME);
+    }
+    return null;
   }
 
-  
   /**
    * Returns editor link, adds it to the editorLinks cache.
    *
@@ -124,6 +128,16 @@ public class OfficeOnlineDocumentEditorPlugin extends BaseComponentPlugin implem
       return new StringBuilder().append('\'').append(link).append('\'').toString();
     }*/
     return link;
+  }
+
+  @Override
+  public void initActivity(String fileId) throws Exception {
+    callModule("officeonline.initActivity(\"" + fileId + "\");");
+  }
+
+  @Override
+  public void initPreview(String fileId) throws Exception {
+    callModule("officeonline.initPreview(\"" + fileId + "\");");
   }
 
 }
