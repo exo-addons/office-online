@@ -131,13 +131,13 @@ public class OfficeOnlineDocumentEditorPlugin extends BaseComponentPlugin implem
   }
 
   @Override
-  public void initActivity(String fileId) throws Exception {
+  public void initActivity(String fileId, String activityId) throws Exception {
     callModule("officeonline.initActivity(\"" + fileId + "\");");
   }
 
   @Override
-  public void initPreview(String fileId) throws Exception {
-    callModule("officeonline.initPreview(\"" + fileId + "\");");
+  public void initPreview(String fileId, String activityId, int index) throws Exception {
+    callModule("officeonline.initPreview(\"" + fileId + "\", \"" + activityId + "\", \"" + index + "\");");
   }
 
 }

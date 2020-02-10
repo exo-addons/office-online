@@ -417,8 +417,8 @@
       
     };
 
-    this.initActivity = function(fileId, editorLink, activityId) {
-      log("Initialize activity " + activityId + " with document: " + fileId);
+    this.initActivity = function(fileId) {
+      log("Initialize activity with document: " + fileId);
       // Listen to document updates
       store.subscribe(function() {
         var state = store.getState();
@@ -427,10 +427,7 @@
         }
       });
       subscribeDocument(fileId);
-      if (editorLink) {
-        $("#activityContainer" + activityId).find("div[id^='ActivityContextBox'] > .actionBar .statusAction.pull-left").append(
-            getEditorButton(editorLink));
-      }
+     
     };
 
     this.init = function(userId, cometdConf, userMessages) {
@@ -460,10 +457,11 @@
       }
     };
 
-    this.initPreview = function(fileId, editorLink, clickSelector) {
-      log("Init preview called");
+    this.initPreview = function(fileId, activityId, index) {
+      log("Init preview called. FileId: " + fileId);
+      var clickSelector = "#Preview" + activityId + "-" + index;
       $(clickSelector).click(function() {
-        log("Initialize preview " + clickSelector + " of document: " + fileId);
+        log("Initialize preview of document: " + fileId);
         // We set timeout here to avoid the case when the element is rendered but is going to be updated soon
         setTimeout(function() {
           store.subscribe(function() {
@@ -475,9 +473,6 @@
         }, 100);
         subscribeDocument(fileId);
       });
-      if (editorLink) {
-        addEditorButtonToPreview(editorLink, clickSelector);
-      }
     };
 
     /**
