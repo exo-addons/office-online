@@ -417,7 +417,7 @@
       
     };
 
-    this.initActivity = function(fileId) {
+    this.initActivity = function(fileId, editorLink) {
       log("Initialize activity with document: " + fileId);
       // Listen to document updates
       store.subscribe(function() {
@@ -427,7 +427,9 @@
         }
       });
       subscribeDocument(fileId);
-     
+      if(editorLink != null) {
+        // TODO: call addCreateButtonFn on editorbuttons module 
+      }
     };
 
     this.init = function(userId, cometdConf, userMessages) {
@@ -457,7 +459,7 @@
       }
     };
 
-    this.initPreview = function(fileId, activityId, index) {
+    this.initPreview = function(fileId, editorLink, activityId, index) {
       log("Init preview called. FileId: " + fileId);
       var clickSelector = "#Preview" + activityId + "-" + index;
       $(clickSelector).click(function() {
@@ -472,7 +474,12 @@
           });
         }, 100);
         subscribeDocument(fileId);
+        if(editorLink != null) {
+          // TODO: call addCreateButtonFn on editorbuttons module 
+        }
       });
+      
+      
     };
 
     /**

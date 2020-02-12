@@ -1,9 +1,24 @@
+/*
+ * Copyright (C) 2003-2020 eXo Platform SAS.
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU Affero General Public License
+ * as published by the Free Software Foundation; either version 3
+ * of the License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, see<http://www.gnu.org/licenses/>.
+ */
 package org.exoplatform.officeonline.documents;
 
 import static org.exoplatform.officeonline.webui.OfficeOnlineContext.callModule;
 
 import java.util.Map;
-import java.util.ResourceBundle;
 import java.util.concurrent.ConcurrentHashMap;
 
 import javax.jcr.Node;
@@ -12,7 +27,6 @@ import org.exoplatform.container.component.BaseComponentPlugin;
 import org.exoplatform.officeonline.WOPIService;
 import org.exoplatform.services.cms.documents.DocumentEditorPlugin;
 import org.exoplatform.services.cms.documents.DocumentTemplate;
-import org.exoplatform.services.cms.documents.model.EditorButton;
 import org.exoplatform.services.log.ExoLogger;
 import org.exoplatform.services.log.Log;
 import org.exoplatform.services.resources.ResourceBundleService;
@@ -85,25 +99,48 @@ public class OfficeOnlineDocumentEditorPlugin extends BaseComponentPlugin implem
     return PROVIDER_NAME;
   }
 
+  @Override
+  public void initActivity(String uuid, String workspace, String activityId, String context) throws Exception {
+    Node symlink = wopiService.nodeByUUID(uuid, workspace);
+    Node node = wopiService.getNode(symlink.getSession().getWorkspace().getName(), symlink.getPath());
+    if (node != null) {
+      String link = editorLink(node);
+      callModule("officeonline.initActivity('" + node.getUUID() + "', '" + link + "');");
+    }
+
+  }
+
+  @Override
+  public void initPreview(String uuid, String workspace, String activityId, String context, int index) throws Exception {
+    Node symlink = wopiService.nodeByUUID(uuid, workspace);
+    Node node = wopiService.getNode(symlink.getSession().getWorkspace().getName(), symlink.getPath());
+    if (node != null) {
+      if (symlink.isNodeType("exo:symlink")) {
+        String userId = WebuiRequestContext.getCurrentInstance().getRemoteUser();
+        wopiService.addFilePreferences(node, userId, symlink.getPath());
+      }
+      String link = editorLink(node);
+      callModule("officeonline.initPreview('" + node.getUUID() + "', '" + link + "', '" + activityId + "', '" + index + "');");
+    }
+    
+  }
+
   /**
    * {@inheritDoc}
    */
-  @Override
-  public EditorButton getEditorButton(String uuid, String workspace, String context) throws Exception {
+
+  protected String getEditorLink(String uuid, String workspace, String context) throws Exception {
     Node symlink = wopiService.nodeByUUID(uuid, workspace);
     Node node = wopiService.getNode(symlink.getSession().getWorkspace().getName(), symlink.getPath());
-    if (symlink.isNodeType("exo:symlink")) {
-      String userId = WebuiRequestContext.getCurrentInstance().getRemoteUser();
-      wopiService.addFilePreferences(node, userId, symlink.getPath());
-    }
-    String link = node != null ? editorLink(node) : null;
-    if (link != null) {
-      ResourceBundle i18n = i18nService.getResourceBundle(new String[] { "locale.officeonline.OfficeOnlineClient" },
-                                                          WebuiRequestContext.getCurrentInstance().getLocale());
-      String label = i18n.getString("OfficeonlineEditorClient.EditButtonTitle");
-      return new EditorButton(link, label, node.getUUID(), PROVIDER_NAME);
+    if (node != null) {
+      if (symlink.isNodeType("exo:symlink")) {
+        String userId = WebuiRequestContext.getCurrentInstance().getRemoteUser();
+        wopiService.addFilePreferences(node, userId, symlink.getPath());
+      }
+      return editorLink(node);
     }
     return null;
+
   }
 
   /**
@@ -121,23 +158,7 @@ public class OfficeOnlineDocumentEditorPlugin extends BaseComponentPlugin implem
       }
       return null;
     });
-    /*
-    if (link == null || link.isEmpty()) {
-      return "null".intern();
-    } else {
-      return new StringBuilder().append('\'').append(link).append('\'').toString();
-    }*/
     return link;
-  }
-
-  @Override
-  public void initActivity(String fileId, String activityId) throws Exception {
-    callModule("officeonline.initActivity(\"" + fileId + "\");");
-  }
-
-  @Override
-  public void initPreview(String fileId, String activityId, int index) throws Exception {
-    callModule("officeonline.initPreview(\"" + fileId + "\", \"" + activityId + "\", \"" + index + "\");");
   }
 
 }
