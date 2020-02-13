@@ -29,8 +29,6 @@ import org.exoplatform.services.cms.documents.DocumentEditorPlugin;
 import org.exoplatform.services.cms.documents.DocumentTemplate;
 import org.exoplatform.services.log.ExoLogger;
 import org.exoplatform.services.log.Log;
-import org.exoplatform.services.resources.ResourceBundleService;
-import org.exoplatform.web.application.JavascriptManager;
 import org.exoplatform.webui.application.WebuiRequestContext;
 
 /**
@@ -47,9 +45,6 @@ public class OfficeOnlineDocumentEditorPlugin extends BaseComponentPlugin implem
   /** The wopi service. */
   protected final WOPIService       wopiService;
 
-  /** The i18 n service. */
-  private ResourceBundleService     i18nService;
-
   /** The editor links. */
   protected final Map<Node, String> editorLinks   = new ConcurrentHashMap<>();
 
@@ -57,11 +52,9 @@ public class OfficeOnlineDocumentEditorPlugin extends BaseComponentPlugin implem
    * Instantiates a new office online new document editor plugin.
    *
    * @param wopiService the wopi service
-   * @param i18nService the i18n service
    */
-  public OfficeOnlineDocumentEditorPlugin(WOPIService wopiService, ResourceBundleService i18nService) {
+  public OfficeOnlineDocumentEditorPlugin(WOPIService wopiService) {
     this.wopiService = wopiService;
-    this.i18nService = i18nService;
   }
 
   /**
@@ -71,24 +64,16 @@ public class OfficeOnlineDocumentEditorPlugin extends BaseComponentPlugin implem
   public void onDocumentCreated(String workspace, String path) throws Exception {
     Node node = wopiService.getNode(workspace, path);
     String link = wopiService.getEditorLink(node, WOPIService.EDIT_ACTION);
-    if (link != null) {
-      link = "'" + link + "'";
-    } else {
-      link = "null";
-    }
-    WebuiRequestContext requestContext = WebuiRequestContext.getCurrentInstance();
-    JavascriptManager js = requestContext.getJavascriptManager();
-    js.require("SHARED/officeonline", "officeonline").addScripts("officeonline.initEditorPage(" + link + ");");
+    link = link != null ? new StringBuilder().append("'").append(link).append("'").toString() : "null".intern();
+    callModule("officeonline.initEditorPage(" + link + ");");
   }
 
   /**
    * {@inheritDoc}
    */
   @Override
-  public void beforeDocumentCreate(DocumentTemplate template, String parentPath, String title) {
-    WebuiRequestContext requestContext = WebuiRequestContext.getCurrentInstance();
-    JavascriptManager js = requestContext.getJavascriptManager();
-    js.require("SHARED/officeonline", "officeonline").addScripts("officeonline.initNewDocument();");
+  public void beforeDocumentCreate(DocumentTemplate template, String parentPath, String title) throws Exception  {
+    callModule("officeonline.initNewDocument();");
   }
 
   /**
@@ -104,10 +89,9 @@ public class OfficeOnlineDocumentEditorPlugin extends BaseComponentPlugin implem
     Node symlink = wopiService.nodeByUUID(uuid, workspace);
     Node node = wopiService.getNode(symlink.getSession().getWorkspace().getName(), symlink.getPath());
     if (node != null) {
-      String link = editorLink(node);
-      callModule("officeonline.initActivity('" + node.getUUID() + "', '" + link + "');");
+      String link = getEditorLink(node);
+      callModule("officeonline.initActivity('" + node.getUUID() + "', " + link + ");");
     }
-
   }
 
   @Override
@@ -119,27 +103,9 @@ public class OfficeOnlineDocumentEditorPlugin extends BaseComponentPlugin implem
         String userId = WebuiRequestContext.getCurrentInstance().getRemoteUser();
         wopiService.addFilePreferences(node, userId, symlink.getPath());
       }
-      String link = editorLink(node);
-      callModule("officeonline.initPreview('" + node.getUUID() + "', '" + link + "', '" + activityId + "', '" + index + "');");
+      String link = getEditorLink(node);
+      callModule("officeonline.initPreview('" + node.getUUID() + "', " + link + ", '" + activityId + "', '" + index + "');");
     }
-    
-  }
-
-  /**
-   * {@inheritDoc}
-   */
-
-  protected String getEditorLink(String uuid, String workspace, String context) throws Exception {
-    Node symlink = wopiService.nodeByUUID(uuid, workspace);
-    Node node = wopiService.getNode(symlink.getSession().getWorkspace().getName(), symlink.getPath());
-    if (node != null) {
-      if (symlink.isNodeType("exo:symlink")) {
-        String userId = WebuiRequestContext.getCurrentInstance().getRemoteUser();
-        wopiService.addFilePreferences(node, userId, symlink.getPath());
-      }
-      return editorLink(node);
-    }
-    return null;
 
   }
 
@@ -149,7 +115,7 @@ public class OfficeOnlineDocumentEditorPlugin extends BaseComponentPlugin implem
    * @param node the node
    * @return the string
    */
-  protected String editorLink(Node node) {
+  protected String getEditorLink(Node node) {
     String link = editorLinks.computeIfAbsent(node, n -> {
       if (wopiService.canEdit(node)) {
         return wopiService.getEditorLink(node, WOPIService.EDIT_ACTION);
@@ -158,6 +124,7 @@ public class OfficeOnlineDocumentEditorPlugin extends BaseComponentPlugin implem
       }
       return null;
     });
+    link = link != null ? new StringBuilder().append("'").append(link).append("'").toString() : "null".intern();
     return link;
   }
 

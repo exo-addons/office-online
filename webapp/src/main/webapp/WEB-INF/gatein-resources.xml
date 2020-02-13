@@ -51,6 +51,9 @@
     <depends>
       <module>officeonlineRedux</module>
     </depends>
+    <depends>
+      <module>editorbuttons</module>
+    </depends>
   </module>
 
   <portlet-skin>

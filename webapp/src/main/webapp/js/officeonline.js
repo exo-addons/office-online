@@ -1,7 +1,7 @@
 /**
  * Office Online Editor client.
  */
-(function($, cCometD, redux) {
+(function($, cCometD, redux, editorbuttons) {
   "use strict";
 
   /** For debug logging. */
@@ -390,6 +390,19 @@
         window.open(versionsLink);
       }
     };
+    
+    var createEditorButton = function(editorLink) {
+      var label = message("OfficeonlineEditorClient.EditButtonTitle");
+      var iconClass = "uiIconEdit";
+      if (editorLink.indexOf("&action=view") > -1) {
+        label = message("OfficeonlineEditorClient.ViewButtonTitle");
+        iconClass = "uiIconView";
+      }
+      return $("<li class='hidden-tabletL'><a href='" + editorLink + "' target='_blank'>"
+          + "<i class='uiIconEcmsOfficeOnlineOpen uiIconEcmsLightGray " + iconClass + "'></i>" + label + "</a></li>");
+      
+    }
+
  
     this.initEditor = function(accessToken, actionURL, versionsURL, filename) {
       extension = filename.substring(filename.lastIndexOf("."));
@@ -416,7 +429,7 @@
       window.addEventListener('message', handlePostMessage, false);
       
     };
-
+    
     this.initActivity = function(fileId, editorLink) {
       log("Initialize activity with document: " + fileId);
       // Listen to document updates
@@ -428,7 +441,18 @@
       });
       subscribeDocument(fileId);
       if(editorLink != null) {
-        // TODO: call addCreateButtonFn on editorbuttons module 
+        editorbuttons.addCreateButtonFn("officeonline", function() {
+          return createEditorButton(editorLink);
+        });
+        
+        // FOR TEST 
+        editorbuttons.addCreateButtonFn("officeonline2", function() {
+          return createEditorButton(editorLink);
+        });
+        
+        editorbuttons.addCreateButtonFn("officeonline3", function() {
+          return createEditorButton(editorLink);
+        });
       }
     };
 
@@ -475,7 +499,9 @@
         }, 100);
         subscribeDocument(fileId);
         if(editorLink != null) {
-          // TODO: call addCreateButtonFn on editorbuttons module 
+          editorbuttons.addCreateButtonFn("officeonline", function() {
+            return createEditorButton(editorLink);
+          });
         }
       });
       
@@ -539,4 +565,4 @@
   var editor = new Editor();
 
   return editor;
-})($, cCometD, Redux);
+})($, cCometD, Redux, editorbuttons);
