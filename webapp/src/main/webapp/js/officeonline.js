@@ -68,61 +68,6 @@
   };
 
   /**
-   * Adds the 'Edit' button to No-preview screen (from the activity stream) when it's loaded.
-   */
-  var tryAddEditorButtonNoPreview = function(editorLink, attempts, delay) {
-    var $elem = $("#documentPreviewContainer .navigationContainer.noPreview");
-    if ($elem.length == 0 || !$elem.is(":visible")) {
-      if (attempts > 0) {
-        setTimeout(function() {
-          tryAddEditorButtonNoPreview(editorLink, attempts - 1, delay);
-        }, delay);
-      } else {
-        log("Cannot find .noPreview element");
-      }
-    } else if ($elem.find("a.editInOfficeOnline").length == 0) {
-      var $detailContainer = $elem.find(".detailContainer");
-      var $downloadBtn = $detailContainer.find(".uiIconDownload").closest("a.btn");
-      if ($downloadBtn.length != 0) {
-        $downloadBtn.after(getNoPreviewEditorButton(editorLink));
-      } else {
-        $detailContainer.append(getNoPreviewEditorButton(editorLink));
-      }
-    }
-  };
-  /**
-   * Adds the 'Edit' button to a preview (from the activity stream) when it's loaded.
-   */
-  var tryAddEditorButtonToPreview = function(editorLink, attempts, delay) {
-    var $elem = $("#uiDocumentPreview .previewBtn");
-    if ($elem.length == 0 || !$elem.is(":visible")) {
-      if (attempts > 0) {
-        setTimeout(function() {
-          tryAddEditorButtonToPreview(editorLink, attempts - 1, delay);
-        }, delay);
-      } else {
-        log("Cannot find element " + $elem);
-      }
-    } else {
-      $elem.append("<div class='editInOfficeOnline'>" + getEditorButton(editorLink) + "</div>");
-    }
-  };
-
-  /**
-   * Ads the 'Edit' button to a preview (opened from the activity stream).
-   */
-  var addEditorButtonToPreview = function(editorLink, clickSelector) {
-    $(clickSelector).click(function() {
-      // We set timeout here to avoid the case when the element is rendered but is going to be updated soon
-      setTimeout(function() {
-        tryAddEditorButtonToPreview(editorLink, 100, 100);
-        // We need wait for about 2min when doc cannot generate its preview
-        tryAddEditorButtonNoPreview(editorLink, 600, 250);
-      }, 100);
-    });
-  };
-
-  /**
    * Ads the 'Edit Online' button to the JCRExplorer when a document is displayed.
    */
   var addEditorButtonToExplorer = function(editorLink) {
@@ -403,7 +348,6 @@
       
     }
 
- 
     this.initEditor = function(accessToken, actionURL, versionsURL, filename) {
       extension = filename.substring(filename.lastIndexOf("."));
       updateWindowTitle(filename);
@@ -442,15 +386,6 @@
       subscribeDocument(fileId);
       if(editorLink != null) {
         editorbuttons.addCreateButtonFn("officeonline", function() {
-          return createEditorButton(editorLink);
-        });
-        
-        // FOR TEST 
-        editorbuttons.addCreateButtonFn("officeonline2", function() {
-          return createEditorButton(editorLink);
-        });
-        
-        editorbuttons.addCreateButtonFn("officeonline3", function() {
           return createEditorButton(editorLink);
         });
       }
@@ -498,14 +433,12 @@
           });
         }, 100);
         subscribeDocument(fileId);
-        if(editorLink != null) {
-          editorbuttons.addCreateButtonFn("officeonline", function() {
-            return createEditorButton(editorLink);
-          });
-        }
       });
-      
-      
+      if(editorLink != null) {
+        editorbuttons.addCreateButtonFn("officeonline", function() {
+          return createEditorButton(editorLink);
+        });
+      }
     };
 
     /**
