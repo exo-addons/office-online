@@ -90,7 +90,7 @@ public class OfficeOnlineDocumentEditorPlugin extends BaseComponentPlugin implem
     Node node = wopiService.getNode(symlink.getSession().getWorkspace().getName(), symlink.getPath());
     if (node != null) {
       String link = getEditorLink(node);
-      callModule("officeonline.initActivity('" + node.getUUID() + "', " + link + ");");
+      callModule("officeonline.initActivity('" + node.getUUID() + "', " + link + ", '" + activityId + "');");
     }
   }
 

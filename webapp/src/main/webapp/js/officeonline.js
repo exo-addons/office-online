@@ -374,7 +374,7 @@
       
     };
     
-    this.initActivity = function(fileId, editorLink) {
+    this.initActivity = function(fileId, editorLink, activityId) {
       log("Initialize activity with document: " + fileId);
       // Listen to document updates
       store.subscribe(function() {
