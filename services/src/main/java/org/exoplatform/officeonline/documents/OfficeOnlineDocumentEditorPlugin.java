@@ -24,9 +24,11 @@ import java.util.concurrent.ConcurrentHashMap;
 import javax.jcr.Node;
 
 import org.exoplatform.container.component.BaseComponentPlugin;
+import org.exoplatform.officeonline.OfficeOnlineDocumentUpdateActivityHandler;
 import org.exoplatform.officeonline.WOPIService;
 import org.exoplatform.services.cms.documents.DocumentEditorPlugin;
 import org.exoplatform.services.cms.documents.DocumentTemplate;
+import org.exoplatform.services.cms.documents.DocumentUpdateActivityHandler;
 import org.exoplatform.services.log.ExoLogger;
 import org.exoplatform.services.log.Log;
 import org.exoplatform.webui.application.WebuiRequestContext;
@@ -47,6 +49,8 @@ public class OfficeOnlineDocumentEditorPlugin extends BaseComponentPlugin implem
 
   /** The editor links. */
   protected final Map<Node, String> editorLinks   = new ConcurrentHashMap<>();
+  
+  protected final OfficeOnlineDocumentUpdateActivityHandler updateHandler;
 
   /**
    * Instantiates a new office online new document editor plugin.
@@ -55,6 +59,7 @@ public class OfficeOnlineDocumentEditorPlugin extends BaseComponentPlugin implem
    */
   public OfficeOnlineDocumentEditorPlugin(WOPIService wopiService) {
     this.wopiService = wopiService;
+    this.updateHandler = new OfficeOnlineDocumentUpdateActivityHandler();
   }
 
   /**
@@ -107,6 +112,11 @@ public class OfficeOnlineDocumentEditorPlugin extends BaseComponentPlugin implem
       callModule("officeonline.initPreview('" + node.getUUID() + "', " + link + ", '" + activityId + "', '" + index + "');");
     }
 
+  }
+  
+  @Override
+  public DocumentUpdateActivityHandler getDocumentUpdateHandler() {
+    return updateHandler;
   }
 
   /**
