@@ -37,7 +37,7 @@ import org.exoplatform.webui.application.WebuiRequestContext;
 public class OfficeOnlineDocumentEditorPlugin extends BaseComponentPlugin implements DocumentEditorPlugin {
 
   /** The Constant PROVIDER_NAME. */
-  protected static final String     PROVIDER_NAME = "OfficeOnline";
+  protected static final String     PROVIDER_NAME = "officeonline";
 
   /** The Constant LOG. */
   protected static final Log        LOG           = ExoLogger.getLogger(OfficeOnlineDocumentEditorPlugin.class);
