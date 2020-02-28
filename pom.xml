@@ -30,7 +30,7 @@
 
   <artifactId>exo-officeonline-editor-parent</artifactId>
   <groupId>org.exoplatform.addons.officeonline</groupId>
-  <version>1.4.x-SNAPSHOT</version>
+  <version>1.0.x-SNAPSHOT</version>
   <packaging>pom</packaging>
   <name>eXo OfficeOnline Editor :: Parent</name>
   <description>eXo OfficeOnline Editor for Documents extension</description>
