@@ -24,6 +24,8 @@ import java.util.concurrent.ConcurrentHashMap;
 import javax.jcr.Node;
 
 import org.exoplatform.container.component.BaseComponentPlugin;
+import org.exoplatform.container.xml.InitParams;
+import org.exoplatform.container.xml.ObjectParameter;
 import org.exoplatform.officeonline.WOPIService;
 import org.exoplatform.services.cms.documents.DocumentEditorPlugin;
 import org.exoplatform.services.cms.documents.DocumentTemplate;
@@ -31,29 +33,47 @@ import org.exoplatform.services.log.ExoLogger;
 import org.exoplatform.services.log.Log;
 import org.exoplatform.webui.application.WebuiRequestContext;
 
+
 /**
  * The Class OnlyOfficeNewDocumentEditorPlugin.
  */
 public class OfficeOnlineDocumentEditorPlugin extends BaseComponentPlugin implements DocumentEditorPlugin {
 
   /** The Constant PROVIDER_NAME. */
-  protected static final String     PROVIDER_NAME = "officeonline";
+  protected static final String     PROVIDER_NAME                = "officeonline";
+
+  /** The Constant PROVIDER_CONFIGURATION_PARAM. */
+  protected static final String     PROVIDER_CONFIGURATION_PARAM = "provider-configuration";
 
   /** The Constant LOG. */
-  protected static final Log        LOG           = ExoLogger.getLogger(OfficeOnlineDocumentEditorPlugin.class);
+  protected static final Log        LOG                          = ExoLogger.getLogger(OfficeOnlineDocumentEditorPlugin.class);
 
   /** The wopi service. */
   protected final WOPIService       wopiService;
 
   /** The editor links. */
-  protected final Map<Node, String> editorLinks   = new ConcurrentHashMap<>();
-
+  protected final Map<Node, String> editorLinks                  = new ConcurrentHashMap<>();
+  
+  /** The config. */
+  protected ProviderConfig config;
+ 
   /**
    * Instantiates a new office online new document editor plugin.
    *
    * @param wopiService the wopi service
+   * @param initParams the init params
    */
-  public OfficeOnlineDocumentEditorPlugin(WOPIService wopiService) {
+  public OfficeOnlineDocumentEditorPlugin(WOPIService wopiService, InitParams initParams) {
+    ObjectParameter typesParam = initParams.getObjectParam(PROVIDER_CONFIGURATION_PARAM);
+    if (typesParam != null) {
+      Object obj = typesParam.getObject();
+      if (obj != null && DocumentEditorPlugin.ProviderConfig.class.isAssignableFrom(obj.getClass())) {
+        DocumentEditorPlugin.ProviderConfig config = DocumentEditorPlugin.ProviderConfig.class.cast(obj);
+        this.config = config;
+      } else {
+        LOG.warn("The provider config not set for " + PROVIDER_NAME + " document editor plugin");
+      }
+    }
     this.wopiService = wopiService;
   }
 
@@ -72,7 +92,7 @@ public class OfficeOnlineDocumentEditorPlugin extends BaseComponentPlugin implem
    * {@inheritDoc}
    */
   @Override
-  public void beforeDocumentCreate(DocumentTemplate template, String parentPath, String title) throws Exception  {
+  public void beforeDocumentCreate(DocumentTemplate template, String parentPath, String title) throws Exception {
     callModule("officeonline.initNewDocument();");
   }
 
@@ -84,6 +104,15 @@ public class OfficeOnlineDocumentEditorPlugin extends BaseComponentPlugin implem
     return PROVIDER_NAME;
   }
 
+  /**
+   * Inits the activity.
+   *
+   * @param uuid the uuid
+   * @param workspace the workspace
+   * @param activityId the activity id
+   * @param context the context
+   * @throws Exception the exception
+   */
   @Override
   public void initActivity(String uuid, String workspace, String activityId, String context) throws Exception {
     Node symlink = wopiService.nodeByUUID(uuid, workspace);
@@ -94,6 +123,16 @@ public class OfficeOnlineDocumentEditorPlugin extends BaseComponentPlugin implem
     }
   }
 
+  /**
+   * Inits the preview.
+   *
+   * @param uuid the uuid
+   * @param workspace the workspace
+   * @param activityId the activity id
+   * @param context the context
+   * @param index the index
+   * @throws Exception the exception
+   */
   @Override
   public void initPreview(String uuid, String workspace, String activityId, String context, int index) throws Exception {
     Node symlink = wopiService.nodeByUUID(uuid, workspace);
@@ -128,4 +167,14 @@ public class OfficeOnlineDocumentEditorPlugin extends BaseComponentPlugin implem
     return link;
   }
 
+  
+  /**
+   * Gets the config.
+   *
+   * @return the config
+   */
+  @Override
+  public ProviderConfig getConfig() {
+    return config;
+  }
 }
