@@ -25,9 +25,8 @@ import javax.jcr.Node;
 
 import org.exoplatform.container.component.BaseComponentPlugin;
 import org.exoplatform.container.xml.InitParams;
-import org.exoplatform.container.xml.ObjectParameter;
 import org.exoplatform.officeonline.WOPIService;
-import org.exoplatform.services.cms.documents.DocumentEditorPlugin;
+import org.exoplatform.services.cms.documents.DocumentEditorOps;
 import org.exoplatform.services.cms.documents.DocumentTemplate;
 import org.exoplatform.services.log.ExoLogger;
 import org.exoplatform.services.log.Log;
@@ -37,7 +36,7 @@ import org.exoplatform.webui.application.WebuiRequestContext;
 /**
  * The Class OnlyOfficeNewDocumentEditorPlugin.
  */
-public class OfficeOnlineDocumentEditorPlugin extends BaseComponentPlugin implements DocumentEditorPlugin {
+public class OfficeOnlineDocumentEditorPlugin extends BaseComponentPlugin implements DocumentEditorOps {
 
   /** The Constant PROVIDER_NAME. */
   protected static final String     PROVIDER_NAME                = "officeonline";
@@ -53,27 +52,13 @@ public class OfficeOnlineDocumentEditorPlugin extends BaseComponentPlugin implem
 
   /** The editor links. */
   protected final Map<Node, String> editorLinks                  = new ConcurrentHashMap<>();
-  
-  /** The config. */
-  protected ProviderConfig config;
- 
+
   /**
    * Instantiates a new office online new document editor plugin.
    *
    * @param wopiService the wopi service
-   * @param initParams the init params
    */
-  public OfficeOnlineDocumentEditorPlugin(WOPIService wopiService, InitParams initParams) {
-    ObjectParameter typesParam = initParams.getObjectParam(PROVIDER_CONFIGURATION_PARAM);
-    if (typesParam != null) {
-      Object obj = typesParam.getObject();
-      if (obj != null && DocumentEditorPlugin.ProviderConfig.class.isAssignableFrom(obj.getClass())) {
-        DocumentEditorPlugin.ProviderConfig config = DocumentEditorPlugin.ProviderConfig.class.cast(obj);
-        this.config = config;
-      } else {
-        LOG.warn("The provider config not set for " + PROVIDER_NAME + " document editor plugin");
-      }
-    }
+  public OfficeOnlineDocumentEditorPlugin(WOPIService wopiService) {
     this.wopiService = wopiService;
   }
 
@@ -167,14 +152,4 @@ public class OfficeOnlineDocumentEditorPlugin extends BaseComponentPlugin implem
     return link;
   }
 
-  
-  /**
-   * Gets the config.
-   *
-   * @return the config
-   */
-  @Override
-  public ProviderConfig getConfig() {
-    return config;
-  }
 }
