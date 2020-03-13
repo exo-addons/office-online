@@ -24,10 +24,9 @@ import java.util.concurrent.ConcurrentHashMap;
 import javax.jcr.Node;
 
 import org.exoplatform.container.component.BaseComponentPlugin;
-import org.exoplatform.container.xml.InitParams;
 import org.exoplatform.officeonline.WOPIService;
-import org.exoplatform.services.cms.documents.DocumentEditorOps;
-import org.exoplatform.services.cms.documents.DocumentTemplate;
+import org.exoplatform.services.cms.documents.DocumentEditor;
+import org.exoplatform.services.cms.documents.NewDocumentTemplate;
 import org.exoplatform.services.log.ExoLogger;
 import org.exoplatform.services.log.Log;
 import org.exoplatform.webui.application.WebuiRequestContext;
@@ -36,7 +35,7 @@ import org.exoplatform.webui.application.WebuiRequestContext;
 /**
  * The Class OnlyOfficeNewDocumentEditorPlugin.
  */
-public class OfficeOnlineDocumentEditorPlugin extends BaseComponentPlugin implements DocumentEditorOps {
+public class OfficeOnlineDocumentEditorPlugin extends BaseComponentPlugin implements DocumentEditor {
 
   /** The Constant PROVIDER_NAME. */
   protected static final String     PROVIDER_NAME                = "officeonline";
@@ -77,7 +76,7 @@ public class OfficeOnlineDocumentEditorPlugin extends BaseComponentPlugin implem
    * {@inheritDoc}
    */
   @Override
-  public void beforeDocumentCreate(DocumentTemplate template, String parentPath, String title) throws Exception {
+  public void beforeDocumentCreate(NewDocumentTemplate template, String parentPath, String title) throws Exception {
     callModule("officeonline.initNewDocument();");
   }
 

@@ -18,15 +18,17 @@ package org.exoplatform.officeonline.documents;
 
 import java.util.Collections;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import javax.jcr.Node;
 
 import org.exoplatform.container.component.BaseComponentPlugin;
 import org.exoplatform.container.xml.InitParams;
 import org.exoplatform.container.xml.ObjectParameter;
-import org.exoplatform.services.cms.documents.DocumentEditorOps;
+import org.exoplatform.services.cms.documents.DocumentEditor;
+import org.exoplatform.services.cms.documents.DocumentEditorProvider;
 import org.exoplatform.services.cms.documents.DocumentService;
-import org.exoplatform.services.cms.documents.DocumentTemplate;
+import org.exoplatform.services.cms.documents.NewDocumentTemplate;
 import org.exoplatform.services.cms.documents.NewDocumentTemplatePlugin;
 import org.exoplatform.services.log.ExoLogger;
 import org.exoplatform.services.log.Log;
@@ -37,17 +39,17 @@ import org.exoplatform.services.log.Log;
 public class OfficeOnlineNewDocumentTemplatePlugin extends BaseComponentPlugin implements NewDocumentTemplatePlugin {
 
   /** The Constant LOG. */
-  protected static final Log       LOG                              =
-                                       ExoLogger.getLogger(OfficeOnlineNewDocumentTemplatePlugin.class);
+  protected static final Log          LOG                              =
+                                          ExoLogger.getLogger(OfficeOnlineNewDocumentTemplatePlugin.class);
 
   /**   The DOCUMENT_TYPES_CONFIGURATION param. */
-  private static final String      DOCUMENT_TEMPLATES_CONFIGURATION = "document-templates-configuration";
+  private static final String         DOCUMENT_TEMPLATES_CONFIGURATION = "document-templates-configuration";
 
   /** The document types. */
-  protected List<DocumentTemplate> templates                        = Collections.emptyList();
+  protected List<NewDocumentTemplate> templates                        = Collections.emptyList();
 
   /** The document service. */
-  protected final DocumentService  documentService;
+  protected final DocumentService     documentService;
 
   /**
    * Instantiates a new new document type plugin.
@@ -60,7 +62,7 @@ public class OfficeOnlineNewDocumentTemplatePlugin extends BaseComponentPlugin i
       Object obj = typesParam.getObject();
       if (obj != null && DocumentService.DocumentTemplatesConfig.class.isAssignableFrom(obj.getClass())) {
         DocumentService.DocumentTemplatesConfig config = DocumentService.DocumentTemplatesConfig.class.cast(obj);
-        this.templates = config.getTemplates();
+        this.templates = config.getTemplates().stream().map(NewDocumentTemplate::new).collect(Collectors.toList());
       } else {
         LOG.error("The document templates are not set");
       }
@@ -74,7 +76,7 @@ public class OfficeOnlineNewDocumentTemplatePlugin extends BaseComponentPlugin i
    * @return the templates
    */
   @Override
-  public List<DocumentTemplate> getTemplates() {
+  public List<NewDocumentTemplate> getTemplates() {
     return templates;
   }
 
@@ -88,23 +90,21 @@ public class OfficeOnlineNewDocumentTemplatePlugin extends BaseComponentPlugin i
    * @throws Exception the exception
    */
   @Override
-  public Node createDocument(Node parent, String title, DocumentTemplate template) throws Exception {
-    LOG.debug("Creating new document {} from template {}", title, template);
+  public Node createDocument(Node parent, String title, NewDocumentTemplate template) throws Exception {
+    if (LOG.isDebugEnabled()) {
+      LOG.debug("Creating new document {} from template {}", title, template);
+    }
     return documentService.createDocumentFromTemplate(parent, title, template);
   }
 
   @Override
-  public DocumentTemplate getTemplate(String name) {
+  public NewDocumentTemplate getTemplate(String name) {
     return templates.stream().filter(t -> t.getName().equals(name)).findAny().orElse(null);
   }
 
   @Override
-  public DocumentEditorOps getEditorOps() {
-    return documentService.getDocumentEditorProviders()
-                   .stream()
-                   .filter(plugin -> plugin.getProviderName().equals(OfficeOnlineDocumentEditorPlugin.PROVIDER_NAME))
-                   .findAny()
-                   .orElse(null);
+  public Class<? extends DocumentEditor> getEditorClass() {
+    return OfficeOnlineDocumentEditorPlugin.class;
   }
 
 }
