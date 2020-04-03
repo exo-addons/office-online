@@ -112,8 +112,17 @@ public class EditorPortlet extends GenericPortlet {
           String versionsUrl = wopiService.getExplorerURL(node, config.getBaseUrl()).append("&versions=true").toString();
           String workspace = node.getSession().getWorkspace().getName();
           InitConfig initConfig = new InitConfig(node.getUUID(), workspace, token.toJSON(), actionURL, versionsUrl, filename);
-          documentService.initDocumentEditorsModule(PROVIDER_NAME, workspace);
-          callModule("officeonline.initEditor(" + initConfig.toJSON() + ");");
+          String currentEditor = documentService.getCurrentDocumentProvider(config.getDocId(), config.getWorkspace());
+          if (currentEditor == null || currentEditor.equals(PROVIDER_NAME)) {
+            documentService.initDocumentEditorsModule(PROVIDER_NAME, workspace);
+            callModule("officeonline.initEditor(" + initConfig.toJSON() + ");");
+          } else {
+            LOG.warn("Cannot open editor for fileId: {} The file is open in another editor provider: {}",
+                     fileId,
+                     currentEditor);
+            showError(i18n.getString("OfficeonlineEditorClient.ErrorTitle"),
+                      i18n.getString("OfficeonlineEditor.error.AnotherEditorIsOpen"));
+          }
         } else {
           showError(i18n.getString("OfficeonlineEditorClient.ErrorTitle"),
                     i18n.getString("OfficeonlineEditor.error.EditorCannotBeCreated"));
@@ -274,7 +283,7 @@ public class EditorPortlet extends GenericPortlet {
     public String getFilename() {
       return filename;
     }
-    
+
     /**
      * Return this config as JSON string.
      *
