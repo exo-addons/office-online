@@ -94,11 +94,10 @@ public class OfficeOnlineDocumentEditorPlugin extends BaseComponentPlugin implem
    * @param uuid the uuid
    * @param workspace the workspace
    * @param activityId the activity id
-   * @param context the context
    * @throws Exception the exception
    */
   @Override
-  public void initActivity(String uuid, String workspace, String activityId, String context) throws Exception {
+  public void initActivity(String uuid, String workspace, String activityId) throws Exception {
     Node symlink = wopiService.nodeByUUID(uuid, workspace);
     Node node = wopiService.getNode(symlink.getSession().getWorkspace().getName(), symlink.getPath());
     if (node != null) {
