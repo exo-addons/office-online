@@ -63,8 +63,9 @@
    * Returns the html markup of the refresh banner;
    */
   var getRefreshBanner = function() {
-    return "<div class='documentRefreshBanner'><div class='refreshBannerContent'>" + message("OfficeonlineEditorClient.UpdateBannerTitle")
-        + "<span class='refreshBannerLink'>" + message("OfficeonlineEditorClient.ReloadButtonTitle") + "</span></div></div>";
+    return "<div class='documentRefreshBanner'><div class='refreshBannerContent'>"
+        + message("OfficeonlineEditorClient.UpdateBannerTitle") + "<span class='refreshBannerLink'>"
+        + message("OfficeonlineEditorClient.ReloadButtonTitle") + "</span></div></div>";
   };
 
   /**
@@ -73,14 +74,14 @@
   var addEditorButtonToExplorer = function(editorLink) {
     var $button = $("#UIJCRExplorer #uiActionsBarContainer i.uiIconEcmsOfficeOnlineOpen");
     if (editorLink.indexOf("&action=view") > -1) {
-     var buttonHtml = $button[0].outerHTML;
-     $button.parent().html(buttonHtml + " " + message("OfficeonlineEditorClient.ViewButtonTitle"));
-     $button = $("#UIJCRExplorer #uiActionsBarContainer i.uiIconEcmsOfficeOnlineOpen");     
-     $button.addClass("uiIconView");
+      var buttonHtml = $button[0].outerHTML;
+      $button.parent().html(buttonHtml + " " + message("OfficeonlineEditorClient.ViewButtonTitle"));
+      $button = $("#UIJCRExplorer #uiActionsBarContainer i.uiIconEcmsOfficeOnlineOpen");
+      $button.addClass("uiIconView");
     } else {
       $button.addClass("uiIconEdit");
     }
-    
+
     $button.closest("li").addClass("hidden-tabletL");
     var $noPreviewContainer = $("#UIJCRExplorer .navigationContainer.noPreview");
     if ($noPreviewContainer.length != 0) {
@@ -119,10 +120,9 @@
       });
     }
   };
-  
+
   var refreshActivityPreview = function(activityId, $banner) {
-    $banner.find(".refreshBannerContent")
-        .append("<div class='loading'><i class='uiLoadingIconSmall uiIconEcmsGray'></i></div>");
+    $banner.find(".refreshBannerContent").append("<div class='loading'><i class='uiLoadingIconSmall uiIconEcmsGray'></i></div>");
     var $refreshLink = $banner.find(".refreshBannerLink");
     $refreshLink.addClass("disabled");
     $refreshLink.on('click', function() {
@@ -163,7 +163,7 @@
       });
     }
   };
-  
+
   var addRefreshBannerActivity = function(activityId) {
     var $previewParent = $("#Preview" + activityId + "-0").parent();
     // If there is no preview
@@ -234,7 +234,7 @@
     const DOCUMENT_SAVED = "DOCUMENT_SAVED";
     const FILE_RENAME = "File_Rename";
     const FILE_VERSIONS = "UI_FileVersions";
-    
+
     // Editor Window
     var editorWindow;
     // Current user ID
@@ -292,7 +292,7 @@
         }
       });
     };
-    
+
     /**
      * Unsubscribes document
      */
@@ -312,30 +312,30 @@
         });
       }
     };
-    
+
     /**
      * Updates window title
      */
     var updateWindowTitle = function(filename) {
-      if(!filename.endsWith(extension)) {
+      if (!filename.endsWith(extension)) {
         filename += extension;
       }
       window.document.title = filename + " - " + message("OfficeonlineEditorClient.EditorTitle");
     };
-    
+
     /**
      * Handles PostMessages from Office Online frame
      */
     var handlePostMessage = function(e) {
       var msg = JSON.parse(e.data);
       // Rename
-      if(msg.MessageId == FILE_RENAME) {
+      if (msg.MessageId == FILE_RENAME) {
         updateWindowTitle(msg.Values.NewName);
       } else if (msg.MessageId == FILE_VERSIONS) {
         window.open(versionsLink);
       }
     };
-    
+
     var createEditorButton = function(editorLink) {
       var label = message("OfficeonlineEditorClient.EditButtonTitle");
       var iconClass = "uiIconEdit";
@@ -345,7 +345,7 @@
       }
       return $("<li class='hidden-tabletL'><a href='" + editorLink + "' target='_blank'>"
           + "<i class='uiIconEcmsOfficeOnlineOpen uiIconEcmsLightGray " + iconClass + "'></i>" + label + "</a></li>");
-      
+
     }
 
     this.initEditor = function(accessToken, actionURL, versionsURL, filename) {
@@ -371,9 +371,9 @@
       frameholder.appendChild(office_frame);
       document.getElementById('office_form').submit();
       window.addEventListener('message', handlePostMessage, false);
-      
+
     };
-    
+
     this.initActivity = function(fileId, editorLink, activityId) {
       log("Initialize activity with document: " + fileId);
       // Listen to document updates
@@ -384,7 +384,7 @@
         }
       });
       subscribeDocument(fileId);
-      if(editorLink != null) {
+      if (editorLink != null) {
         editorbuttons.addCreateButtonFn("officeonline", function() {
           return createEditorButton(editorLink);
         });
@@ -434,7 +434,7 @@
         }, 100);
         subscribeDocument(fileId);
       });
-      if(editorLink != null) {
+      if (editorLink != null) {
         editorbuttons.addCreateButtonFn("officeonline", function() {
           return createEditorButton(editorLink);
         });
