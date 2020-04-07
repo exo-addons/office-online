@@ -1001,12 +1001,12 @@ public class WOPIResource implements ResourceContainer {
       target = new String(target.getBytes(), UTF_7);
       String fileId = wopiService.putSuggestedFile(config, target, data);
       String fileName = wopiService.getFileName(fileId, config.getWorkspace());
+      EditorConfig newConfig = wopiService.createEditorConfig(config.getUserId(), fileId, config.getWorkspace(), requestInfo);
       String url = new StringBuilder(wopiService.getWOPISrc(requestInfo, fileId)).append("?access_token=")
-                                                                                 .append(config.getAccessToken().getToken())
+                                                                                 .append(newConfig.getAccessToken().getToken())
                                                                                  .toString();
       String editUrl = wopiService.getEditorLink(fileId, config.getWorkspace(), config.getBaseUrl(), WOPIService.EDIT_ACTION);
-      // TODO: introduce viewUrl
-      String viewUrl = editUrl;
+      String viewUrl = wopiService.getEditorLink(fileId, config.getWorkspace(), config.getBaseUrl(), WOPIService.VIEW_ACTION);
       if (LOG.isDebugEnabled()) {
         LOG.debug("PutRelativeFile [Suggested] response: OK");
       }
@@ -1042,7 +1042,7 @@ public class WOPIResource implements ResourceContainer {
                          + e.getMessage() + "\"}")
                      .type(MediaType.APPLICATION_JSON)
                      .build();
-    } catch (RepositoryException e) {
+    } catch (OfficeOnlineException | RepositoryException e) {
       LOG.error("Cannot create new file based on existing one in suggested mode.", e);
       return Response.status(Status.INTERNAL_SERVER_ERROR)
                      .entity("{\"Name\": \"" + currentFileName + "\", \"Url\": \"" + currentUrl
