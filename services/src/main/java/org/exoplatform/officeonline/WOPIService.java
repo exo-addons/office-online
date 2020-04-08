@@ -855,6 +855,18 @@ public class WOPIService extends AbstractOfficeOnlineService {
   }
 
   /**
+   * Gets the editor URL using PortletRequestContext.
+   *
+   * @param node the node
+   * @param action the action
+   * @return the editor URL
+   */
+  public String getEditorLink(Node node, URI requestURI, String action) {
+    String baseUrl = platformUrl(requestURI.getScheme(), requestURI.getHost(), requestURI.getPort()).toString();
+    return getEditorLink(node, baseUrl, action);
+  }
+
+  /**
    * Gets the editor URL.
    *
    * @param node the node

@@ -18,19 +18,21 @@ package org.exoplatform.officeonline.documents;
 
 import static org.exoplatform.officeonline.webui.OfficeOnlineContext.callModule;
 
+import java.net.URI;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 import javax.jcr.Node;
+import javax.jcr.RepositoryException;
 
 import org.exoplatform.container.component.BaseComponentPlugin;
 import org.exoplatform.officeonline.WOPIService;
+import org.exoplatform.officeonline.exception.FileNotFoundException;
 import org.exoplatform.services.cms.documents.DocumentEditor;
 import org.exoplatform.services.cms.documents.NewDocumentTemplate;
 import org.exoplatform.services.log.ExoLogger;
 import org.exoplatform.services.log.Log;
 import org.exoplatform.webui.application.WebuiRequestContext;
-
 
 /**
  * The Class OnlyOfficeNewDocumentEditorPlugin.
@@ -101,7 +103,7 @@ public class OfficeOnlineDocumentEditorPlugin extends BaseComponentPlugin implem
     Node symlink = wopiService.nodeByUUID(uuid, workspace);
     Node node = wopiService.getNode(symlink.getSession().getWorkspace().getName(), symlink.getPath());
     if (node != null) {
-      String link = getEditorLink(node);
+      String link = getEditorLink(node, null);
       callModule("officeonline.initActivity('" + node.getUUID() + "', " + link + ", '" + activityId + "');");
     }
   }
@@ -109,26 +111,30 @@ public class OfficeOnlineDocumentEditorPlugin extends BaseComponentPlugin implem
   /**
    * Inits the preview.
    *
-   * @param uuid the uuid
+   * @param fileId the uuid
    * @param workspace the workspace
-   * @param activityId the activity id
-   * @param context the context
-   * @param index the index
-   * @throws Exception the exception
+   * @param requestURI the requestURI
+   * @return the editor settings
    */
   @Override
-  public void initPreview(String uuid, String workspace, String activityId, String context, int index) throws Exception {
-    Node symlink = wopiService.nodeByUUID(uuid, workspace);
-    Node node = wopiService.getNode(symlink.getSession().getWorkspace().getName(), symlink.getPath());
-    if (node != null) {
-      if (symlink.isNodeType("exo:symlink")) {
-        String userId = WebuiRequestContext.getCurrentInstance().getRemoteUser();
-        wopiService.addFilePreferences(node, userId, symlink.getPath());
+  public Object initPreview(String fileId, String workspace, URI requestURI) {
+    try {
+      Node symlink = wopiService.nodeByUUID(fileId, workspace);
+      Node node = wopiService.getNode(symlink.getSession().getWorkspace().getName(), symlink.getPath());
+      if (node != null) {
+        if (symlink.isNodeType("exo:symlink")) {
+          String userId = WebuiRequestContext.getCurrentInstance().getRemoteUser();
+          wopiService.addFilePreferences(node, userId, symlink.getPath());
+        }
+        String link = getEditorLink(node, requestURI);
+        return new EditorSetting(fileId, link);
       }
-      String link = getEditorLink(node);
-      callModule("officeonline.initPreview('" + node.getUUID() + "', " + link + ", '" + activityId + "', '" + index + "');");
+    } catch (FileNotFoundException e) {
+      LOG.error("Cannot initialize preview for fileId: {}, workspace: {}. {}", fileId, workspace, e.getMessage());
+    } catch (RepositoryException e) {
+      LOG.error("Cannot initialize preview", e);
     }
-
+    return null;
   }
 
   /**
@@ -137,17 +143,59 @@ public class OfficeOnlineDocumentEditorPlugin extends BaseComponentPlugin implem
    * @param node the node
    * @return the string
    */
-  protected String getEditorLink(Node node) {
+  protected String getEditorLink(Node node, URI requestURI) {
     String link = editorLinks.computeIfAbsent(node, n -> {
       if (wopiService.canEdit(node)) {
-        return wopiService.getEditorLink(node, WOPIService.EDIT_ACTION);
+        return wopiService.getEditorLink(node, requestURI, WOPIService.EDIT_ACTION);
       } else if (wopiService.canView(node)) {
-        return wopiService.getEditorLink(node, WOPIService.VIEW_ACTION);
+        return wopiService.getEditorLink(node, requestURI, WOPIService.VIEW_ACTION);
       }
       return null;
     });
     link = link != null ? new StringBuilder().append("'").append(link).append("'").toString() : "null".intern();
     return link;
+  }
+
+  /**
+   * The Class EditorSetting.
+   */
+  protected static class EditorSetting {
+
+    /** The file id. */
+    private final String fileId;
+
+    /** The link. */
+    private final String link;
+
+    /**
+     * Instantiates a new editor setting.
+     *
+     * @param fileId the file id
+     * @param link the link
+     */
+    public EditorSetting(String fileId, String link) {
+      this.fileId = fileId;
+      this.link = link;
+    }
+
+    /**
+     * Gets the file id.
+     *
+     * @return the file id
+     */
+    public String getFileId() {
+      return fileId;
+    }
+
+    /**
+     * Gets the link.
+     *
+     * @return the link
+     */
+    public String getLink() {
+      return link;
+    }
+
   }
 
 }
