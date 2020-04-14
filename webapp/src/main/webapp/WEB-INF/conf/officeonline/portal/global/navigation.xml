@@ -27,9 +27,9 @@
     <node>
       <uri>mseditor</uri>
       <name>mseditor</name>
-      <label>#{portal.intranet.mseditor}</label>
+      <label>#{portal.global.mseditor}</label>
       <visibility>SYSTEM</visibility>
-      <page-reference>portal::intranet::mseditor</page-reference>
+      <page-reference>portal::global::mseditor</page-reference>
     </node>
   </page-nodes>
 </node-navigation>
