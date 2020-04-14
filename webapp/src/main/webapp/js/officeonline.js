@@ -348,8 +348,51 @@
       }
       return $("<li class='hidden-tabletL'><a href='" + editorLink + "' target='_blank'>"
           + "<i class='uiIconEcmsOfficeOnlineOpen uiIconEcmsLightGray " + iconClass + "'></i>" + label + "</a></li>");
-
     };
+    
+    this.initEditor = function(config) {
+      extension = config.filename.substring(config.filename.lastIndexOf("."));
+      updateWindowTitle(config.filename);
+      versionsLink = config.versionsURL;
+      $('#office_form').attr('action', config.actionURL);
+      $('input[name="access_token"]').val(config.accessToken.token);
+      $('input[name="access_token_ttl"]').val(config.accessToken.expires);
+
+      var frameholder = document.getElementById('frameholder');
+      var office_frame = document.createElement('iframe');
+      office_frame.name = 'office_frame';
+      office_frame.id = 'office_frame';
+      // The title should be set for accessibility
+      office_frame.title = 'Office Frame';
+      // This attribute allows true fullscreen mode in slideshow view
+      // when using PowerPoint's 'view' action.
+      office_frame.setAttribute('allowfullscreen', 'true');
+      // The sandbox attribute is needed to allow automatic redirection to the O365 sign-in page in the business user flow
+      office_frame.setAttribute('sandbox',
+          'allow-scripts allow-same-origin allow-forms allow-popups allow-top-navigation allow-popups-to-escape-sandbox');
+      frameholder.appendChild(office_frame);
+      document.getElementById('office_form').submit();
+      window.addEventListener('message', handlePostMessage, false);
+      editorbuttons.onEditorOpen(config.fileId, config.workspace, "officeonline");
+    };
+    
+    this.initActivity = function(fileId, editorLink, activityId) {
+      log("Initialize activity with document: " + fileId);
+      // Listen to document updates
+      store.subscribe(function() {
+        var state = store.getState();
+        if (state.type === DOCUMENT_SAVED && state.fileId === fileId) {
+          addRefreshBannerActivity(activityId);
+        }
+      });
+      subscribeDocument(fileId);
+      if(editorLink != null) {
+        editorbuttons.addCreateButtonFn("officeonline", function() {
+          return createEditorButton(editorLink);
+        });
+      }
+    };
+
 
     var init = function(userId, cometdConf, userMessages) {
       if (userId == currentUserId) {

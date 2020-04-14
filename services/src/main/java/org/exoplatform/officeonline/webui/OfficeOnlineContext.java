@@ -76,7 +76,6 @@ public class OfficeOnlineContext {
   private OfficeOnlineContext(WebuiRequestContext requestContext) throws OfficeOnlineException {
     JavascriptManager js = requestContext.getJavascriptManager();
     this.require = js.require("SHARED/officeonline", "officeonline");
-
     // Basic JS module initialization
     String messagesJson;
     try {

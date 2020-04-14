@@ -26,25 +26,33 @@ import org.exoplatform.officeonline.exception.ActionNotFoundException;
 import org.exoplatform.officeonline.exception.FileExtensionNotFoundException;
 import org.exoplatform.officeonline.exception.FileNotFoundException;
 import org.exoplatform.officeonline.exception.OfficeOnlineException;
+import org.exoplatform.services.cms.documents.DocumentService;
 import org.exoplatform.services.log.ExoLogger;
 import org.exoplatform.services.log.Log;
 import org.exoplatform.services.resources.ResourceBundleService;
 import org.exoplatform.webui.application.WebuiRequestContext;
 import org.exoplatform.ws.frameworks.json.impl.JsonException;
+import org.exoplatform.ws.frameworks.json.impl.JsonGeneratorImpl;
 
 /**
  * The Class EditorPortlet.
  */
 public class EditorPortlet extends GenericPortlet {
 
+  /** The Constant PROVIDER_NAME. */
+  private static final String   PROVIDER_NAME = "officeonline";
+
   /** The Constant LOG. */
-  private static final Log      LOG = ExoLogger.getLogger(EditorPortlet.class);
+  private static final Log      LOG           = ExoLogger.getLogger(EditorPortlet.class);
 
   /** The Officeonline. */
   private EditorService         editorService;
 
   /** The Officeonline. */
   private WOPIService           wopiService;
+
+  /** The document service. */
+  private DocumentService       documentService;
 
   /** The i 18 n service. */
   private ResourceBundleService i18nService;
@@ -59,6 +67,7 @@ public class EditorPortlet extends GenericPortlet {
     this.editorService = container.getComponentInstanceOfType(EditorService.class);
     this.wopiService = container.getComponentInstanceOfType(WOPIService.class);
     this.i18nService = container.getComponentInstanceOfType(ResourceBundleService.class);
+    this.documentService = container.getComponentInstanceOfType(DocumentService.class);
   }
 
   /**
@@ -101,7 +110,19 @@ public class EditorPortlet extends GenericPortlet {
           String actionURL = wopiService.getActionUrl(requestInfo, fileId, null, action);
           String filename = node.getName();
           String versionsUrl = wopiService.getExplorerURL(node, config.getBaseUrl()).append("&versions=true").toString();
-          callModule("officeonline.initEditor(" + token.toJSON() + ", \"" + actionURL + "\", \"" + versionsUrl + "\", \"" + filename + "\");");
+          String workspace = node.getSession().getWorkspace().getName();
+          InitConfig initConfig = new InitConfig(node.getUUID(), workspace, token.toJSON(), actionURL, versionsUrl, filename);
+          String currentEditor = documentService.getCurrentDocumentProvider(node.getUUID(), workspace);
+          if (currentEditor == null || currentEditor.equals(PROVIDER_NAME)) {
+            documentService.initDocumentEditorsModule(PROVIDER_NAME, workspace);
+            callModule("officeonline.initEditor(" + initConfig.toJSON() + ");");
+          } else {
+            LOG.warn("Cannot open editor for fileId: {} The file is open in another editor provider: {}",
+                     fileId,
+                     currentEditor);
+            showError(i18n.getString("OfficeonlineEditorClient.ErrorTitle"),
+                      i18n.getString("OfficeonlineEditor.error.AnotherEditorIsOpen"));
+          }
         } else {
           showError(i18n.getString("OfficeonlineEditorClient.ErrorTitle"),
                     i18n.getString("OfficeonlineEditor.error.EditorCannotBeCreated"));
@@ -160,6 +181,120 @@ public class EditorPortlet extends GenericPortlet {
       return true;
     }
     return false;
+  }
+
+  /**
+   * The Class InitConfig.
+   */
+  public static class InitConfig {
+
+    /** The file id. */
+    private final String fileId;
+
+    /** The workspace. */
+    private final String workspace;
+
+    /** The access token. */
+    private final String accessToken;
+
+    /** The action URL. */
+    private final String actionURL;
+
+    /** The versions URL. */
+    private final String versionsURL;
+
+    /** The filename. */
+    private final String filename;
+
+    /**
+     * Instantiates a new inits the config.
+     *
+     * @param fileId the file id
+     * @param workspace the workspace
+     * @param accessToken the access token
+     * @param actionURL the action URL
+     * @param versionsURL the versions URL
+     * @param filename the filename
+     */
+    public InitConfig(String fileId,
+                      String workspace,
+                      String accessToken,
+                      String actionURL,
+                      String versionsURL,
+                      String filename) {
+      this.fileId = fileId;
+      this.workspace = workspace;
+      this.accessToken = accessToken;
+      this.actionURL = actionURL;
+      this.versionsURL = versionsURL;
+      this.filename = filename;
+    }
+
+    /**
+     * Gets the file id.
+     *
+     * @return the file id
+     */
+    public String getFileId() {
+      return fileId;
+    }
+
+    /**
+     * Gets the workspace.
+     *
+     * @return the workspace
+     */
+    public String getWorkspace() {
+      return workspace;
+    }
+
+    /**
+     * Gets the access token.
+     *
+     * @return the access token
+     */
+    public String getAccessToken() {
+      return accessToken;
+    }
+
+    /**
+     * Gets the action URL.
+     *
+     * @return the action URL
+     */
+    public String getActionURL() {
+      return actionURL;
+    }
+
+    /**
+     * Gets the versions URL.
+     *
+     * @return the versions URL
+     */
+    public String getVersionsURL() {
+      return versionsURL;
+    }
+
+    /**
+     * Gets the filename.
+     *
+     * @return the filename
+     */
+    public String getFilename() {
+      return filename;
+    }
+
+    /**
+     * Return this config as JSON string.
+     *
+     * @return the string
+     * @throws JsonException the json exception
+     */
+    public String toJSON() throws JsonException {
+      JsonGeneratorImpl gen = new JsonGeneratorImpl();
+      return gen.createJsonObject(this).toString();
+    }
+
   }
 
 }

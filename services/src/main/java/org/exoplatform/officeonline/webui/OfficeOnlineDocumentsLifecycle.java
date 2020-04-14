@@ -45,7 +45,7 @@ import org.exoplatform.webui.application.WebuiRequestContext;
  *          $
  */
 public class OfficeOnlineDocumentsLifecycle extends AbstractOfficeOnlineLifecycle {
-
+  
   /** The Constant LOG. */
   protected static final Log    LOG                          = ExoLogger.getLogger(OfficeOnlineDocumentsLifecycle.class);
 
