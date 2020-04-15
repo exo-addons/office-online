@@ -421,13 +421,13 @@
       }
     };
 
-    this.initEditor = function(accessToken, actionURL, versionsURL, filename) {
-      extension = filename.substring(filename.lastIndexOf("."));
-      updateWindowTitle(filename);
-      versionsLink = versionsURL;
-      $('#office_form').attr('action', actionURL);
-      $('input[name="access_token"]').val(accessToken.token);
-      $('input[name="access_token_ttl"]').val(accessToken.expires);
+    this.initEditor = function(config) {
+      extension = config.filename.substring(config.filename.lastIndexOf("."));
+      updateWindowTitle(config.filename);
+      versionsLink = config.versionsURL;
+      $('#office_form').attr('action', config.actionURL);
+      $('input[name="access_token"]').val(config.accessToken.token);
+      $('input[name="access_token_ttl"]').val(config.accessToken.expires);
 
       var frameholder = document.getElementById('frameholder');
       var office_frame = document.createElement('iframe');
@@ -438,14 +438,13 @@
       // This attribute allows true fullscreen mode in slideshow view
       // when using PowerPoint's 'view' action.
       office_frame.setAttribute('allowfullscreen', 'true');
-      // The sandbox attribute is needed to allow automatic redirection to the
-      // O365 sign-in page in the business user flow
+      // The sandbox attribute is needed to allow automatic redirection to the O365 sign-in page in the business user flow
       office_frame.setAttribute('sandbox',
           'allow-scripts allow-same-origin allow-forms allow-popups allow-top-navigation allow-popups-to-escape-sandbox');
       frameholder.appendChild(office_frame);
       document.getElementById('office_form').submit();
       window.addEventListener('message', handlePostMessage, false);
-
+      editorbuttons.onEditorOpen(config.fileId, config.workspace, "officeonline");
     };
 
     this.initActivity = function(fileId, editorLink, activityId) {
