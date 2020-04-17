@@ -114,7 +114,7 @@ public class EditorPortlet extends GenericPortlet {
           InitConfig initConfig = new InitConfig(node.getUUID(), workspace, token.toJSON(), actionURL, versionsUrl, filename);
           String currentEditor = documentService.getCurrentDocumentProvider(node.getUUID(), workspace);
           if (currentEditor == null || currentEditor.equals(PROVIDER_NAME)) {
-            documentService.initDocumentEditorsModule(PROVIDER_NAME, workspace);
+            documentService.initEditorSupportModule(PROVIDER_NAME, workspace);
             callModule("officeonline.initEditor(" + initConfig.toJSON() + ");");
           } else {
             LOG.warn("Cannot open editor for fileId: {} The file is open in another editor provider: {}",
