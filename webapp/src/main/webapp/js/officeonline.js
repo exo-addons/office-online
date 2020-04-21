@@ -36,29 +36,7 @@
       }
     }
   };
-
-  var getEditorButton = function(editorLink) {
-    var label = message("OfficeonlineEditorClient.EditButtonTitle");
-    var iconClass = "uiIconEdit";
-    if (editorLink.indexOf("&action=view") > -1) {
-      label = message("OfficeonlineEditorClient.ViewButtonTitle");
-      iconClass = "uiIconView";
-    }
-    return "<li class='hidden-tabletL'><a href='" + editorLink + "' target='_blank'>"
-        + "<i class='uiIconEcmsOfficeOnlineOpen uiIconEcmsLightGray " + iconClass + "'></i>" + label + "</a></li>";
-  };
-
-  var getNoPreviewEditorButton = function(editorLink) {
-    var label = message("OfficeonlineEditorClient.EditButtonTitle");
-    var iconClass = "uiIconEdit";
-    if (editorLink.indexOf("&action=view") > -1) {
-      label = message("OfficeonlineEditorClient.ViewButtonTitle");
-      iconClass = "uiIconView";
-    }
-    return "<a class='btn editInOfficeOnline hidden-tabletL' href='#' onclick='javascript:window.open(\"" + editorLink + "\");'>"
-        + "<i class='uiIconEcmsOfficeOnlineOpen uiIconEcmsLightGray " + iconClass + "'></i>" + label + "</a>";
-  };
-
+  
   /**
    * Returns the html markup of the refresh banner;
    */
@@ -66,34 +44,6 @@
     return "<div class='documentRefreshBanner'><div class='refreshBannerContent'>"
         + message("OfficeonlineEditorClient.UpdateBannerTitle") + "<span class='refreshBannerLink'>"
         + message("OfficeonlineEditorClient.ReloadButtonTitle") + "</span></div></div>";
-  };
-
-  /**
-   * Ads the 'Edit Online' button to the JCRExplorer when a document is
-   * displayed.
-   */
-  var addEditorButtonToExplorer = function(editorLink) {
-    var $button = $("#UIJCRExplorer #uiActionsBarContainer i.uiIconEcmsOfficeOnlineOpen");
-    if (editorLink.indexOf("&action=view") > -1) {
-      var buttonHtml = $button[0].outerHTML;
-      $button.parent().html(buttonHtml + " " + message("OfficeonlineEditorClient.ViewButtonTitle"));
-      $button = $("#UIJCRExplorer #uiActionsBarContainer i.uiIconEcmsOfficeOnlineOpen");
-      $button.addClass("uiIconView");
-    } else {
-      $button.addClass("uiIconEdit");
-    }
-
-    $button.closest("li").addClass("hidden-tabletL");
-    var $noPreviewContainer = $("#UIJCRExplorer .navigationContainer.noPreview");
-    if ($noPreviewContainer.length != 0) {
-      var $detailContainer = $noPreviewContainer.find(".detailContainer");
-      var $downloadBtn = $detailContainer.find(".uiIconDownload").closest("a.btn");
-      if ($downloadBtn.length != 0) {
-        $downloadBtn.after(getNoPreviewEditorButton(editorLink));
-      } else {
-        $detailContainer.append(getNoPreviewEditorButton(editorLink));
-      }
-    }
   };
 
   var refreshPDFPreview = function() {
@@ -467,7 +417,6 @@
         subscribeDocument(fileId);
         explorerFileId = fileId;
       }
-      addEditorButtonToExplorer(editorLink);
     };
 
     /**
