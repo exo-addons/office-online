@@ -150,7 +150,7 @@ public class OfficeOnlineDocumentEditorPlugin extends BaseComponentPlugin implem
    */
   @SuppressWarnings("unchecked")
   @Override
-  public <T> T initPreview(String fileId, String workspace, URI requestURI, Locale locale) {
+  public EditorSetting initPreview(String fileId, String workspace, URI requestURI, Locale locale) {
     try {
       String userId = ConversationState.getCurrent().getIdentity().getUserId();
       Node symlink = wopiService.nodeByUUID(fileId, workspace);
@@ -164,7 +164,7 @@ public class OfficeOnlineDocumentEditorPlugin extends BaseComponentPlugin implem
         CometdConfig cometdConf = new CometdConfig(cometdService.getCometdServerPath(),
                                                    cometdService.getUserToken(userId),
                                                    PortalContainer.getCurrentPortalContainerName());
-        return (T) new EditorSetting(fileId, link, userId, cometdConf, messages);
+        return new EditorSetting(fileId, link, userId, cometdConf, messages);
       }
     } catch (FileNotFoundException e) {
       LOG.error("Cannot initialize preview for fileId: {}, workspace: {}. {}", fileId, workspace, e.getMessage());
