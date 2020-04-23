@@ -396,8 +396,9 @@
     /**
      * Initializes JCRExplorer when a document is displayed.
      */
-    this.initExplorer = function(fileId, editorLink) {
-      log("Initialize explorer with document: " + fileId);
+    this.initExplorer = function(settings) {
+      init(settings.userId, settings.cometdConf, settings.messages);
+      log("Initialize explorer with document: " + settings.fileId);
       // Listen document updated
       store.subscribe(function() {
         var state = store.getState();
@@ -409,13 +410,18 @@
           }
         }
       });
-      if (fileId != explorerFileId) {
+      if (settings.fileId != explorerFileId) {
         // We need unsubscribe from previous doc
         if (explorerFileId) {
           unsubscribeDocument(explorerFileId);
         }
-        subscribeDocument(fileId);
-        explorerFileId = fileId;
+        subscribeDocument(settings.fileId);
+        explorerFileId = settings.fileId;
+      }
+      if (settings.link != null) {
+        editorbuttons.addCreateButtonFn("officeonline", function() {
+          return createEditorButton(settings.link);
+        });
       }
     };
 

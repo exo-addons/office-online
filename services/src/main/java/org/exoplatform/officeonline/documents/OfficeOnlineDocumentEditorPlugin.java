@@ -31,6 +31,7 @@ import javax.jcr.RepositoryException;
 
 import org.exoplatform.container.PortalContainer;
 import org.exoplatform.container.component.BaseComponentPlugin;
+import org.exoplatform.ecm.webui.component.explorer.UIJCRExplorer;
 import org.exoplatform.officeonline.WOPIService;
 import org.exoplatform.officeonline.cometd.CometdConfig;
 import org.exoplatform.officeonline.cometd.CometdOfficeOnlineService;
@@ -41,6 +42,7 @@ import org.exoplatform.services.log.ExoLogger;
 import org.exoplatform.services.log.Log;
 import org.exoplatform.services.resources.ResourceBundleService;
 import org.exoplatform.services.security.ConversationState;
+import org.exoplatform.webui.application.WebuiRequestContext;
 
 /**
  * The Class OnlyOfficeNewDocumentEditorPlugin.
@@ -140,7 +142,6 @@ public class OfficeOnlineDocumentEditorPlugin extends BaseComponentPlugin implem
   /**
    * Inits the preview.
    *
-   * @param <T> the generic type
    * @param fileId the uuid
    * @param workspace the workspace
    * @param requestURI the requestURI
@@ -174,6 +175,72 @@ public class OfficeOnlineDocumentEditorPlugin extends BaseComponentPlugin implem
   }
 
   /**
+   * Inits the explorer.
+   *
+   * @param fileId the file id
+   * @param workspace the workspace
+   * @param context the context
+   * @return the editor setting
+   */
+  @SuppressWarnings("unchecked")
+  @Override
+  public EditorSetting initExplorer(String fileId, String workspace, WebuiRequestContext context) {
+    try {
+      Node node = wopiService.nodeByUUID(fileId, workspace);
+      node = wopiService.getNode(node.getSession().getWorkspace().getName(), node.getPath());
+
+      // Handling symlinks
+      UIJCRExplorer uiExplorer = context.getUIApplication().findFirstComponentOfType(UIJCRExplorer.class);
+      Node symlink = (Node) uiExplorer.getSession().getItem(uiExplorer.getCurrentPath());
+      if (symlink.isNodeType("exo:symlink")) {
+        wopiService.addFilePreferences(node, WebuiRequestContext.getCurrentInstance().getRemoteUser(), symlink.getPath());
+      }
+
+      if (wopiService.isDocumentSupported(node)) {
+        if (LOG.isDebugEnabled()) {
+          LOG.debug("Init documents explorer for node: {}:{}", workspace, fileId);
+        }
+        String userId = context.getRemoteUser();
+        String editorLink = null;
+        if (wopiService.canEdit(node)) {
+          editorLink = wopiService.getEditorLink(node, WOPIService.EDIT_ACTION);
+        } else if (wopiService.canView(node)) {
+          editorLink = wopiService.getEditorLink(node, WOPIService.VIEW_ACTION);
+        }
+        Map<String, String> messages = initMessages(WebuiRequestContext.getCurrentInstance().getLocale());
+        CometdConfig cometdConf = new CometdConfig(cometdService.getCometdServerPath(),
+                                                   cometdService.getUserToken(userId),
+                                                   PortalContainer.getCurrentPortalContainerName());
+        return new EditorSetting(fileId, editorLink, userId, cometdConf, messages);
+      }
+    } catch (Exception e) {
+      LOG.error("Cannot initialize exlporer for fileId: {}, workspace: {}. {}", fileId, workspace, e.getMessage());
+    }
+    return null;
+  }
+
+  /**
+   * Checks if is document supported.
+   *
+   * @param fileId the file id
+   * @param workspace the workspace
+   * @return true, if is document supported
+   */
+  @Override
+  public boolean isDocumentSupported(String fileId, String workspace) {
+    Node node;
+    try {
+      node = wopiService.nodeByUUID(fileId, workspace);
+      return wopiService.canEdit(node) || wopiService.canView(node);
+    } catch (FileNotFoundException e) {
+      LOG.error("Cannot check if file is suported, document not found. {}", e.getMessage());
+    } catch (RepositoryException e) {
+      LOG.error("Cannot check if file is suported", e);
+    }
+    return false;
+  }
+
+  /**
    * Returns editor link, adds it to the editorLinks cache.
    *
    * @param node the node
@@ -196,7 +263,6 @@ public class OfficeOnlineDocumentEditorPlugin extends BaseComponentPlugin implem
    * Returns editor link, adds it to the editorLinks cache.
    *
    * @param node the node
-   * @param requestURI the request URI
    * @return the string
    */
   protected String getEditorLink(Node node) {
@@ -315,5 +381,4 @@ public class OfficeOnlineDocumentEditorPlugin extends BaseComponentPlugin implem
       return messages;
     }
   }
-
 }
