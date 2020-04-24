@@ -1,7 +1,7 @@
 /**
  * Office Online Editor client.
  */
-(function($, cCometD, redux) {
+(function($, cCometD, redux, editorbuttons) {
   "use strict";
 
   /** For debug logging. */
@@ -63,63 +63,9 @@
    * Returns the html markup of the refresh banner;
    */
   var getRefreshBanner = function() {
-    return "<div class='documentRefreshBanner'><div class='refreshBannerContent'>" + message("OfficeonlineEditorClient.UpdateBannerTitle")
-        + "<span class='refreshBannerLink'>" + message("OfficeonlineEditorClient.ReloadButtonTitle") + "</span></div></div>";
-  };
-
-  /**
-   * Adds the 'Edit' button to No-preview screen (from the activity stream) when it's loaded.
-   */
-  var tryAddEditorButtonNoPreview = function(editorLink, attempts, delay) {
-    var $elem = $("#documentPreviewContainer .navigationContainer.noPreview");
-    if ($elem.length == 0 || !$elem.is(":visible")) {
-      if (attempts > 0) {
-        setTimeout(function() {
-          tryAddEditorButtonNoPreview(editorLink, attempts - 1, delay);
-        }, delay);
-      } else {
-        log("Cannot find .noPreview element");
-      }
-    } else if ($elem.find("a.editInOfficeOnline").length == 0) {
-      var $detailContainer = $elem.find(".detailContainer");
-      var $downloadBtn = $detailContainer.find(".uiIconDownload").closest("a.btn");
-      if ($downloadBtn.length != 0) {
-        $downloadBtn.after(getNoPreviewEditorButton(editorLink));
-      } else {
-        $detailContainer.append(getNoPreviewEditorButton(editorLink));
-      }
-    }
-  };
-  /**
-   * Adds the 'Edit' button to a preview (from the activity stream) when it's loaded.
-   */
-  var tryAddEditorButtonToPreview = function(editorLink, attempts, delay) {
-    var $elem = $("#uiDocumentPreview .previewBtn");
-    if ($elem.length == 0 || !$elem.is(":visible")) {
-      if (attempts > 0) {
-        setTimeout(function() {
-          tryAddEditorButtonToPreview(editorLink, attempts - 1, delay);
-        }, delay);
-      } else {
-        log("Cannot find element " + $elem);
-      }
-    } else {
-      $elem.append("<div class='editInOfficeOnline'>" + getEditorButton(editorLink) + "</div>");
-    }
-  };
-
-  /**
-   * Ads the 'Edit' button to a preview (opened from the activity stream).
-   */
-  var addEditorButtonToPreview = function(editorLink, clickSelector) {
-    $(clickSelector).click(function() {
-      // We set timeout here to avoid the case when the element is rendered but is going to be updated soon
-      setTimeout(function() {
-        tryAddEditorButtonToPreview(editorLink, 100, 100);
-        // We need wait for about 2min when doc cannot generate its preview
-        tryAddEditorButtonNoPreview(editorLink, 600, 250);
-      }, 100);
-    });
+    return "<div class='documentRefreshBanner'><div class='refreshBannerContent'>"
+        + message("OfficeonlineEditorClient.UpdateBannerTitle") + "<span class='refreshBannerLink'>"
+        + message("OfficeonlineEditorClient.ReloadButtonTitle") + "</span></div></div>";
   };
 
   /**
@@ -128,14 +74,14 @@
   var addEditorButtonToExplorer = function(editorLink) {
     var $button = $("#UIJCRExplorer #uiActionsBarContainer i.uiIconEcmsOfficeOnlineOpen");
     if (editorLink.indexOf("&action=view") > -1) {
-     var buttonHtml = $button[0].outerHTML;
-     $button.parent().html(buttonHtml + " " + message("OfficeonlineEditorClient.ViewButtonTitle"));
-     $button = $("#UIJCRExplorer #uiActionsBarContainer i.uiIconEcmsOfficeOnlineOpen");     
-     $button.addClass("uiIconView");
+      var buttonHtml = $button[0].outerHTML;
+      $button.parent().html(buttonHtml + " " + message("OfficeonlineEditorClient.ViewButtonTitle"));
+      $button = $("#UIJCRExplorer #uiActionsBarContainer i.uiIconEcmsOfficeOnlineOpen");
+      $button.addClass("uiIconView");
     } else {
       $button.addClass("uiIconEdit");
     }
-    
+
     $button.closest("li").addClass("hidden-tabletL");
     var $noPreviewContainer = $("#UIJCRExplorer .navigationContainer.noPreview");
     if ($noPreviewContainer.length != 0) {
@@ -174,10 +120,9 @@
       });
     }
   };
-  
+
   var refreshActivityPreview = function(activityId, $banner) {
-    $banner.find(".refreshBannerContent")
-        .append("<div class='loading'><i class='uiLoadingIconSmall uiIconEcmsGray'></i></div>");
+    $banner.find(".refreshBannerContent").append("<div class='loading'><i class='uiLoadingIconSmall uiIconEcmsGray'></i></div>");
     var $refreshLink = $banner.find(".refreshBannerLink");
     $refreshLink.addClass("disabled");
     $refreshLink.on('click', function() {
@@ -218,7 +163,7 @@
       });
     }
   };
-  
+
   var addRefreshBannerActivity = function(activityId) {
     var $previewParent = $("#Preview" + activityId + "-0").parent();
     // If there is no preview
@@ -289,7 +234,7 @@
     const DOCUMENT_SAVED = "DOCUMENT_SAVED";
     const FILE_RENAME = "File_Rename";
     const FILE_VERSIONS = "UI_FileVersions";
-    
+
     // Editor Window
     var editorWindow;
     // Current user ID
@@ -307,6 +252,8 @@
 
     // Events that are dispatched to redux as actions
     var dispatchableEvents = [ DOCUMENT_SAVED ];
+    
+    
 
     // Redux store for dispatching document updates inside the app
     var store = redux.createStore(function(state, action) {
@@ -347,7 +294,7 @@
         }
       });
     };
-    
+
     /**
      * Unsubscribes document
      */
@@ -367,30 +314,52 @@
         });
       }
     };
-    
+
     /**
      * Updates window title
      */
     var updateWindowTitle = function(filename) {
-      if(!filename.endsWith(extension)) {
+      if (!filename.endsWith(extension)) {
         filename += extension;
       }
       window.document.title = filename + " - " + message("OfficeonlineEditorClient.EditorTitle");
     };
     
     /**
+     * Shows error
+     */
+    var showError = function(title, message) {
+      $(".officeonlineContainer").prepend(
+          '<div class="alert alert-error"><i class="uiIconError"></i>' + title + ': ' + message + '</div>');
+    };
+    
+    this.showError = showError;
+
+    /**
      * Handles PostMessages from Office Online frame
      */
     var handlePostMessage = function(e) {
       var msg = JSON.parse(e.data);
       // Rename
-      if(msg.MessageId == FILE_RENAME) {
+      if (msg.MessageId == FILE_RENAME) {
         updateWindowTitle(msg.Values.NewName);
       } else if (msg.MessageId == FILE_VERSIONS) {
         window.open(versionsLink);
       }
     };
- 
+
+    var createEditorButton = function(editorLink) {
+      var label = message("OfficeonlineEditorClient.EditButtonTitle");
+      var iconClass = "uiIconEdit";
+      if (editorLink.indexOf("&action=view") > -1) {
+        label = message("OfficeonlineEditorClient.ViewButtonTitle");
+        iconClass = "uiIconView";
+      }
+      return $("<li class='hidden-tabletL'><a href='" + editorLink + "' target='_blank'>"
+          + "<i class='uiIconEcmsOfficeOnlineOpen uiIconEcmsLightGray " + iconClass + "'></i>" + label + "</a></li>");
+
+    }
+
     this.initEditor = function(accessToken, actionURL, versionsURL, filename) {
       extension = filename.substring(filename.lastIndexOf("."));
       updateWindowTitle(filename);
@@ -414,11 +383,11 @@
       frameholder.appendChild(office_frame);
       document.getElementById('office_form').submit();
       window.addEventListener('message', handlePostMessage, false);
-      
+
     };
 
     this.initActivity = function(fileId, editorLink, activityId) {
-      log("Initialize activity " + activityId + " with document: " + fileId);
+      log("Initialize activity with document: " + fileId);
       // Listen to document updates
       store.subscribe(function() {
         var state = store.getState();
@@ -427,9 +396,10 @@
         }
       });
       subscribeDocument(fileId);
-      if (editorLink) {
-        $("#activityContainer" + activityId).find("div[id^='ActivityContextBox'] > .actionBar .statusAction.pull-left").append(
-            getEditorButton(editorLink));
+      if (editorLink != null) {
+        editorbuttons.addCreateButtonFn("officeonline", function() {
+          return createEditorButton(editorLink);
+        });
       }
     };
 
@@ -460,10 +430,11 @@
       }
     };
 
-    this.initPreview = function(fileId, editorLink, clickSelector) {
-      log("Init preview called");
+    this.initPreview = function(fileId, editorLink, activityId, index) {
+      log("Init preview called. FileId: " + fileId);
+      var clickSelector = "#Preview" + activityId + "-" + index;
       $(clickSelector).click(function() {
-        log("Initialize preview " + clickSelector + " of document: " + fileId);
+        log("Initialize preview of document: " + fileId);
         // We set timeout here to avoid the case when the element is rendered but is going to be updated soon
         setTimeout(function() {
           store.subscribe(function() {
@@ -475,8 +446,10 @@
         }, 100);
         subscribeDocument(fileId);
       });
-      if (editorLink) {
-        addEditorButtonToPreview(editorLink, clickSelector);
+      if (editorLink != null) {
+        editorbuttons.addCreateButtonFn("officeonline", function() {
+          return createEditorButton(editorLink);
+        });
       }
     };
 
@@ -522,19 +495,15 @@
         if (link != null) {
           editorWindow.location = link;
         } else {
-          editorWindow.close();
+          showError(message("OfficeonlineEditorClient.ErrorTitle"), message("OfficeonlineEditor.error.ErrorLinkNotFound"));
           editorWindow = null;
         }
       }
     };
 
-    this.showError = function(title, message) {
-      $(".officeonlineContainer").prepend(
-          '<div class="alert alert-error"><i class="uiIconError"></i>' + title + ': ' + message + '</div>');
-    };
   }
 
   var editor = new Editor();
 
   return editor;
-})($, cCometD, Redux);
+})($, cCometD, Redux, editorbuttons);

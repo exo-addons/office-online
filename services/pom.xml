@@ -25,7 +25,7 @@
   <parent>
     <groupId>org.exoplatform.addons.officeonline</groupId>
     <artifactId>exo-officeonline-editor-parent</artifactId>
-    <version>1.4.x-SNAPSHOT</version>
+    <version>1.0.x-SNAPSHOT</version>
   </parent>
   <artifactId>exo-officeonline-editor-services</artifactId>
   <packaging>jar</packaging>
@@ -94,7 +94,7 @@
       <artifactId>ecms-core-webui</artifactId>
       <scope>provided</scope>
     </dependency>
-        <dependency>
+    <dependency>
       <groupId>org.exoplatform.ecms</groupId>
       <artifactId>ecms-core-services</artifactId>
       <scope>provided</scope>
@@ -106,8 +106,8 @@
     </dependency>
 
     <dependency>
-      <groupId>org.exoplatform.integration</groupId>
-      <artifactId>integ-ecms-social</artifactId>
+      <groupId>org.exoplatform.ecms</groupId>
+      <artifactId>ecms-social-integration</artifactId>
       <scope>provided</scope>
     </dependency>
     
@@ -143,11 +143,6 @@
     <dependency>
       <groupId>org.exoplatform.gatein.portal</groupId>
       <artifactId>exo.portal.component.test.core</artifactId>
-      <scope>test</scope>
-    </dependency>
-    <dependency>
-      <groupId>org.exoplatform.gatein.portal</groupId>
-      <artifactId>exo.portal.component.test.jcr</artifactId>
       <scope>test</scope>
     </dependency>
     <dependency>
