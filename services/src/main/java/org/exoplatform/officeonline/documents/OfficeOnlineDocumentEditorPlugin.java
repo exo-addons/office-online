@@ -96,7 +96,12 @@ public class OfficeOnlineDocumentEditorPlugin extends BaseComponentPlugin implem
   public void onDocumentCreated(String workspace, String path) throws Exception {
     Node node = wopiService.getNode(workspace, path);
     String link = wopiService.getEditorLink(node, WOPIService.EDIT_ACTION);
-    link = link != null ? new StringBuilder().append("'").append(link).append("'").toString() : "null".intern();
+    if (link != null) {
+      link = new StringBuilder().append("'").append(link).append("'").toString();
+    } else {
+      link = "null";
+      LOG.error("Cannot get editor link for document: {}, workspace: {}", path, workspace);
+    }
     callModule("officeonline.initEditorPage(" + link + ");");
   }
 

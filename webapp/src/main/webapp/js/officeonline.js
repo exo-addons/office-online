@@ -204,6 +204,8 @@
 
     // Events that are dispatched to redux as actions
     var dispatchableEvents = [ DOCUMENT_SAVED ];
+    
+    
 
     // Redux store for dispatching document updates inside the app
     var store = redux.createStore(function(state, action) {
@@ -275,6 +277,16 @@
       }
       window.document.title = filename + " - " + message("OfficeonlineEditorClient.EditorTitle");
     };
+    
+    /**
+     * Shows error
+     */
+    var showError = function(title, message) {
+      $(".officeonlineContainer").prepend(
+          '<div class="alert alert-error"><i class="uiIconError"></i>' + title + ': ' + message + '</div>');
+    };
+    
+    this.showError = showError;
 
     /**
      * Handles PostMessages from Office Online frame
@@ -442,16 +454,12 @@
         if (link != null) {
           editorWindow.location = link;
         } else {
-          editorWindow.close();
+          showError(message("OfficeonlineEditorClient.ErrorTitle"), message("OfficeonlineEditor.error.ErrorLinkNotFound"));
           editorWindow = null;
         }
       }
     };
 
-    this.showError = function(title, message) {
-      $(".officeonlineContainer").prepend(
-          '<div class="alert alert-error"><i class="uiIconError"></i>' + title + ': ' + message + '</div>');
-    };
   }
 
   var editor = new Editor();

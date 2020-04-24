@@ -43,6 +43,7 @@
     </message>
     <error>
       <AnotherEditorIsOpen>Cannot create editor. The document is being edited in another editor (provider)</AnotherEditorIsOpen>
+      <ErrorLinkNotFound>Editor link not found</ErrorLinkNotFound>
       <EditorCannotBeCreated>Editor cannot be created. Please retry.</EditorCannotBeCreated>
       <FileNotFound>File not found. Please retry.</FileNotFound>
       <WrongExtension>Wrong file extension. Please retry.</WrongExtension>
