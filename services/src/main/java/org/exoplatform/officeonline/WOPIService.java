@@ -833,36 +833,8 @@ public class WOPIService extends AbstractOfficeOnlineService {
    * @throws RepositoryException the repository exception
    * @throws FileNotFoundException the file not found exception
    */
-  public String getEditorLink(String fileId, String workspace, String baseUrl, String action) throws RepositoryException,
-                                                                                              FileNotFoundException {
+  public String getEditorLink(String fileId, String workspace, String baseUrl, String action) throws RepositoryException, FileNotFoundException {
     Node node = nodeByUUID(fileId, workspace);
-    return getEditorLink(node, baseUrl, action);
-  }
-
-  /**
-   * Gets the editor URL using PortletRequestContext.
-   *
-   * @param node the node
-   * @param action the action
-   * @return the editor URL
-   */
-  public String getEditorLink(Node node, String action) {
-    PortletRequestContext pcontext = (PortletRequestContext) WebuiRequestContext.getCurrentInstance();
-    String baseUrl = platformUrl(pcontext.getRequest().getScheme(),
-                                 pcontext.getRequest().getServerName(),
-                                 pcontext.getRequest().getServerPort()).toString();
-    return getEditorLink(node, baseUrl, action);
-  }
-
-  /**
-   * Gets the editor URL using PortletRequestContext.
-   *
-   * @param node the node
-   * @param action the action
-   * @return the editor URL
-   */
-  public String getEditorLink(Node node, URI requestURI, String action) {
-    String baseUrl = platformUrl(requestURI.getScheme(), requestURI.getHost(), requestURI.getPort()).toString();
     return getEditorLink(node, baseUrl, action);
   }
 

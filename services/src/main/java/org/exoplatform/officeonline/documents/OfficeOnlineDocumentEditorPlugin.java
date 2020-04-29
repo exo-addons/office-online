@@ -36,6 +36,9 @@ import org.exoplatform.officeonline.WOPIService;
 import org.exoplatform.officeonline.cometd.CometdConfig;
 import org.exoplatform.officeonline.cometd.CometdOfficeOnlineService;
 import org.exoplatform.officeonline.exception.FileNotFoundException;
+import org.exoplatform.officeonline.exception.OfficeOnlineException;
+import org.exoplatform.portal.application.PortalRequestContext;
+import org.exoplatform.portal.webui.util.Util;
 import org.exoplatform.services.cms.documents.DocumentEditor;
 import org.exoplatform.services.cms.documents.NewDocumentTemplate;
 import org.exoplatform.services.log.ExoLogger;
@@ -95,7 +98,7 @@ public class OfficeOnlineDocumentEditorPlugin extends BaseComponentPlugin implem
   @Override
   public void onDocumentCreated(String workspace, String path) throws Exception {
     Node node = wopiService.getNode(workspace, path);
-    String link = wopiService.getEditorLink(node, WOPIService.EDIT_ACTION);
+    String link = getEditorLink(node, null);
     if (link != null) {
       link = new StringBuilder().append("'").append(link).append("'").toString();
     } else {
@@ -134,7 +137,7 @@ public class OfficeOnlineDocumentEditorPlugin extends BaseComponentPlugin implem
     Node symlink = wopiService.nodeByUUID(uuid, workspace);
     Node node = wopiService.getNode(symlink.getSession().getWorkspace().getName(), symlink.getPath());
     if (node != null) {
-      String link = getEditorLink(node);
+      String link = getEditorLink(node, null);
       if (link != null) {
         link = new StringBuilder("'").append(link).append("'").toString();
       } else {
@@ -171,7 +174,7 @@ public class OfficeOnlineDocumentEditorPlugin extends BaseComponentPlugin implem
                                                    PortalContainer.getCurrentPortalContainerName());
         return new EditorSetting(fileId, link, userId, cometdConf, messages);
       }
-    } catch (FileNotFoundException e) {
+    } catch (OfficeOnlineException e) {
       LOG.error("Cannot initialize preview for fileId: {}, workspace: {}. {}", fileId, workspace, e.getMessage());
     } catch (RepositoryException e) {
       LOG.error("Cannot initialize preview", e);
@@ -196,22 +199,21 @@ public class OfficeOnlineDocumentEditorPlugin extends BaseComponentPlugin implem
 
       // Handling symlinks
       UIJCRExplorer uiExplorer = context.getUIApplication().findFirstComponentOfType(UIJCRExplorer.class);
-      Node symlink = (Node) uiExplorer.getSession().getItem(uiExplorer.getCurrentPath());
-      if (symlink.isNodeType("exo:symlink")) {
-        wopiService.addFilePreferences(node, WebuiRequestContext.getCurrentInstance().getRemoteUser(), symlink.getPath());
+      if (uiExplorer != null) {
+        Node symlink = (Node) uiExplorer.getSession().getItem(uiExplorer.getCurrentPath());
+        if (symlink.isNodeType("exo:symlink")) {
+          wopiService.addFilePreferences(node, WebuiRequestContext.getCurrentInstance().getRemoteUser(), symlink.getPath());
+        }
+      } else {
+        LOG.warn("Cannot check for symlink node {}:{} - UIJCRExplorer is null", fileId, workspace);
       }
-
+      
       if (wopiService.isDocumentSupported(node)) {
         if (LOG.isDebugEnabled()) {
           LOG.debug("Init documents explorer for node: {}:{}", workspace, fileId);
         }
         String userId = context.getRemoteUser();
-        String editorLink = null;
-        if (wopiService.canEdit(node)) {
-          editorLink = wopiService.getEditorLink(node, WOPIService.EDIT_ACTION);
-        } else if (wopiService.canView(node)) {
-          editorLink = wopiService.getEditorLink(node, WOPIService.VIEW_ACTION);
-        }
+        String editorLink = getEditorLink(node, null);
         Map<String, String> messages = initMessages(WebuiRequestContext.getCurrentInstance().getLocale());
         CometdConfig cometdConf = new CometdConfig(cometdService.getCometdServerPath(),
                                                    cometdService.getUserToken(userId),
@@ -251,31 +253,28 @@ public class OfficeOnlineDocumentEditorPlugin extends BaseComponentPlugin implem
    * @param node the node
    * @param requestURI the request URI
    * @return the string
+   * @throws OfficeOnlineException 
    */
-  protected String getEditorLink(Node node, URI requestURI) {
-    String link = editorLinks.computeIfAbsent(node, n -> {
-      if (wopiService.canEdit(node)) {
-        return wopiService.getEditorLink(node, requestURI, WOPIService.EDIT_ACTION);
-      } else if (wopiService.canView(node)) {
-        return wopiService.getEditorLink(node, requestURI, WOPIService.VIEW_ACTION);
+  protected String getEditorLink(Node node, URI requestURI) throws OfficeOnlineException {
+    String baseUrl;
+    if (requestURI != null) {
+      baseUrl = wopiService.platformUrl(requestURI.getScheme(), requestURI.getHost(), requestURI.getPort()).toString();
+    } else {
+      PortalRequestContext pcontext = Util.getPortalRequestContext();
+      if (pcontext != null) {
+        baseUrl = wopiService.platformUrl(pcontext.getRequest().getScheme(),
+                                          pcontext.getRequest().getServerName(),
+                                          pcontext.getRequest().getServerPort())
+                             .toString();
+      } else {
+        throw new OfficeOnlineException("Cannot get editor link - request URI and PortalRequestContext are null");
       }
-      return null;
-    });
-    return link;
-  }
-
-  /**
-   * Returns editor link, adds it to the editorLinks cache.
-   *
-   * @param node the node
-   * @return the string
-   */
-  protected String getEditorLink(Node node) {
+    }
     String link = editorLinks.computeIfAbsent(node, n -> {
       if (wopiService.canEdit(node)) {
-        return wopiService.getEditorLink(node, WOPIService.EDIT_ACTION);
+        return wopiService.getEditorLink(node, baseUrl, WOPIService.EDIT_ACTION);
       } else if (wopiService.canView(node)) {
-        return wopiService.getEditorLink(node, WOPIService.VIEW_ACTION);
+        return wopiService.getEditorLink(node, baseUrl, WOPIService.VIEW_ACTION);
       }
       return null;
     });
