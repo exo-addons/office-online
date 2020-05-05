@@ -570,7 +570,7 @@
             <field name="patterns">
               <collection type="java.util.ArrayList" item-type="java.lang.String">
                 <value>
-                  <string>/intranet/mseditor.*</string>
+                  <string>.*/mseditor.*</string>
                 </value>
               </collection>
             </field>
@@ -591,11 +591,11 @@
             </field>
             <field name="patterns">
               <collection type="java.util.ArrayList" item-type="java.lang.String">
-                <value>
-                  <string>/intranet/documents.*</string>
+               <value>
+                  <string>.*/documents.*</string>
                 </value>
                 <value>
-                  <string>/g/.*/documents.*</string>
+                  <string>.*/drives.*</string>
                 </value>
               </collection>
             </field>

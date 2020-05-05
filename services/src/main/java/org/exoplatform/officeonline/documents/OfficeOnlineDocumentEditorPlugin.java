@@ -18,17 +18,29 @@ package org.exoplatform.officeonline.documents;
 
 import static org.exoplatform.officeonline.webui.OfficeOnlineContext.callModule;
 
+import java.net.URI;
+import java.util.Enumeration;
+import java.util.HashMap;
+import java.util.Locale;
 import java.util.Map;
+import java.util.ResourceBundle;
 import java.util.concurrent.ConcurrentHashMap;
 
 import javax.jcr.Node;
+import javax.jcr.RepositoryException;
 
+import org.exoplatform.container.PortalContainer;
 import org.exoplatform.container.component.BaseComponentPlugin;
 import org.exoplatform.officeonline.WOPIService;
+import org.exoplatform.officeonline.cometd.CometdConfig;
+import org.exoplatform.officeonline.cometd.CometdOfficeOnlineService;
+import org.exoplatform.officeonline.exception.FileNotFoundException;
 import org.exoplatform.services.cms.documents.DocumentEditor;
 import org.exoplatform.services.cms.documents.NewDocumentTemplate;
 import org.exoplatform.services.log.ExoLogger;
 import org.exoplatform.services.log.Log;
+import org.exoplatform.services.resources.ResourceBundleService;
+import org.exoplatform.services.security.ConversationState;
 import org.exoplatform.webui.application.WebuiRequestContext;
 
 /**
@@ -37,27 +49,43 @@ import org.exoplatform.webui.application.WebuiRequestContext;
 public class OfficeOnlineDocumentEditorPlugin extends BaseComponentPlugin implements DocumentEditor {
 
   /** The Constant PROVIDER_NAME. */
-  protected static final String     PROVIDER_NAME                = "officeonline";
+  protected static final String             PROVIDER_NAME                = "officeonline";
 
   /** The Constant PROVIDER_CONFIGURATION_PARAM. */
-  protected static final String     PROVIDER_CONFIGURATION_PARAM = "provider-configuration";
+  protected static final String             PROVIDER_CONFIGURATION_PARAM = "provider-configuration";
+
+  /** The Constant CLIENT_RESOURCE_PREFIX. */
+  protected static final String             CLIENT_RESOURCE_PREFIX       = "OfficeOnlineEditorClient.";
 
   /** The Constant LOG. */
-  protected static final Log        LOG                          = ExoLogger.getLogger(OfficeOnlineDocumentEditorPlugin.class);
+  protected static final Log                LOG                          =
+                                                ExoLogger.getLogger(OfficeOnlineDocumentEditorPlugin.class);
 
   /** The wopi service. */
-  protected final WOPIService       wopiService;
+  protected final WOPIService               wopiService;
+
+  /** The i 18 n service. */
+  protected final ResourceBundleService     i18nService;
+
+  /** The cometd service. */
+  protected final CometdOfficeOnlineService cometdService;
 
   /** The editor links. */
-  protected final Map<Node, String> editorLinks                  = new ConcurrentHashMap<>();
+  protected final Map<Node, String>         editorLinks                  = new ConcurrentHashMap<>();
 
   /**
-   * Instantiates a new office online new document editor plugin.
+   * Instantiates a new office online document editor plugin.
    *
    * @param wopiService the wopi service
+   * @param i18nService the i 18 n service
+   * @param cometdService the cometd service
    */
-  public OfficeOnlineDocumentEditorPlugin(WOPIService wopiService) {
+  public OfficeOnlineDocumentEditorPlugin(WOPIService wopiService,
+                                          ResourceBundleService i18nService,
+                                          CometdOfficeOnlineService cometdService) {
     this.wopiService = wopiService;
+    this.i18nService = i18nService;
+    this.cometdService = cometdService;
   }
 
   /**
@@ -106,6 +134,11 @@ public class OfficeOnlineDocumentEditorPlugin extends BaseComponentPlugin implem
     Node node = wopiService.getNode(symlink.getSession().getWorkspace().getName(), symlink.getPath());
     if (node != null) {
       String link = getEditorLink(node);
+      if (link != null) {
+        link = new StringBuilder("'").append(link).append("'").toString();
+      } else {
+        link = "null";
+      }
       callModule("officeonline.initActivity('" + node.getUUID() + "', " + link + ", '" + activityId + "');");
     }
   }
@@ -113,32 +146,63 @@ public class OfficeOnlineDocumentEditorPlugin extends BaseComponentPlugin implem
   /**
    * Inits the preview.
    *
-   * @param uuid the uuid
+   * @param <T> the generic type
+   * @param fileId the uuid
    * @param workspace the workspace
-   * @param activityId the activity id
-   * @param context the context
-   * @param index the index
-   * @throws Exception the exception
+   * @param requestURI the requestURI
+   * @param locale the locale
+   * @return the editor settings
    */
+  @SuppressWarnings("unchecked")
   @Override
-  public void initPreview(String uuid, String workspace, String activityId, String context, int index) throws Exception {
-    Node symlink = wopiService.nodeByUUID(uuid, workspace);
-    Node node = wopiService.getNode(symlink.getSession().getWorkspace().getName(), symlink.getPath());
-    if (node != null) {
-      if (symlink.isNodeType("exo:symlink")) {
-        String userId = WebuiRequestContext.getCurrentInstance().getRemoteUser();
-        wopiService.addFilePreferences(node, userId, symlink.getPath());
+  public EditorSetting initPreview(String fileId, String workspace, URI requestURI, Locale locale) {
+    try {
+      Node symlink = wopiService.nodeByUUID(fileId, workspace);
+      Node node = wopiService.getNode(symlink.getSession().getWorkspace().getName(), symlink.getPath());
+      if (node != null) {
+        String userId = ConversationState.getCurrent().getIdentity().getUserId();
+        if (symlink.isNodeType("exo:symlink")) {
+          wopiService.addFilePreferences(node, userId, symlink.getPath());
+        }
+        String link = getEditorLink(node, requestURI);
+        Map<String, String> messages = initMessages(locale);
+        CometdConfig cometdConf = new CometdConfig(cometdService.getCometdServerPath(),
+                                                   cometdService.getUserToken(userId),
+                                                   PortalContainer.getCurrentPortalContainerName());
+        return new EditorSetting(fileId, link, userId, cometdConf, messages);
       }
-      String link = getEditorLink(node);
-      callModule("officeonline.initPreview('" + node.getUUID() + "', " + link + ", '" + activityId + "', '" + index + "');");
+    } catch (FileNotFoundException e) {
+      LOG.error("Cannot initialize preview for fileId: {}, workspace: {}. {}", fileId, workspace, e.getMessage());
+    } catch (RepositoryException e) {
+      LOG.error("Cannot initialize preview", e);
     }
-
+    return null;
   }
 
   /**
    * Returns editor link, adds it to the editorLinks cache.
    *
    * @param node the node
+   * @param requestURI the request URI
+   * @return the string
+   */
+  protected String getEditorLink(Node node, URI requestURI) {
+    String link = editorLinks.computeIfAbsent(node, n -> {
+      if (wopiService.canEdit(node)) {
+        return wopiService.getEditorLink(node, requestURI, WOPIService.EDIT_ACTION);
+      } else if (wopiService.canView(node)) {
+        return wopiService.getEditorLink(node, requestURI, WOPIService.VIEW_ACTION);
+      }
+      return null;
+    });
+    return link;
+  }
+
+  /**
+   * Returns editor link, adds it to the editorLinks cache.
+   *
+   * @param node the node
+   * @param requestURI the request URI
    * @return the string
    */
   protected String getEditorLink(Node node) {
@@ -150,8 +214,112 @@ public class OfficeOnlineDocumentEditorPlugin extends BaseComponentPlugin implem
       }
       return null;
     });
-    link = link != null ? new StringBuilder().append("'").append(link).append("'").toString() : "null".intern();
     return link;
+  }
+
+  /**
+   * Inits the messages.
+   *
+   * @param locale the locale
+   * @return the map
+   */
+  private Map<String, String> initMessages(Locale locale) {
+    ResourceBundle res = i18nService.getResourceBundle("locale.officeonline.OfficeOnlineClient", locale);
+    Map<String, String> messages = new HashMap<String, String>();
+    for (Enumeration<String> keys = res.getKeys(); keys.hasMoreElements();) {
+      String key = keys.nextElement();
+      String bundleKey;
+      if (key.startsWith(CLIENT_RESOURCE_PREFIX)) {
+        bundleKey = key.substring(CLIENT_RESOURCE_PREFIX.length());
+      } else {
+        bundleKey = key;
+      }
+      messages.put(bundleKey, res.getString(key));
+    }
+    return messages;
+  }
+
+  /**
+   * The Class EditorSetting.
+   */
+  protected static class EditorSetting {
+
+    /** The file id. */
+    private final String              fileId;
+
+    /** The link. */
+    private final String              link;
+
+    /** The user id. */
+    private final String              userId;
+
+    /** The cometd conf. */
+    private final CometdConfig        cometdConf;
+
+    /** The messages. */
+    private final Map<String, String> messages;
+
+    /**
+     * Instantiates a new editor setting.
+     *
+     * @param fileId the file id
+     * @param link the link
+     * @param userId the user id
+     * @param cometdConf the cometd conf
+     * @param messages the messages
+     */
+    public EditorSetting(String fileId, String link, String userId, CometdConfig cometdConf, Map<String, String> messages) {
+      this.fileId = fileId;
+      this.link = link;
+      this.userId = userId;
+      this.cometdConf = cometdConf;
+      this.messages = messages;
+    }
+
+    /**
+     * Gets the file id.
+     *
+     * @return the file id
+     */
+    public String getFileId() {
+      return fileId;
+    }
+
+    /**
+     * Gets the link.
+     *
+     * @return the link
+     */
+    public String getLink() {
+      return link;
+    }
+
+    /**
+     * Gets the user id.
+     *
+     * @return the user id
+     */
+    public String getUserId() {
+      return userId;
+    }
+
+    /**
+     * Gets the cometd conf.
+     *
+     * @return the cometd conf
+     */
+    public CometdConfig getCometdConf() {
+      return cometdConf;
+    }
+
+    /**
+     * Gets the messages.
+     *
+     * @return the messages
+     */
+    public Map<String, String> getMessages() {
+      return messages;
+    }
   }
 
 }
