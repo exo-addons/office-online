@@ -152,10 +152,10 @@ public class OfficeOnlineDocumentEditorPlugin extends BaseComponentPlugin implem
   @Override
   public EditorSetting initPreview(String fileId, String workspace, URI requestURI, Locale locale) {
     try {
-      String userId = ConversationState.getCurrent().getIdentity().getUserId();
       Node symlink = wopiService.nodeByUUID(fileId, workspace);
       Node node = wopiService.getNode(symlink.getSession().getWorkspace().getName(), symlink.getPath());
       if (node != null) {
+        String userId = ConversationState.getCurrent().getIdentity().getUserId();
         if (symlink.isNodeType("exo:symlink")) {
           wopiService.addFilePreferences(node, userId, symlink.getPath());
         }
