@@ -69,7 +69,8 @@
   };
 
   /**
-   * Ads the 'Edit Online' button to the JCRExplorer when a document is displayed.
+   * Ads the 'Edit Online' button to the JCRExplorer when a document is
+   * displayed.
    */
   var addEditorButtonToExplorer = function(editorLink) {
     var $button = $("#UIJCRExplorer #uiActionsBarContainer i.uiIconEcmsOfficeOnlineOpen");
@@ -105,7 +106,7 @@
       var viewerSrc = $vieverScript.attr("src");
       $vieverScript.remove();
       $(".document-preview-content-file").append("<script src='" + viewerSrc + "'></script>");
-    }, 250); // XXX we need wait for office preview server generate a new preview
+    }, 250); // XXX we need wait for server to generate a new preview
   };
 
   /**
@@ -268,7 +269,8 @@
     });
 
     /**
-     * Subscribes on a document updates using cometd. Dispatches events to the redux store.
+     * Subscribes on a document updates using cometd. Dispatches events to the
+     * redux store.
      */
     var subscribeDocument = function(fileId) {
       // Use only one channel for one document
@@ -358,53 +360,10 @@
       return $("<li class='hidden-tabletL'><a href='" + editorLink + "' target='_blank'>"
           + "<i class='uiIconEcmsOfficeOnlineOpen uiIconEcmsLightGray " + iconClass + "'></i>" + label + "</a></li>");
 
-    }
-
-    this.initEditor = function(accessToken, actionURL, versionsURL, filename) {
-      extension = filename.substring(filename.lastIndexOf("."));
-      updateWindowTitle(filename);
-      versionsLink = versionsURL;
-      $('#office_form').attr('action', actionURL);
-      $('input[name="access_token"]').val(accessToken.token);
-      $('input[name="access_token_ttl"]').val(accessToken.expires);
-
-      var frameholder = document.getElementById('frameholder');
-      var office_frame = document.createElement('iframe');
-      office_frame.name = 'office_frame';
-      office_frame.id = 'office_frame';
-      // The title should be set for accessibility
-      office_frame.title = 'Office Frame';
-      // This attribute allows true fullscreen mode in slideshow view
-      // when using PowerPoint's 'view' action.
-      office_frame.setAttribute('allowfullscreen', 'true');
-      // The sandbox attribute is needed to allow automatic redirection to the O365 sign-in page in the business user flow
-      office_frame.setAttribute('sandbox',
-          'allow-scripts allow-same-origin allow-forms allow-popups allow-top-navigation allow-popups-to-escape-sandbox');
-      frameholder.appendChild(office_frame);
-      document.getElementById('office_form').submit();
-      window.addEventListener('message', handlePostMessage, false);
-
     };
 
-    this.initActivity = function(fileId, editorLink, activityId) {
-      log("Initialize activity with document: " + fileId);
-      // Listen to document updates
-      store.subscribe(function() {
-        var state = store.getState();
-        if (state.type === DOCUMENT_SAVED && state.fileId === fileId) {
-          addRefreshBannerActivity(activityId);
-        }
-      });
-      subscribeDocument(fileId);
-      if (editorLink != null) {
-        editorbuttons.addCreateButtonFn("officeonline", function() {
-          return createEditorButton(editorLink);
-        });
-      }
-    };
-
-    this.init = function(userId, cometdConf, userMessages) {
-      if (userId == currentUserId) {
+    var init = function(userId, cometdConf, userMessages) {
+      if (userId === currentUserId) {
         log("Already initialized user: " + userId);
       } else if (userId) {
         currentUserId = userId;
@@ -430,25 +389,69 @@
       }
     };
 
-    this.initPreview = function(fileId, editorLink, activityId, index) {
-      log("Init preview called. FileId: " + fileId);
-      var clickSelector = "#Preview" + activityId + "-" + index;
-      $(clickSelector).click(function() {
-        log("Initialize preview of document: " + fileId);
-        // We set timeout here to avoid the case when the element is rendered but is going to be updated soon
-        setTimeout(function() {
-          store.subscribe(function() {
-            var state = store.getState();
-            if (state.type === DOCUMENT_SAVED && state.fileId === fileId) {
-              addRefreshBannerPDF();
-            }
-          });
-        }, 100);
-        subscribeDocument(fileId);
+    this.initEditor = function(accessToken, actionURL, versionsURL, filename) {
+      extension = filename.substring(filename.lastIndexOf("."));
+      updateWindowTitle(filename);
+      versionsLink = versionsURL;
+      $('#office_form').attr('action', actionURL);
+      $('input[name="access_token"]').val(accessToken.token);
+      $('input[name="access_token_ttl"]').val(accessToken.expires);
+
+      var frameholder = document.getElementById('frameholder');
+      var office_frame = document.createElement('iframe');
+      office_frame.name = 'office_frame';
+      office_frame.id = 'office_frame';
+      // The title should be set for accessibility
+      office_frame.title = 'Office Frame';
+      // This attribute allows true fullscreen mode in slideshow view
+      // when using PowerPoint's 'view' action.
+      office_frame.setAttribute('allowfullscreen', 'true');
+      // The sandbox attribute is needed to allow automatic redirection to the
+      // O365 sign-in page in the business user flow
+      office_frame.setAttribute('sandbox',
+          'allow-scripts allow-same-origin allow-forms allow-popups allow-top-navigation allow-popups-to-escape-sandbox');
+      frameholder.appendChild(office_frame);
+      document.getElementById('office_form').submit();
+      window.addEventListener('message', handlePostMessage, false);
+
+    };
+
+    this.initActivity = function(fileId, editorLink, activityId) {
+      log("Initialize activity with document: " + fileId);
+      // Listen to document updates
+      store.subscribe(function() {
+        var state = store.getState();
+        if (state.type === DOCUMENT_SAVED && state.fileId === fileId) {
+          addRefreshBannerActivity(activityId);
+        }
       });
+      subscribeDocument(fileId);
       if (editorLink != null) {
         editorbuttons.addCreateButtonFn("officeonline", function() {
           return createEditorButton(editorLink);
+        });
+      }
+    };
+
+    this.init = init;
+
+    this.initPreview = function(settings) {
+      init(settings.userId, settings.cometdConf, settings.messages);
+      log("Initialize preview of document: " + settings.fileId);
+      // We set timeout here to avoid the case when the element is rendered but
+      // is going to be updated soon
+      setTimeout(function() {
+        store.subscribe(function() {
+          var state = store.getState();
+          if (state.type === DOCUMENT_SAVED && state.fileId === settings.fileId) {
+            addRefreshBannerPDF();
+          }
+        });
+      }, 100);
+      // subscribeDocument(settings.fileId);
+      if (settings.link != null) {
+        editorbuttons.addCreateButtonFn("officeonline", function() {
+          return createEditorButton(settings.link);
         });
       }
     };
@@ -481,14 +484,16 @@
     };
 
     /**
-     * Sets the onClick listener for Create Document button (used in creating a new document)
+     * Sets the onClick listener for Create Document button (used in creating a
+     * new document)
      */
     this.initNewDocument = function() {
       editorWindow = window.open();
     };
 
     /**
-     * Initializes the editor in the editorWindow. (used in creating a new document)
+     * Initializes the editor in the editorWindow. (used in creating a new
+     * document)
      */
     this.initEditorPage = function(link) {
       if (editorWindow != null) {
