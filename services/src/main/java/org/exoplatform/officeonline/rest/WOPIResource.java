@@ -23,7 +23,6 @@ import java.io.InputStream;
 import java.io.Serializable;
 import java.io.StringWriter;
 import java.net.InetAddress;
-import java.net.URI;
 import java.nio.charset.Charset;
 import java.util.Map;
 
@@ -53,6 +52,7 @@ import org.exoplatform.officeonline.RequestInfo;
 import org.exoplatform.officeonline.WOPIService;
 import org.exoplatform.officeonline.exception.AuthenticationFailedException;
 import org.exoplatform.officeonline.exception.EditorConfigNotFoundException;
+import org.exoplatform.officeonline.exception.EditorLinkNotFoundException;
 import org.exoplatform.officeonline.exception.FileExtensionNotFoundException;
 import org.exoplatform.officeonline.exception.FileLockedException;
 import org.exoplatform.officeonline.exception.FileNotFoundException;
@@ -1004,9 +1004,14 @@ public class WOPIResource implements ResourceContainer {
       String url = new StringBuilder(wopiService.getWOPISrc(requestInfo, fileId)).append("?access_token=")
                                                                                  .append(config.getAccessToken().getToken())
                                                                                  .toString();
-      String editUrl = wopiService.getEditorLink(fileId, config.getWorkspace(), config.getBaseUrl(), WOPIService.EDIT_ACTION);
-      // TODO: introduce viewUrl
-      String viewUrl = editUrl;
+      String editUrl = null;
+      String viewUrl = null;
+      try {
+        wopiService.getEditorLink(fileId, config.getWorkspace(), config.getBaseUrl(), WOPIService.EDIT_ACTION);
+        wopiService.getEditorLink(fileId, config.getWorkspace(), config.getBaseUrl(), WOPIService.VIEW_ACTION);
+      } catch (EditorLinkNotFoundException e) {
+        LOG.error("Cannot get editor link: ", e);
+      }
       if (LOG.isDebugEnabled()) {
         LOG.debug("PutRelativeFile [Suggested] response: OK");
       }

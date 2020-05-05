@@ -22,6 +22,15 @@
     <EditorTitle>Online Editor</EditorTitle>
     <ErrorTitle>Error</ErrorTitle>
     <InfoTitle>Information</InfoTitle>
+    
+     <!-- For Explorer/Preview/Stream -->
+    <EditorLinkNotFoundError>Editor link not found</EditorLinkNotFoundError>
+    <EditorLinkNotFoundErrorMessage>Cannot get editor link - permission denied.</EditorLinkNotFoundErrorMessage>
+    <StorageError>Storage error has occured.</StorageError>
+    <StorageErrorMessage>Cannot get editor link due to storage errors.</StorageErrorMessage>
+    <InternalEditorError>Integran editor error.</InternalEditorError>
+    <InternalEditorErrorMessage>Cannot get editor link due to internal editor error.</InternalEditorErrorMessage>
+    
   </OfficeonlineEditorClient>
   
       

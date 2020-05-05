@@ -405,6 +405,8 @@
           editorbuttons.addCreateButtonFn(OFFICEONLINE, function() {
             return createEditorButton(settings.link);
           });
+        } else {
+          log(message(settings.error.type) + " - " + message(settings.error.message));
         }
       } else {
         log("Cannot init preview - the settings are null");
@@ -441,11 +443,12 @@
           editorbuttons.addCreateButtonFn(OFFICEONLINE, function() {
             return createEditorButton(settings.link);
           });
+        } else {
+          log(message(settings.error.type) + " - " + message(settings.error.message));
         }
       } else {
         log("Cannot init explorer - the settings are null");
-      }
-
+      }s
     };
 
     /**
