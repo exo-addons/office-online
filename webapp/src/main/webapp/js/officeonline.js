@@ -56,8 +56,7 @@
       var viewerSrc = $vieverScript.attr("src");
       $vieverScript.remove();
       $(".document-preview-content-file").append("<script src='" + viewerSrc + "'></script>");
-    }, 250); // XXX we need wait for office preview server generate a new
-    // preview
+    }, 250); // XXX we need wait for server to generate a new preview
   };
 
   /**
@@ -341,7 +340,7 @@
     };
 
     var init = function(userId, cometdConf, userMessages) {
-      if (userId == currentUserId) {
+      if (userId === currentUserId) {
         log("Already initialized user: " + userId);
       } else if (userId) {
         currentUserId = userId;
