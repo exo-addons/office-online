@@ -40,6 +40,7 @@ import org.exoplatform.ecm.utils.text.Text;
 import org.exoplatform.ecm.webui.utils.PermissionUtil;
 import org.exoplatform.ecm.webui.utils.Utils;
 import org.exoplatform.officeonline.exception.ActionNotFoundException;
+import org.exoplatform.officeonline.exception.EditorLinkNotFoundException;
 import org.exoplatform.officeonline.exception.FileExtensionNotFoundException;
 import org.exoplatform.officeonline.exception.FileLockedException;
 import org.exoplatform.officeonline.exception.FileNotFoundException;
@@ -77,8 +78,6 @@ import org.exoplatform.services.security.ConversationState;
 import org.exoplatform.services.security.IdentityRegistry;
 import org.exoplatform.services.wcm.core.NodetypeConstant;
 import org.exoplatform.services.wcm.utils.WCMCoreUtils;
-import org.exoplatform.webui.application.WebuiRequestContext;
-import org.exoplatform.webui.application.portlet.PortletRequestContext;
 
 /**
  * The Class WOPIService.
@@ -832,69 +831,60 @@ public class WOPIService extends AbstractOfficeOnlineService {
    * @return the editor URL
    * @throws RepositoryException the repository exception
    * @throws FileNotFoundException the file not found exception
+   * @throws EditorLinkNotFoundException the editor link not found exception
    */
   public String getEditorLink(String fileId, String workspace, String baseUrl, String action) throws RepositoryException,
-                                                                                              FileNotFoundException {
+                                                                                              FileNotFoundException, EditorLinkNotFoundException {
     Node node = nodeByUUID(fileId, workspace);
     return getEditorLink(node, baseUrl, action);
   }
 
+
   /**
-   * Gets the editor URL using PortletRequestContext.
+   * Gets the editor link.
    *
    * @param node the node
+   * @param scheme the scheme
+   * @param host the host
+   * @param port the port
    * @param action the action
-   * @return the editor URL
+   * @return the editor link
+   * @throws RepositoryException the repository exception
+   * @throws EditorLinkNotFoundException the editor link not found exception
    */
-  public String getEditorLink(Node node, String action) {
-    PortletRequestContext pcontext = (PortletRequestContext) WebuiRequestContext.getCurrentInstance();
-    String baseUrl = platformUrl(pcontext.getRequest().getScheme(),
-                                 pcontext.getRequest().getServerName(),
-                                 pcontext.getRequest().getServerPort()).toString();
+  public String getEditorLink(Node node, String scheme, String host, int port, String action) throws RepositoryException, EditorLinkNotFoundException {
+    String baseUrl = platformUrl(scheme, host, port).toString();
     return getEditorLink(node, baseUrl, action);
   }
 
   /**
-   * Gets the editor URL using PortletRequestContext.
-   *
-   * @param node the node
-   * @param action the action
-   * @return the editor URL
-   */
-  public String getEditorLink(Node node, URI requestURI, String action) {
-    String baseUrl = platformUrl(requestURI.getScheme(), requestURI.getHost(), requestURI.getPort()).toString();
-    return getEditorLink(node, baseUrl, action);
-  }
-
-  /**
-   * Gets the editor URL.
+   * Gets the editor link.
    *
    * @param node the node
    * @param baseUrl the base url
    * @param action the action
-   * @return the editor URL
+   * @return the editor link
+   * @throws RepositoryException the repository exception
+   * @throws EditorLinkNotFoundException the editor link not found exception
    */
-  public String getEditorLink(Node node, String baseUrl, String action) {
-    try {
-      if (isDocumentSupported(node)) {
-        StringBuilder link = new StringBuilder(baseUrl).append('/')
-                                                       .append(CommonsUtils.getCurrentPortalOwner())
-                                                       .append("/mseditor?fileId=")
-                                                       .append(node.getUUID());
+  public String getEditorLink(Node node, String baseUrl, String action) throws RepositoryException, EditorLinkNotFoundException {
+    if (isDocumentSupported(node)) {
+      StringBuilder link = new StringBuilder(baseUrl).append('/')
+                                                     .append(CommonsUtils.getCurrentPortalOwner())
+                                                     .append("/mseditor?fileId=")
+                                                     .append(node.getUUID());
 
-        if (action.equals(VIEW_ACTION)) {
-          link.append(VIEW_PARAM);
-        } else if (action.equals(EDIT_ACTION)) {
-          link.append(EDIT_PARAM);
-        } else if (action.equals(EDITNEW_ACTION)) {
-          link.append(EDITNEW_PARAM);
-        }
-        return link.toString();
+      if (action.equals(VIEW_ACTION)) {
+        link.append(VIEW_PARAM);
+      } else if (action.equals(EDIT_ACTION)) {
+        link.append(EDIT_PARAM);
+      } else if (action.equals(EDITNEW_ACTION)) {
+        link.append(EDITNEW_PARAM);
       }
-    } catch (RepositoryException e) {
-      LOG.error("Cannot get editor link", e);
+      return link.toString();
+    } else {
+      throw new EditorLinkNotFoundException("Editor link not found - document is not supported");
     }
-    return null;
   }
 
   /**
@@ -1151,8 +1141,12 @@ public class WOPIService extends AbstractOfficeOnlineService {
                                                            .append(config.getAccessToken().getToken())
                                                            .toString();
     map.put(DOWNLOAD_URL, downloadURL);
-    map.put(HOST_EDIT_URL, getEditorLink(node, config.getBaseUrl(), EDIT_ACTION));
-    map.put(HOST_VIEW_URL, getEditorLink(node, config.getBaseUrl(), VIEW_ACTION));
+    try {
+      map.put(HOST_EDIT_URL, getEditorLink(node, config.getBaseUrl(), EDIT_ACTION));
+      map.put(HOST_VIEW_URL, getEditorLink(node, config.getBaseUrl(), VIEW_ACTION));
+    } catch (EditorLinkNotFoundException e) {
+      LOG.error("Cannot get editor link", e);
+    }
     map.put(FILE_URL, downloadURL);
 
   }

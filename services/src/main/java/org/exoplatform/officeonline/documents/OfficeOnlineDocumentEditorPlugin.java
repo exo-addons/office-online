@@ -31,10 +31,15 @@ import javax.jcr.RepositoryException;
 
 import org.exoplatform.container.PortalContainer;
 import org.exoplatform.container.component.BaseComponentPlugin;
+import org.exoplatform.ecm.webui.component.explorer.UIJCRExplorer;
 import org.exoplatform.officeonline.WOPIService;
 import org.exoplatform.officeonline.cometd.CometdConfig;
 import org.exoplatform.officeonline.cometd.CometdOfficeOnlineService;
+import org.exoplatform.officeonline.exception.EditorLinkNotFoundException;
 import org.exoplatform.officeonline.exception.FileNotFoundException;
+import org.exoplatform.officeonline.exception.OfficeOnlineException;
+import org.exoplatform.portal.application.PortalRequestContext;
+import org.exoplatform.portal.webui.util.Util;
 import org.exoplatform.services.cms.documents.DocumentEditor;
 import org.exoplatform.services.cms.documents.NewDocumentTemplate;
 import org.exoplatform.services.log.ExoLogger;
@@ -49,16 +54,34 @@ import org.exoplatform.webui.application.WebuiRequestContext;
 public class OfficeOnlineDocumentEditorPlugin extends BaseComponentPlugin implements DocumentEditor {
 
   /** The Constant PROVIDER_NAME. */
-  protected static final String             PROVIDER_NAME                = "officeonline";
+  protected static final String             PROVIDER_NAME                       = "officeonline";
 
   /** The Constant PROVIDER_CONFIGURATION_PARAM. */
-  protected static final String             PROVIDER_CONFIGURATION_PARAM = "provider-configuration";
+  protected static final String             PROVIDER_CONFIGURATION_PARAM        = "provider-configuration";
 
   /** The Constant CLIENT_RESOURCE_PREFIX. */
-  protected static final String             CLIENT_RESOURCE_PREFIX       = "OfficeOnlineEditorClient.";
+  protected static final String             CLIENT_RESOURCE_PREFIX              = "OfficeOnlineEditorClient.";
+
+  /** The Constant EDITOR_LINK_NOT_FOUND_ERROR. */
+  protected static final String             EDITOR_LINK_NOT_FOUND_ERROR         = "EditorLinkNotFoundError";
+
+  /** The Constant EDITOR_LINK_NOT_FOUND_ERROR_MESSAGE. */
+  protected static final String             EDITOR_LINK_NOT_FOUND_ERROR_MESSAGE = "EditorLinkNotFoundErrorMessage";
+
+  /** The Constant STORAGE_ERROR. */
+  protected static final String             STORAGE_ERROR                       = "StorageError";
+
+  /** The Constant STORAGE_ERROR_MESSAGE. */
+  protected static final String             STORAGE_ERROR_MESSAGE               = "StorageErrorMessage";
+
+  /** The Constant INTERNAL_EDITOR_ERROR. */
+  protected static final String             INTERNAL_EDITOR_ERROR               = "InternalEditorError";
+
+  /** The Constant INTERNAL_EDITOR_ERROR_MESSAGE. */
+  protected static final String             INTERNAL_EDITOR_ERROR_MESSAGE       = "InternalEditorErrorMessage";
 
   /** The Constant LOG. */
-  protected static final Log                LOG                          =
+  protected static final Log                LOG                                 =
                                                 ExoLogger.getLogger(OfficeOnlineDocumentEditorPlugin.class);
 
   /** The wopi service. */
@@ -71,7 +94,7 @@ public class OfficeOnlineDocumentEditorPlugin extends BaseComponentPlugin implem
   protected final CometdOfficeOnlineService cometdService;
 
   /** The editor links. */
-  protected final Map<Node, String>         editorLinks                  = new ConcurrentHashMap<>();
+  protected final Map<Node, String>         editorLinks                         = new ConcurrentHashMap<>();
 
   /**
    * Instantiates a new office online document editor plugin.
@@ -94,12 +117,12 @@ public class OfficeOnlineDocumentEditorPlugin extends BaseComponentPlugin implem
   @Override
   public void onDocumentCreated(String workspace, String path) throws Exception {
     Node node = wopiService.getNode(workspace, path);
-    String link = wopiService.getEditorLink(node, WOPIService.EDIT_ACTION);
-    if (link != null) {
-      link = new StringBuilder().append("'").append(link).append("'").toString();
-    } else {
+    String link = null;
+    try {
+      link = new StringBuilder("'").append(getEditorLink(node, null)).append("'").toString();
+    } catch (OfficeOnlineException e) {
+      LOG.error("Cannot get editor link: {}", e.getMessage());
       link = "null";
-      LOG.error("Cannot get editor link for document: {}, workspace: {}", path, workspace);
     }
     callModule("officeonline.initEditorPage(" + link + ");");
   }
@@ -133,10 +156,13 @@ public class OfficeOnlineDocumentEditorPlugin extends BaseComponentPlugin implem
     Node symlink = wopiService.nodeByUUID(uuid, workspace);
     Node node = wopiService.getNode(symlink.getSession().getWorkspace().getName(), symlink.getPath());
     if (node != null) {
-      String link = getEditorLink(node);
-      if (link != null) {
-        link = new StringBuilder("'").append(link).append("'").toString();
-      } else {
+      String link = null;
+      try {
+        link = new StringBuilder("'").append(getEditorLink(node, null)).append("'").toString();
+      } catch (EditorLinkNotFoundException e) {
+        if (LOG.isDebugEnabled()) {
+          LOG.debug("Cannot get editor link: {}", e.getMessage());
+        }
         link = "null";
       }
       callModule("officeonline.initActivity('" + node.getUUID() + "', " + link + ", '" + activityId + "');");
@@ -146,7 +172,6 @@ public class OfficeOnlineDocumentEditorPlugin extends BaseComponentPlugin implem
   /**
    * Inits the preview.
    *
-   * @param <T> the generic type
    * @param fileId the uuid
    * @param workspace the workspace
    * @param requestURI the requestURI
@@ -164,12 +189,29 @@ public class OfficeOnlineDocumentEditorPlugin extends BaseComponentPlugin implem
         if (symlink.isNodeType("exo:symlink")) {
           wopiService.addFilePreferences(node, userId, symlink.getPath());
         }
-        String link = getEditorLink(node, requestURI);
+
+        String link = null;
+        EditorError error = null;
+        try {
+          link = getEditorLink(node, requestURI);
+        } catch (EditorLinkNotFoundException e) {
+          if (LOG.isDebugEnabled()) {
+            LOG.debug("Cannot get editor link for preview: {}", e.getMessage());
+          }
+          error = new EditorError(EDITOR_LINK_NOT_FOUND_ERROR, EDITOR_LINK_NOT_FOUND_ERROR_MESSAGE);
+        } catch (OfficeOnlineException e) {
+          LOG.error("Cannot get editor link for preview: ", e);
+          error = new EditorError(INTERNAL_EDITOR_ERROR, INTERNAL_EDITOR_ERROR_MESSAGE);
+        } catch (RepositoryException e) {
+          LOG.error("Cannot get editor link for preview: ", e);
+          error = new EditorError(STORAGE_ERROR, STORAGE_ERROR_MESSAGE);
+        }
+
         Map<String, String> messages = initMessages(locale);
         CometdConfig cometdConf = new CometdConfig(cometdService.getCometdServerPath(),
                                                    cometdService.getUserToken(userId),
                                                    PortalContainer.getCurrentPortalContainerName());
-        return new EditorSetting(fileId, link, userId, cometdConf, messages);
+        return new EditorSetting(fileId, link, userId, cometdConf, messages, error);
       }
     } catch (FileNotFoundException e) {
       LOG.error("Cannot initialize preview for fileId: {}, workspace: {}. {}", fileId, workspace, e.getMessage());
@@ -180,22 +222,84 @@ public class OfficeOnlineDocumentEditorPlugin extends BaseComponentPlugin implem
   }
 
   /**
-   * Returns editor link, adds it to the editorLinks cache.
+   * Inits the explorer.
    *
-   * @param node the node
-   * @param requestURI the request URI
-   * @return the string
+   * @param fileId the file id
+   * @param workspace the workspace
+   * @param context the context
+   * @return the editor setting
    */
-  protected String getEditorLink(Node node, URI requestURI) {
-    String link = editorLinks.computeIfAbsent(node, n -> {
-      if (wopiService.canEdit(node)) {
-        return wopiService.getEditorLink(node, requestURI, WOPIService.EDIT_ACTION);
-      } else if (wopiService.canView(node)) {
-        return wopiService.getEditorLink(node, requestURI, WOPIService.VIEW_ACTION);
+  @SuppressWarnings("unchecked")
+  @Override
+  public EditorSetting initExplorer(String fileId, String workspace, WebuiRequestContext context) {
+    try {
+      Node node = wopiService.nodeByUUID(fileId, workspace);
+      node = wopiService.getNode(node.getSession().getWorkspace().getName(), node.getPath());
+
+      // Handling symlinks
+      UIJCRExplorer uiExplorer = context.getUIApplication().findFirstComponentOfType(UIJCRExplorer.class);
+      if (uiExplorer != null) {
+        Node symlink = (Node) uiExplorer.getSession().getItem(uiExplorer.getCurrentPath());
+        if (symlink.isNodeType("exo:symlink")) {
+          wopiService.addFilePreferences(node, WebuiRequestContext.getCurrentInstance().getRemoteUser(), symlink.getPath());
+        }
+      } else {
+        LOG.warn("Cannot check for symlink node {}:{} - UIJCRExplorer is null", fileId, workspace);
       }
-      return null;
-    });
-    return link;
+
+      if (wopiService.isDocumentSupported(node)) {
+        if (LOG.isDebugEnabled()) {
+          LOG.debug("Init documents explorer for node: {}:{}", workspace, fileId);
+        }
+        String userId = context.getRemoteUser();
+        String link = null;
+        EditorError error = null;
+        try {
+          link = getEditorLink(node, null);
+        } catch (EditorLinkNotFoundException e) {
+          if (LOG.isDebugEnabled()) {
+            LOG.debug("Cannot get editor link for preview: {}", e.getMessage());
+          }
+          error = new EditorError(EDITOR_LINK_NOT_FOUND_ERROR, EDITOR_LINK_NOT_FOUND_ERROR_MESSAGE);
+        } catch (OfficeOnlineException e) {
+          LOG.error("Cannot get editor link for preview: ", e);
+          error = new EditorError(INTERNAL_EDITOR_ERROR, INTERNAL_EDITOR_ERROR_MESSAGE);
+        } catch (RepositoryException e) {
+          LOG.error("Cannot get editor link for preview: ", e);
+          error = new EditorError(STORAGE_ERROR, STORAGE_ERROR_MESSAGE);
+        }
+
+        Map<String, String> messages = initMessages(WebuiRequestContext.getCurrentInstance().getLocale());
+        CometdConfig cometdConf = new CometdConfig(cometdService.getCometdServerPath(),
+                                                   cometdService.getUserToken(userId),
+                                                   PortalContainer.getCurrentPortalContainerName());
+        return new EditorSetting(fileId, link, userId, cometdConf, messages, error);
+      }
+    } catch (Exception e) {
+      LOG.error("Cannot initialize exlporer for fileId: {}, workspace: {}. {}", fileId, workspace, e.getMessage());
+    }
+    return null;
+  }
+
+  /**
+   * Checks if is document supported.
+   *
+   * @param fileId the file id
+   * @param workspace the workspace
+   * @return true, if is document supported
+   */
+  @Override
+  public boolean isDocumentSupported(String fileId, String workspace) {
+    Node node;
+    try {
+      node = wopiService.nodeByUUID(fileId, workspace);
+      return wopiService.canEdit(node) || wopiService.canView(node);
+    } catch (FileNotFoundException e) {
+      LOG.error("Cannot check if file is suported, document not found. {}", e.getMessage());
+    } catch (RepositoryException e) {
+      LOG.error("Cannot check if file is suported", e);
+    }
+    return false;
   }
 
   /**
@@ -204,16 +308,36 @@ public class OfficeOnlineDocumentEditorPlugin extends BaseComponentPlugin implem
    * @param node the node
    * @param requestURI the request URI
    * @return the string
+   * @throws RepositoryException the repository exception
+   * @throws OfficeOnlineException the office online exception
    */
-  protected String getEditorLink(Node node) {
-    String link = editorLinks.computeIfAbsent(node, n -> {
-      if (wopiService.canEdit(node)) {
-        return wopiService.getEditorLink(node, WOPIService.EDIT_ACTION);
-      } else if (wopiService.canView(node)) {
-        return wopiService.getEditorLink(node, WOPIService.VIEW_ACTION);
+  protected String getEditorLink(Node node, URI requestURI) throws RepositoryException, OfficeOnlineException {
+    String scheme;
+    String host;
+    int port;
+    if (requestURI != null) {
+      scheme = requestURI.getScheme();
+      host = requestURI.getHost();
+      port = requestURI.getPort();
+    } else {
+      PortalRequestContext pcontext = Util.getPortalRequestContext();
+      if (pcontext != null) {
+        scheme = pcontext.getRequest().getScheme();
+        host = pcontext.getRequest().getServerName();
+        port = pcontext.getRequest().getServerPort();
+      } else {
+        throw new OfficeOnlineException("Cannot get editor link - request URI and PortalRequestContext are null");
       }
-      return null;
-    });
+    }
+    String link = null;
+    if (wopiService.canEdit(node)) {
+      link = wopiService.getEditorLink(node, scheme, host, port, WOPIService.EDIT_ACTION);
+    } else if (wopiService.canView(node)) {
+      link = wopiService.getEditorLink(node, scheme, host, port, WOPIService.VIEW_ACTION);
+    } else {
+      throw new EditorLinkNotFoundException("Editor link not found - permission denied");
+    }
+    editorLinks.putIfAbsent(node, link);
     return link;
   }
 
@@ -259,6 +383,9 @@ public class OfficeOnlineDocumentEditorPlugin extends BaseComponentPlugin implem
     /** The messages. */
     private final Map<String, String> messages;
 
+    /** The error. */
+    private final EditorError         error;
+
     /**
      * Instantiates a new editor setting.
      *
@@ -267,13 +394,20 @@ public class OfficeOnlineDocumentEditorPlugin extends BaseComponentPlugin implem
      * @param userId the user id
      * @param cometdConf the cometd conf
      * @param messages the messages
+     * @param error the error
      */
-    public EditorSetting(String fileId, String link, String userId, CometdConfig cometdConf, Map<String, String> messages) {
+    public EditorSetting(String fileId,
+                         String link,
+                         String userId,
+                         CometdConfig cometdConf,
+                         Map<String, String> messages,
+                         EditorError error) {
       this.fileId = fileId;
       this.link = link;
       this.userId = userId;
       this.cometdConf = cometdConf;
       this.messages = messages;
+      this.error = error;
     }
 
     /**
@@ -320,6 +454,57 @@ public class OfficeOnlineDocumentEditorPlugin extends BaseComponentPlugin implem
     public Map<String, String> getMessages() {
       return messages;
     }
+
+    /**
+     * Gets the error.
+     *
+     * @return the error
+     */
+    public EditorError getError() {
+      return error;
+    }
+
   }
 
+  /**
+   * The Class Error.
+   */
+  public static class EditorError {
+
+    /** The key. */
+    private final String type;
+
+    /** The message. */
+    private final String message;
+
+    /**
+     * Instantiates a new editor error.
+     *
+     * @param type the type
+     * @param message the message
+     */
+    public EditorError(String type, String message) {
+      this.type = type;
+      this.message = message;
+    }
+
+    /**
+     * Gets the message.
+     *
+     * @return the message
+     */
+    public String getMessage() {
+      return message;
+    }
+
+    /**
+     * Gets the type.
+     *
+     * @return the type
+     */
+    public String getType() {
+      return type;
+    }
+
+  }
 }

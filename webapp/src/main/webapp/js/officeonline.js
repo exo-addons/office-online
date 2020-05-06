@@ -1,7 +1,7 @@
 /**
  * Office Online Editor client.
  */
-(function($, cCometD, redux, editorbuttons) {
+(function($, cCometD, redux, editorbuttons, editorsupport) {
   "use strict";
 
   /** For debug logging. */
@@ -36,29 +36,7 @@
       }
     }
   };
-
-  var getEditorButton = function(editorLink) {
-    var label = message("OfficeonlineEditorClient.EditButtonTitle");
-    var iconClass = "uiIconEdit";
-    if (editorLink.indexOf("&action=view") > -1) {
-      label = message("OfficeonlineEditorClient.ViewButtonTitle");
-      iconClass = "uiIconView";
-    }
-    return "<li class='hidden-tabletL'><a href='" + editorLink + "' target='_blank'>"
-        + "<i class='uiIconEcmsOfficeOnlineOpen uiIconEcmsLightGray " + iconClass + "'></i>" + label + "</a></li>";
-  };
-
-  var getNoPreviewEditorButton = function(editorLink) {
-    var label = message("OfficeonlineEditorClient.EditButtonTitle");
-    var iconClass = "uiIconEdit";
-    if (editorLink.indexOf("&action=view") > -1) {
-      label = message("OfficeonlineEditorClient.ViewButtonTitle");
-      iconClass = "uiIconView";
-    }
-    return "<a class='btn editInOfficeOnline hidden-tabletL' href='#' onclick='javascript:window.open(\"" + editorLink + "\");'>"
-        + "<i class='uiIconEcmsOfficeOnlineOpen uiIconEcmsLightGray " + iconClass + "'></i>" + label + "</a>";
-  };
-
+  
   /**
    * Returns the html markup of the refresh banner;
    */
@@ -66,34 +44,6 @@
     return "<div class='documentRefreshBanner'><div class='refreshBannerContent'>"
         + message("OfficeonlineEditorClient.UpdateBannerTitle") + "<span class='refreshBannerLink'>"
         + message("OfficeonlineEditorClient.ReloadButtonTitle") + "</span></div></div>";
-  };
-
-  /**
-   * Ads the 'Edit Online' button to the JCRExplorer when a document is
-   * displayed.
-   */
-  var addEditorButtonToExplorer = function(editorLink) {
-    var $button = $("#UIJCRExplorer #uiActionsBarContainer i.uiIconEcmsOfficeOnlineOpen");
-    if (editorLink.indexOf("&action=view") > -1) {
-      var buttonHtml = $button[0].outerHTML;
-      $button.parent().html(buttonHtml + " " + message("OfficeonlineEditorClient.ViewButtonTitle"));
-      $button = $("#UIJCRExplorer #uiActionsBarContainer i.uiIconEcmsOfficeOnlineOpen");
-      $button.addClass("uiIconView");
-    } else {
-      $button.addClass("uiIconEdit");
-    }
-
-    $button.closest("li").addClass("hidden-tabletL");
-    var $noPreviewContainer = $("#UIJCRExplorer .navigationContainer.noPreview");
-    if ($noPreviewContainer.length != 0) {
-      var $detailContainer = $noPreviewContainer.find(".detailContainer");
-      var $downloadBtn = $detailContainer.find(".uiIconDownload").closest("a.btn");
-      if ($downloadBtn.length != 0) {
-        $downloadBtn.after(getNoPreviewEditorButton(editorLink));
-      } else {
-        $detailContainer.append(getNoPreviewEditorButton(editorLink));
-      }
-    }
   };
 
   var refreshPDFPreview = function() {
@@ -235,6 +185,7 @@
     const DOCUMENT_SAVED = "DOCUMENT_SAVED";
     const FILE_RENAME = "File_Rename";
     const FILE_VERSIONS = "UI_FileVersions";
+    const OFFICEONLINE = "officeonline";
 
     // Editor Window
     var editorWindow;
@@ -359,7 +310,33 @@
       }
       return $("<li class='hidden-tabletL'><a href='" + editorLink + "' target='_blank'>"
           + "<i class='uiIconEcmsOfficeOnlineOpen uiIconEcmsLightGray " + iconClass + "'></i>" + label + "</a></li>");
+    };
+    
+    this.initEditor = function(config) {
+      editorsupport.onEditorOpen(config.fileId, config.workspace, OFFICEONLINE).done(function(){
+        extension = config.filename.substring(config.filename.lastIndexOf("."));
+        updateWindowTitle(config.filename);
+        versionsLink = config.versionsURL;
+        $('#office_form').attr('action', config.actionURL);
+        $('input[name="access_token"]').val(config.accessToken.token);
+        $('input[name="access_token_ttl"]').val(config.accessToken.expires);
 
+        var frameholder = document.getElementById('frameholder');
+        var office_frame = document.createElement('iframe');
+        office_frame.name = 'office_frame';
+        office_frame.id = 'office_frame';
+        // The title should be set for accessibility
+        office_frame.title = 'Office Frame';
+        // This attribute allows true fullscreen mode in slideshow view
+        // when using PowerPoint's 'view' action.
+        office_frame.setAttribute('allowfullscreen', 'true');
+        // The sandbox attribute is needed to allow automatic redirection to the O365 sign-in page in the business user flow
+        office_frame.setAttribute('sandbox',
+            'allow-scripts allow-same-origin allow-forms allow-popups allow-top-navigation allow-popups-to-escape-sandbox');
+        frameholder.appendChild(office_frame);
+        document.getElementById('office_form').submit();
+        window.addEventListener('message', handlePostMessage, false);
+      });
     };
 
     var init = function(userId, cometdConf, userMessages) {
@@ -389,33 +366,6 @@
       }
     };
 
-    this.initEditor = function(accessToken, actionURL, versionsURL, filename) {
-      extension = filename.substring(filename.lastIndexOf("."));
-      updateWindowTitle(filename);
-      versionsLink = versionsURL;
-      $('#office_form').attr('action', actionURL);
-      $('input[name="access_token"]').val(accessToken.token);
-      $('input[name="access_token_ttl"]').val(accessToken.expires);
-
-      var frameholder = document.getElementById('frameholder');
-      var office_frame = document.createElement('iframe');
-      office_frame.name = 'office_frame';
-      office_frame.id = 'office_frame';
-      // The title should be set for accessibility
-      office_frame.title = 'Office Frame';
-      // This attribute allows true fullscreen mode in slideshow view
-      // when using PowerPoint's 'view' action.
-      office_frame.setAttribute('allowfullscreen', 'true');
-      // The sandbox attribute is needed to allow automatic redirection to the
-      // O365 sign-in page in the business user flow
-      office_frame.setAttribute('sandbox',
-          'allow-scripts allow-same-origin allow-forms allow-popups allow-top-navigation allow-popups-to-escape-sandbox');
-      frameholder.appendChild(office_frame);
-      document.getElementById('office_form').submit();
-      window.addEventListener('message', handlePostMessage, false);
-
-    };
-
     this.initActivity = function(fileId, editorLink, activityId) {
       log("Initialize activity with document: " + fileId);
       // Listen to document updates
@@ -427,7 +377,7 @@
       });
       subscribeDocument(fileId);
       if (editorLink != null) {
-        editorbuttons.addCreateButtonFn("officeonline", function() {
+        editorbuttons.addCreateButtonFn(OFFICEONLINE, function() {
           return createEditorButton(editorLink);
         });
       }
@@ -436,51 +386,68 @@
     this.init = init;
 
     this.initPreview = function(settings) {
-      init(settings.userId, settings.cometdConf, settings.messages);
-      log("Initialize preview of document: " + settings.fileId);
-      // We set timeout here to avoid the case when the element is rendered but
-      // is going to be updated soon
-      setTimeout(function() {
-        store.subscribe(function() {
-          var state = store.getState();
-          if (state.type === DOCUMENT_SAVED && state.fileId === settings.fileId) {
-            addRefreshBannerPDF();
-          }
-        });
-      }, 100);
-      // subscribeDocument(settings.fileId);
-      if (settings.link != null) {
-        editorbuttons.addCreateButtonFn("officeonline", function() {
-          return createEditorButton(settings.link);
-        });
+      if (settings) {
+        init(settings.userId, settings.cometdConf, settings.messages);
+        log("Initialize preview of document: " + settings.fileId);
+        // We set timeout here to avoid the case when the element is rendered but
+        // is going to be updated soon
+        setTimeout(function() {
+          store.subscribe(function() {
+            var state = store.getState();
+            if (state.type === DOCUMENT_SAVED && state.fileId === settings.fileId) {
+              addRefreshBannerPDF();
+            }
+          });
+        }, 100);
+        // subscribeDocument(settings.fileId);
+        if (settings.link != null) {
+          editorbuttons.addCreateButtonFn(OFFICEONLINE, function() {
+            return createEditorButton(settings.link);
+          });
+        } else {
+          log(message(settings.error.type) + " - " + message(settings.error.message));
+        }
+      } else {
+        log("Cannot init preview - the settings are null");
       }
     };
 
     /**
      * Initializes JCRExplorer when a document is displayed.
      */
-    this.initExplorer = function(fileId, editorLink) {
-      log("Initialize explorer with document: " + fileId);
-      // Listen document updated
-      store.subscribe(function() {
-        var state = store.getState();
-        if (state.type === DOCUMENT_SAVED) {
-          if (state.userId === currentUserId) {
-            refreshPDFPreview();
-          } else {
-            addRefreshBannerPDF();
+    this.initExplorer = function(settings) {
+      if (settings) {
+        init(settings.userId, settings.cometdConf, settings.messages);
+        log("Initialize explorer with document: " + settings.fileId);
+        // Listen document updated
+        store.subscribe(function() {
+          var state = store.getState();
+          if (state.type === DOCUMENT_SAVED) {
+            if (state.userId === currentUserId) {
+              refreshPDFPreview();
+            } else {
+              addRefreshBannerPDF();
+            }
           }
+        });
+        if (settings.fileId != explorerFileId) {
+          // We need unsubscribe from previous doc
+          if (explorerFileId) {
+            unsubscribeDocument(explorerFileId);
+          }
+          subscribeDocument(settings.fileId);
+          explorerFileId = settings.fileId;
         }
-      });
-      if (fileId != explorerFileId) {
-        // We need unsubscribe from previous doc
-        if (explorerFileId) {
-          unsubscribeDocument(explorerFileId);
+        if (settings.link != null) {
+          editorbuttons.addCreateButtonFn(OFFICEONLINE, function() {
+            return createEditorButton(settings.link);
+          });
+        } else {
+          log(message(settings.error.type) + " - " + message(settings.error.message));
         }
-        subscribeDocument(fileId);
-        explorerFileId = fileId;
-      }
-      addEditorButtonToExplorer(editorLink);
+      } else {
+        log("Cannot init explorer - the settings are null");
+      }s
     };
 
     /**
@@ -511,4 +478,4 @@
   var editor = new Editor();
 
   return editor;
-})($, cCometD, Redux, editorbuttons);
+})($, cCometD, Redux, editorbuttons, editorsupport);
