@@ -447,7 +447,7 @@
         }
       } else {
         log("Cannot init explorer - the settings are null");
-      }s
+      }
     };
 
     /**
