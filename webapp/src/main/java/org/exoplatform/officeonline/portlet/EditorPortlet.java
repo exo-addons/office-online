@@ -111,7 +111,7 @@ public class EditorPortlet extends GenericPortlet {
           String filename = node.getName();
           String versionsUrl = wopiService.getExplorerURL(node, config.getBaseUrl()).append("&versions=true").toString();
           String workspace = node.getSession().getWorkspace().getName();
-          InitConfig initConfig = new InitConfig(node.getUUID(), workspace, token.toJSON(), actionURL, versionsUrl, filename);
+          InitConfig initConfig = new InitConfig(node.getUUID(), workspace, token, actionURL, versionsUrl, filename);
           callModule("officeonline.initEditor(" + initConfig.toJSON() + ");");
         } else {
           showError(i18n.getString("OfficeonlineEditorClient.ErrorTitle"),
@@ -185,7 +185,7 @@ public class EditorPortlet extends GenericPortlet {
     private final String workspace;
 
     /** The access token. */
-    private final String accessToken;
+    private final AccessToken accessToken;
 
     /** The action URL. */
     private final String actionURL;
@@ -208,7 +208,7 @@ public class EditorPortlet extends GenericPortlet {
      */
     public InitConfig(String fileId,
                       String workspace,
-                      String accessToken,
+                      AccessToken accessToken,
                       String actionURL,
                       String versionsURL,
                       String filename) {
@@ -243,7 +243,7 @@ public class EditorPortlet extends GenericPortlet {
      *
      * @return the access token
      */
-    public String getAccessToken() {
+    public AccessToken getAccessToken() {
       return accessToken;
     }
 
