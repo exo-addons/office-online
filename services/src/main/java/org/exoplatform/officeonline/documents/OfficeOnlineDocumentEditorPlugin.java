@@ -312,25 +312,28 @@ public class OfficeOnlineDocumentEditorPlugin extends BaseComponentPlugin implem
    * @throws OfficeOnlineException the office online exception
    */
   protected String getEditorLink(Node node, URI requestURI) throws RepositoryException, OfficeOnlineException {
-    String baseUrl;
+    String scheme;
+    String host;
+    int port;
     if (requestURI != null) {
-      baseUrl = wopiService.platformUrl(requestURI.getScheme(), requestURI.getHost(), requestURI.getPort()).toString();
+      scheme = requestURI.getScheme();
+      host = requestURI.getHost();
+      port = requestURI.getPort();
     } else {
       PortalRequestContext pcontext = Util.getPortalRequestContext();
       if (pcontext != null) {
-        baseUrl = wopiService.platformUrl(pcontext.getRequest().getScheme(),
-                                          pcontext.getRequest().getServerName(),
-                                          pcontext.getRequest().getServerPort())
-                             .toString();
+        scheme = pcontext.getRequest().getScheme();
+        host = pcontext.getRequest().getServerName();
+        port = pcontext.getRequest().getServerPort();
       } else {
         throw new OfficeOnlineException("Cannot get editor link - request URI and PortalRequestContext are null");
       }
     }
     String link = null;
     if (wopiService.canEdit(node)) {
-      link = wopiService.getEditorLink(node, baseUrl, WOPIService.EDIT_ACTION);
+      link = wopiService.getEditorLink(node, scheme, host, port, WOPIService.EDIT_ACTION);
     } else if (wopiService.canView(node)) {
-      link = wopiService.getEditorLink(node, baseUrl, WOPIService.VIEW_ACTION);
+      link = wopiService.getEditorLink(node, scheme, host, port, WOPIService.VIEW_ACTION);
     } else {
       throw new EditorLinkNotFoundException("Editor link not found - permission denied");
     }

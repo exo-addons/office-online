@@ -275,7 +275,7 @@ public abstract class AbstractOfficeOnlineService implements Startable {
    * @param port the port
    * @return the string builder
    */
-  public StringBuilder platformUrl(String schema, String host, int port) {
+  protected StringBuilder platformUrl(String schema, String host, int port) {
     StringBuilder platformUrl = new StringBuilder();
     platformUrl.append(schema);
     platformUrl.append("://");

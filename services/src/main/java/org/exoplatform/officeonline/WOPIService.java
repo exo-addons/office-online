@@ -28,7 +28,6 @@ import javax.jcr.Node;
 import javax.jcr.RepositoryException;
 import javax.jcr.Session;
 
-import org.antlr.grammar.v3.ANTLRParser.throwsSpec_return;
 import org.apache.commons.lang.StringUtils;
 
 import org.exoplatform.commons.utils.CommonsUtils;
@@ -79,8 +78,6 @@ import org.exoplatform.services.security.ConversationState;
 import org.exoplatform.services.security.IdentityRegistry;
 import org.exoplatform.services.wcm.core.NodetypeConstant;
 import org.exoplatform.services.wcm.utils.WCMCoreUtils;
-import org.exoplatform.webui.application.WebuiRequestContext;
-import org.exoplatform.webui.application.portlet.PortletRequestContext;
 
 /**
  * The Class WOPIService.
@@ -834,6 +831,7 @@ public class WOPIService extends AbstractOfficeOnlineService {
    * @return the editor URL
    * @throws RepositoryException the repository exception
    * @throws FileNotFoundException the file not found exception
+   * @throws EditorLinkNotFoundException the editor link not found exception
    */
   public String getEditorLink(String fileId, String workspace, String baseUrl, String action) throws RepositoryException,
                                                                                               FileNotFoundException, EditorLinkNotFoundException {
@@ -846,10 +844,28 @@ public class WOPIService extends AbstractOfficeOnlineService {
    * Gets the editor link.
    *
    * @param node the node
+   * @param scheme the scheme
+   * @param host the host
+   * @param port the port
+   * @param action the action
+   * @return the editor link
+   * @throws RepositoryException the repository exception
+   * @throws EditorLinkNotFoundException the editor link not found exception
+   */
+  public String getEditorLink(Node node, String scheme, String host, int port, String action) throws RepositoryException, EditorLinkNotFoundException {
+    String baseUrl = platformUrl(scheme, host, port).toString();
+    return getEditorLink(node, baseUrl, action);
+  }
+
+  /**
+   * Gets the editor link.
+   *
+   * @param node the node
    * @param baseUrl the base url
    * @param action the action
    * @return the editor link
    * @throws RepositoryException the repository exception
+   * @throws EditorLinkNotFoundException the editor link not found exception
    */
   public String getEditorLink(Node node, String baseUrl, String action) throws RepositoryException, EditorLinkNotFoundException {
     if (isDocumentSupported(node)) {
