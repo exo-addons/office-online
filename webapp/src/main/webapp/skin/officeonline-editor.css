@@ -8,7 +8,7 @@ body {
 #office_frame {
   width: 100%;
   height: 100%;
-  position: absolute;
+  position: fixed;
   top: 0;
   left: 0;
   right: 0;
@@ -16,6 +16,7 @@ body {
   margin: 0;
   border: none;
   display: block;
+  z-index: 3000;
 }
 
 .officeonlineContainer .alert {
