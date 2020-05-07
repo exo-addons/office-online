@@ -245,7 +245,15 @@ public abstract class AbstractOfficeOnlineService implements Startable {
       final String mimeType = content.getProperty(JCR_MIME_TYPE).getString();
       // data stream will be closed when EoF will be reached
       final InputStream data = new AutoCloseInputStream(content.getProperty(JCR_DATA).getStream());
+      final String filename = node.getName();
+      
       return new DocumentContent() {
+        
+        @Override
+        public String getFilename() {
+          return filename;
+        }
+        
         @Override
         public String getType() {
           return mimeType;

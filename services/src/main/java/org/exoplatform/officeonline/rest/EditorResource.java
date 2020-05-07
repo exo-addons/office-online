@@ -50,7 +50,6 @@ public class EditorResource implements ResourceContainer {
    */
   @GET
   @Path("/content/{fileId}")
-  @Produces(MediaType.APPLICATION_JSON)
   public Response content(@Context UriInfo uriInfo,
                           @Context HttpServletRequest request,
                           @Context ServletContext context,
@@ -72,7 +71,12 @@ public class EditorResource implements ResourceContainer {
 
     try {
       DocumentContent content = editorService.getContent(config);
-      return Response.ok().entity(content.getData()).type(content.getType()).build();
+      return Response.ok()
+                     .header("Content-Type", content.getType())
+                     .header("Content-disposition", "attachment; filename=" + content.getFilename())
+                     .entity(content.getData())
+                     .type(content.getType())
+                     .build();
     } catch (OfficeOnlineException e) {
       return Response.status(Status.BAD_REQUEST)
                      .entity("{\"error\": \"" + e.getMessage() + "\"}")
