@@ -95,7 +95,7 @@ public class EditorResource implements ResourceContainer {
   }
 
   @GET
-  @Path("/version/accumulation")
+  @Path("/configuration/version/accumulation")
   @Produces(MediaType.APPLICATION_JSON)
   @RolesAllowed("administrators")
   public Response isVersionAccumulationEnabled() {
@@ -107,7 +107,7 @@ public class EditorResource implements ResourceContainer {
   }
   
   @PUT
-  @Path("/version/accumulation")
+  @Path("/configuration/version/accumulation")
   @RolesAllowed("administrators")
   public Response setVersionAccumulation(@FormParam("enabled") Boolean enabled) {
     wopiService.setVersionAccumulation(enabled);
