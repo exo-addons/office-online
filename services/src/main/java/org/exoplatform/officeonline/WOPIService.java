@@ -232,10 +232,10 @@ public class WOPIService extends AbstractOfficeOnlineService {
 
   /** The Constant VERSION_ACCUMULATION_PROPERTIES. */
   protected static final String                               VERSION_ACCUMULATION_PROPERTIES     =
-                                                                                              "versions-accumulation-configuration";
+                                                                                              "version-accumulation-configuration";
 
-  /** The Constant VERSIONS_ACCUMULATION. */
-  protected static final String                               VERSIONS_ACCUMULATION               = "versions-accumulation";
+  /** The Constant VERSION_ACCUMULATION. */
+  protected static final String                               VERSION_ACCUMULATION                = "version-accumulation";
 
   /** The Constant WOPI_URL. */
   protected static final String                               WOPI_URL                            = "wopi-url";
@@ -289,8 +289,8 @@ public class WOPIService extends AbstractOfficeOnlineService {
   /** The wopi files url. */
   protected String                                            wopiUrl;
 
-  /** The versions accumulation. */
-  protected Boolean                                           versionsAccumulation;
+  /** The version accumulation. */
+  protected boolean                                           versionAccumulation;
 
   /** The platform scheme. */
   protected String                                            platformScheme;
@@ -367,8 +367,8 @@ public class WOPIService extends AbstractOfficeOnlineService {
     PropertiesParam wopiFilesUrlParam = initParams.getPropertiesParam(WOPI_CONFIGURATION_PROPERTIES);
     wopiUrl = wopiFilesUrlParam.getProperty(WOPI_URL);
 
-    PropertiesParam versionsAccumulationParam = initParams.getPropertiesParam(VERSION_ACCUMULATION_PROPERTIES);
-    versionsAccumulation = Boolean.valueOf(versionsAccumulationParam.getProperty(VERSIONS_ACCUMULATION));
+    PropertiesParam versionAccumulationParam = initParams.getPropertiesParam(VERSION_ACCUMULATION_PROPERTIES);
+    versionAccumulation = Boolean.valueOf(versionAccumulationParam.getProperty(VERSION_ACCUMULATION));
     usersPath = hierarchyCreator.getJcrPath(BasePath.CMS_USERS_PATH);
   }
 
@@ -437,7 +437,7 @@ public class WOPIService extends AbstractOfficeOnlineService {
 
         long timeout = System.currentTimeMillis() - versionDate.getTimeInMillis();
         // Version accumulation for same user
-        if (versionsAccumulation && versionable && config.getUserId().equals(versioningUser) && timeout < VERSION_TIMEOUT) {
+        if (versionAccumulation && versionable && config.getUserId().equals(versioningUser) && timeout < VERSION_TIMEOUT) {
           String versionName = node.getBaseVersion().getName();
           if (LOG.isDebugEnabled()) {
             LOG.debug("Version accumulation: removig version " + versionName + " from node " + node.getUUID());
@@ -1621,6 +1621,24 @@ public class WOPIService extends AbstractOfficeOnlineService {
     } else {
       LOG.error("The documentTypePlugin plugin is not an instance of " + pclass.getName());
     }
+  }
+
+  /**
+   * Checks if is version accumulation enabled.
+   *
+   * @return true, if is version accumulation enabled
+   */
+  public boolean isVersionAccumulationEnabled() {
+    return versionAccumulation;
+  }
+  
+  /**
+   * Sets the version accumulation.
+   *
+   * @param versionAccumulation the new version accumulation
+   */
+  public void setVersionAccumulation(boolean versionAccumulation) {
+    this.versionAccumulation = versionAccumulation;
   }
 
   /**

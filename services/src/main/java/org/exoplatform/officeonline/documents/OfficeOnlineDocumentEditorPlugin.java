@@ -155,7 +155,7 @@ public class OfficeOnlineDocumentEditorPlugin extends BaseComponentPlugin implem
   public void initActivity(String uuid, String workspace, String activityId) throws Exception {
     Node symlink = wopiService.nodeByUUID(uuid, workspace);
     Node node = wopiService.getNode(symlink.getSession().getWorkspace().getName(), symlink.getPath());
-    if (node != null) {
+    if (node != null && wopiService.isDocumentSupported(node)) {
       String link = null;
       try {
         link = new StringBuilder("'").append(getEditorLink(node, null)).append("'").toString();
@@ -184,7 +184,7 @@ public class OfficeOnlineDocumentEditorPlugin extends BaseComponentPlugin implem
     try {
       Node symlink = wopiService.nodeByUUID(fileId, workspace);
       Node node = wopiService.getNode(symlink.getSession().getWorkspace().getName(), symlink.getPath());
-      if (node != null) {
+      if (node != null && wopiService.isDocumentSupported(node)) {
         String userId = ConversationState.getCurrent().getIdentity().getUserId();
         if (symlink.isNodeType("exo:symlink")) {
           wopiService.addFilePreferences(node, userId, symlink.getPath());
@@ -235,21 +235,19 @@ public class OfficeOnlineDocumentEditorPlugin extends BaseComponentPlugin implem
     try {
       Node node = wopiService.nodeByUUID(fileId, workspace);
       node = wopiService.getNode(node.getSession().getWorkspace().getName(), node.getPath());
-
-      // Handling symlinks
-      UIJCRExplorer uiExplorer = context.getUIApplication().findFirstComponentOfType(UIJCRExplorer.class);
-      if (uiExplorer != null) {
-        Node symlink = (Node) uiExplorer.getSession().getItem(uiExplorer.getCurrentPath());
-        if (symlink.isNodeType("exo:symlink")) {
-          wopiService.addFilePreferences(node, WebuiRequestContext.getCurrentInstance().getRemoteUser(), symlink.getPath());
-        }
-      } else {
-        LOG.warn("Cannot check for symlink node {}:{} - UIJCRExplorer is null", fileId, workspace);
-      }
-
       if (wopiService.isDocumentSupported(node)) {
         if (LOG.isDebugEnabled()) {
           LOG.debug("Init documents explorer for node: {}:{}", workspace, fileId);
+        }
+        // Handling symlinks
+        UIJCRExplorer uiExplorer = context.getUIApplication().findFirstComponentOfType(UIJCRExplorer.class);
+        if (uiExplorer != null) {
+          Node symlink = (Node) uiExplorer.getSession().getItem(uiExplorer.getCurrentPath());
+          if (symlink.isNodeType("exo:symlink")) {
+            wopiService.addFilePreferences(node, WebuiRequestContext.getCurrentInstance().getRemoteUser(), symlink.getPath());
+          }
+        } else {
+          LOG.warn("Cannot check for symlink node {}:{} - UIJCRExplorer is null", fileId, workspace);
         }
         String userId = context.getRemoteUser();
         String link = null;

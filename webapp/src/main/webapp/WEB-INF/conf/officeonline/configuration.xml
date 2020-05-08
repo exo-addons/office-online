@@ -55,9 +55,9 @@
           value="${officeonline.wopi.files.url:http://wopi-dev01.exoplatform.org/portal/rest/wopi}" />
       </properties-param>
       <properties-param>
-        <name>versions-accumulation-configuration</name>
-        <property name="versions-accumulation"
-          value="${officeonline.versions.accumulation:false}" />
+        <name>version-accumulation-configuration</name>
+        <property name="version-accumulation"
+          value="${officeonline.version.accumulation:true}" />
       </properties-param>
     </init-params>
   </component>

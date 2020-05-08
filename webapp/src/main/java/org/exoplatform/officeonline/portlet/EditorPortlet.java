@@ -39,9 +39,6 @@ import org.exoplatform.ws.frameworks.json.impl.JsonGeneratorImpl;
  */
 public class EditorPortlet extends GenericPortlet {
 
-  /** The Constant PROVIDER_NAME. */
-  private static final String   PROVIDER_NAME = "officeonline";
-
   /** The Constant LOG. */
   private static final Log      LOG           = ExoLogger.getLogger(EditorPortlet.class);
 
@@ -51,8 +48,6 @@ public class EditorPortlet extends GenericPortlet {
   /** The Officeonline. */
   private WOPIService           wopiService;
 
-  /** The document service. */
-  private DocumentService       documentService;
 
   /** The i 18 n service. */
   private ResourceBundleService i18nService;
@@ -67,7 +62,6 @@ public class EditorPortlet extends GenericPortlet {
     this.editorService = container.getComponentInstanceOfType(EditorService.class);
     this.wopiService = container.getComponentInstanceOfType(WOPIService.class);
     this.i18nService = container.getComponentInstanceOfType(ResourceBundleService.class);
-    this.documentService = container.getComponentInstanceOfType(DocumentService.class);
   }
 
   /**
@@ -114,38 +108,38 @@ public class EditorPortlet extends GenericPortlet {
           InitConfig initConfig = new InitConfig(node.getUUID(), workspace, token, actionURL, versionsUrl, filename);
           callModule("officeonline.initEditor(" + initConfig.toJSON() + ");");
         } else {
-          showError(i18n.getString("OfficeonlineEditorClient.ErrorTitle"),
-                    i18n.getString("OfficeonlineEditor.error.EditorCannotBeCreated"));
+          showError(i18n.getString("OfficeOnlineEditorClient.ErrorTitle"),
+                    i18n.getString("OfficeOnlineEditor.error.EditorCannotBeCreated"));
         }
 
       } catch (RepositoryException e) {
         LOG.error("Error reading document node by ID: {}", fileId, e);
-        showError(i18n.getString("OfficeonlineEditorClient.ErrorTitle"),
-                  i18n.getString("OfficeonlineEditor.error.CannotReadDocument"));
+        showError(i18n.getString("OfficeOnlineEditorClient.ErrorTitle"),
+                  i18n.getString("OfficeOnlineEditor.error.CannotReadDocument"));
       } catch (JsonException e) {
         LOG.error("Error creating JSON from access token for node by ID: {}", fileId, e);
-        showError(i18n.getString("OfficeonlineEditorClient.ErrorTitle"),
-                  i18n.getString("OfficeonlineEditor.error.EditorCannotBeCreated"));
+        showError(i18n.getString("OfficeOnlineEditorClient.ErrorTitle"),
+                  i18n.getString("OfficeOnlineEditor.error.EditorCannotBeCreated"));
       } catch (FileNotFoundException e) {
         LOG.error("Error creating editor config. File not found {}", fileId, e);
-        showError(i18n.getString("OfficeonlineEditorClient.ErrorTitle"), i18n.getString("OfficeonlineEditor.error.FileNotFound"));
+        showError(i18n.getString("OfficeOnlineEditorClient.ErrorTitle"), i18n.getString("OfficeOnlineEditor.error.FileNotFound"));
       } catch (FileExtensionNotFoundException e) {
         LOG.error("Error while getting file extension. ID: {}", fileId, e);
-        showError(i18n.getString("OfficeonlineEditorClient.ErrorTitle"),
-                  i18n.getString("OfficeonlineEditor.error.WrongExtension"));
+        showError(i18n.getString("OfficeOnlineEditorClient.ErrorTitle"),
+                  i18n.getString("OfficeOnlineEditor.error.WrongExtension"));
       } catch (ActionNotFoundException e) {
         LOG.error("Error getting actionURL by fileId and action. FileId: {}", fileId, e);
-        showError(i18n.getString("OfficeonlineEditorClient.ErrorTitle"),
-                  i18n.getString("OfficeonlineEditor.error.ActionNotFound"));
+        showError(i18n.getString("OfficeOnlineEditorClient.ErrorTitle"),
+                  i18n.getString("OfficeOnlineEditor.error.ActionNotFound"));
       } catch (OfficeOnlineException e) {
         LOG.error("Error creating document editor for node by ID: {}", fileId, e);
-        showError(i18n.getString("OfficeonlineEditorClient.ErrorTitle"),
-                  i18n.getString("OfficeonlineEditor.error.EditorCannotBeCreated"));
+        showError(i18n.getString("OfficeOnlineEditorClient.ErrorTitle"),
+                  i18n.getString("OfficeOnlineEditor.error.EditorCannotBeCreated"));
       }
     } else {
       LOG.error("Error initializing editor configuration for node by ID: {}", fileId);
-      showError(i18n.getString("OfficeonlineEditorClient.ErrorTitle"),
-                i18n.getString("OfficeonlineEditor.error.DocumentIdRequired"));
+      showError(i18n.getString("OfficeOnlineEditorClient.ErrorTitle"),
+                i18n.getString("OfficeOnlineEditor.error.DocumentIdRequired"));
     }
 
     PortletRequestDispatcher prDispatcher = getPortletContext().getRequestDispatcher("/WEB-INF/pages/editor.jsp");
