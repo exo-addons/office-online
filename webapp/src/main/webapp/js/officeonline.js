@@ -42,8 +42,8 @@
    */
   var getRefreshBanner = function() {
     return "<div class='documentRefreshBanner'><div class='refreshBannerContent'>"
-        + message("OfficeonlineEditorClient.UpdateBannerTitle") + "<span class='refreshBannerLink'>"
-        + message("OfficeonlineEditorClient.ReloadButtonTitle") + "</span></div></div>";
+        + message("UpdateBannerTitle") + "<span class='refreshBannerLink'>"
+        + message("ReloadButtonTitle") + "</span></div></div>";
   };
 
   var refreshPDFPreview = function() {
@@ -275,7 +275,7 @@
       if (!filename.endsWith(extension)) {
         filename += extension;
       }
-      window.document.title = filename + " - " + message("OfficeonlineEditorClient.EditorTitle");
+      window.document.title = filename + " - " + message("EditorTitle");
     };
     
     /**
@@ -302,10 +302,10 @@
     };
 
     var createEditorButton = function(editorLink) {
-      var label = message("OfficeonlineEditorClient.EditButtonTitle");
+      var label = message("EditButtonTitle");
       var iconClass = "uiIconEdit";
       if (editorLink.indexOf("&action=view") > -1) {
-        label = message("OfficeonlineEditorClient.ViewButtonTitle");
+        label = message("ViewButtonTitle");
         iconClass = "uiIconView";
       }
       return $("<li class='hidden-tabletL'><a href='" + editorLink + "' target='_blank'>"
@@ -407,8 +407,6 @@
         } else {
           log(message(settings.error.type) + " - " + message(settings.error.message));
         }
-      } else {
-        log("Cannot init preview - the settings are null");
       }
     };
 
@@ -445,8 +443,6 @@
         } else {
           log(message(settings.error.type) + " - " + message(settings.error.message));
         }
-      } else {
-        log("Cannot init explorer - the settings are null");
       }
     };
 
@@ -467,7 +463,7 @@
         if (link != null) {
           editorWindow.location = link;
         } else {
-          showError(message("OfficeonlineEditorClient.ErrorTitle"), message("OfficeonlineEditor.error.ErrorLinkNotFound"));
+          showError(message("ErrorTitle"), message("OfficeOnlineEditor.error.ErrorLinkNotFound"));
           editorWindow = null;
         }
       }

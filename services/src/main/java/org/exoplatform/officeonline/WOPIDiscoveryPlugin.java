@@ -130,8 +130,8 @@ public class WOPIDiscoveryPlugin extends BaseComponentPlugin {
    */
   public void start() {
     loadDiscovery();
-    // Refresh discovery every 5 minutes (for testing only). 12-24 hours is recommended
-    refreshExecutor.scheduleAtFixedRate(() -> loadDiscovery(), 5, 5, TimeUnit.MINUTES);
+    // Refresh discovery every 12 hours
+    refreshExecutor.scheduleAtFixedRate(() -> loadDiscovery(), 12, 12, TimeUnit.HOURS);
   }
 
   /**

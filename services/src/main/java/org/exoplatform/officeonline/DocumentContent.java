@@ -16,6 +16,13 @@ public abstract class DocumentContent {
   }
 
   /**
+   * Gets the filename.
+   *
+   * @return the filename
+   */
+  public abstract String getFilename();
+  
+  /**
    * Actual document content. 
    * 
    * @return {@link InputStream}

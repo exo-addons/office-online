@@ -14,7 +14,7 @@
   </UITabForm>
 
   <!-- For client UI -->
-  <OfficeonlineEditorClient>
+  <OfficeOnlineEditorClient>
     <EditButtonTitle>Edit in Office Online</EditButtonTitle>
     <ViewButtonTitle>View in Office Online</ViewButtonTitle>
     <UpdateBannerTitle>The document has been updated.</UpdateBannerTitle>
@@ -24,14 +24,14 @@
     <InfoTitle>Information</InfoTitle>
     
      <!-- For Explorer/Preview/Stream -->
-    <EditorLinkNotFoundError>Editor link not found</EditorLinkNotFoundError>
+    <EditorLinkNotFoundError>Editor link not found.</EditorLinkNotFoundError>
     <EditorLinkNotFoundErrorMessage>Cannot get editor link - permission denied.</EditorLinkNotFoundErrorMessage>
     <StorageError>Storage error has occured.</StorageError>
     <StorageErrorMessage>Cannot get editor link due to storage errors.</StorageErrorMessage>
     <InternalEditorError>Integran editor error.</InternalEditorError>
     <InternalEditorErrorMessage>Cannot get editor link due to internal editor error.</InternalEditorErrorMessage>
     
-  </OfficeonlineEditorClient>
+  </OfficeOnlineEditorClient>
   
       
   <!-- For new document form -->
@@ -46,7 +46,7 @@
   </UINewDocumentForm>
 
   <!-- Messages -->
-  <OfficeonlineEditor>
+  <OfficeOnlineEditor>
     <message>
       <ViewerNotFound>Online document editor not found</ViewerNotFound>
     </message>
@@ -60,5 +60,5 @@
       <CannotReadDocument>Cannot read the document. Please retry.</CannotReadDocument>
       <DocumentIdRequired>Wrong request: document ID required.</DocumentIdRequired>
     </error>
-  </OfficeonlineEditor>
+  </OfficeOnlineEditor>
 </bundle>

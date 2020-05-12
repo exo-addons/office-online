@@ -447,8 +447,6 @@ public class WOPIResource implements ResourceContainer {
     switch (operation) {
     case GET_LOCK:
       return getLock(config);
-    case GET_SHARE_URL:
-      return getShareUrl();
     case LOCK: {
       String providedLock = request.getHeader(LOCK);
       String oldLock = request.getHeader(OLD_LOCK);
@@ -1008,8 +1006,8 @@ public class WOPIResource implements ResourceContainer {
       String editUrl = null;
       String viewUrl = null;
       try {
-        wopiService.getEditorLink(fileId, config.getWorkspace(), config.getBaseUrl(), WOPIService.EDIT_ACTION);
-        wopiService.getEditorLink(fileId, config.getWorkspace(), config.getBaseUrl(), WOPIService.VIEW_ACTION);
+        editUrl = wopiService.getEditorLink(fileId, config.getWorkspace(), config.getBaseUrl(), WOPIService.EDIT_ACTION);
+        viewUrl = wopiService.getEditorLink(fileId, config.getWorkspace(), config.getBaseUrl(), WOPIService.VIEW_ACTION);
       } catch (EditorLinkNotFoundException e) {
         LOG.error("Cannot get editor link: ", e);
       }

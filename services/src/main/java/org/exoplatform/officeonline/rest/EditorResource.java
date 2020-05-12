@@ -3,9 +3,12 @@
  */
 package org.exoplatform.officeonline.rest;
 
+import javax.annotation.security.RolesAllowed;
 import javax.servlet.ServletContext;
 import javax.servlet.http.HttpServletRequest;
+import javax.ws.rs.FormParam;
 import javax.ws.rs.GET;
+import javax.ws.rs.PUT;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
@@ -18,6 +21,7 @@ import javax.ws.rs.core.UriInfo;
 import org.exoplatform.officeonline.DocumentContent;
 import org.exoplatform.officeonline.EditorConfig;
 import org.exoplatform.officeonline.EditorService;
+import org.exoplatform.officeonline.WOPIService;
 import org.exoplatform.officeonline.exception.OfficeOnlineException;
 import org.exoplatform.services.rest.resource.ResourceContainer;
 
@@ -30,13 +34,18 @@ public class EditorResource implements ResourceContainer {
   /** The editor service. */
   protected EditorService editorService;
 
+  /** The wopi service. */
+  protected WOPIService   wopiService;
+
   /**
-   * Instantiates a new editor service.
+   * Instantiates a new editor resource.
    *
    * @param editorService the editor service
+   * @param wopiService the wopi service
    */
-  public EditorResource(EditorService editorService) {
+  public EditorResource(EditorService editorService, WOPIService wopiService) {
     this.editorService = editorService;
+    this.wopiService = wopiService;
   }
 
   /**
@@ -50,7 +59,6 @@ public class EditorResource implements ResourceContainer {
    */
   @GET
   @Path("/content/{fileId}")
-  @Produces(MediaType.APPLICATION_JSON)
   public Response content(@Context UriInfo uriInfo,
                           @Context HttpServletRequest request,
                           @Context ServletContext context,
@@ -72,7 +80,12 @@ public class EditorResource implements ResourceContainer {
 
     try {
       DocumentContent content = editorService.getContent(config);
-      return Response.ok().entity(content.getData()).type(content.getType()).build();
+      return Response.ok()
+                     .header("Content-Type", content.getType())
+                     .header("Content-disposition", "attachment; filename=" + content.getFilename())
+                     .entity(content.getData())
+                     .type(content.getType())
+                     .build();
     } catch (OfficeOnlineException e) {
       return Response.status(Status.BAD_REQUEST)
                      .entity("{\"error\": \"" + e.getMessage() + "\"}")
@@ -81,35 +94,24 @@ public class EditorResource implements ResourceContainer {
     }
   }
 
-  /**
-   * WARNING: ONLY FOR TESTING PURPOSES. SHOULD BE REMOVED ON PRODUCTION
-   * 
-   * Creates the token.
-   *
-   * @param uriInfo the uri info
-   * @param request the request
-   * @param context the context
-   * @param userId the user id
-   * @param fileId the file id
-   * @return the response
-   */
   @GET
-  @Path("/test/token/{userId}/{fileId}")
+  @Path("/configuration/version/accumulation")
   @Produces(MediaType.APPLICATION_JSON)
-  public Response createToken(@Context UriInfo uriInfo,
-                              @Context HttpServletRequest request,
-                              @Context ServletContext context,
-                              @PathParam("userId") String userId,
-                              @PathParam("fileId") String fileId) {
-    try {
-      String token = editorService.createToken(userId, fileId);
-      return Response.ok().entity("{\"token\": \"" + token + "\"}").type(MediaType.APPLICATION_JSON).build();
-    } catch (OfficeOnlineException e) {
-      return Response.status(Status.BAD_REQUEST)
-                     .entity("{\"error\": \"" + e.getMessage() + "\"}")
-                     .type(MediaType.APPLICATION_JSON)
-                     .build();
-    }
+  @RolesAllowed("administrators")
+  public Response isVersionAccumulationEnabled() {
+    return Response.ok()
+                   .entity("{\"enabled\": " + wopiService.isVersionAccumulationEnabled() + "}")
+                   .type(MediaType.APPLICATION_JSON)
+                   .build();
+
+  }
+  
+  @PUT
+  @Path("/configuration/version/accumulation")
+  @RolesAllowed("administrators")
+  public Response setVersionAccumulation(@FormParam("enabled") Boolean enabled) {
+    wopiService.setVersionAccumulation(enabled);
+    return Response.ok().build();
 
   }
 }

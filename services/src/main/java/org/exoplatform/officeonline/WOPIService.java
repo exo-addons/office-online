@@ -230,6 +230,13 @@ public class WOPIService extends AbstractOfficeOnlineService {
   /** The Constant WOPI_CONFIGURATION_PROPERTIES. */
   protected static final String                               WOPI_CONFIGURATION_PROPERTIES       = "wopi-configuration";
 
+  /** The Constant VERSION_ACCUMULATION_PROPERTIES. */
+  protected static final String                               VERSION_ACCUMULATION_PROPERTIES     =
+                                                                                              "version-accumulation-configuration";
+
+  /** The Constant VERSION_ACCUMULATION. */
+  protected static final String                               VERSION_ACCUMULATION                = "version-accumulation";
+
   /** The Constant WOPI_URL. */
   protected static final String                               WOPI_URL                            = "wopi-url";
 
@@ -281,6 +288,9 @@ public class WOPIService extends AbstractOfficeOnlineService {
 
   /** The wopi files url. */
   protected String                                            wopiUrl;
+
+  /** The version accumulation. */
+  protected boolean                                           versionAccumulation;
 
   /** The platform scheme. */
   protected String                                            platformScheme;
@@ -357,6 +367,8 @@ public class WOPIService extends AbstractOfficeOnlineService {
     PropertiesParam wopiFilesUrlParam = initParams.getPropertiesParam(WOPI_CONFIGURATION_PROPERTIES);
     wopiUrl = wopiFilesUrlParam.getProperty(WOPI_URL);
 
+    PropertiesParam versionAccumulationParam = initParams.getPropertiesParam(VERSION_ACCUMULATION_PROPERTIES);
+    versionAccumulation = Boolean.valueOf(versionAccumulationParam.getProperty(VERSION_ACCUMULATION));
     usersPath = hierarchyCreator.getJcrPath(BasePath.CMS_USERS_PATH);
   }
 
@@ -425,7 +437,7 @@ public class WOPIService extends AbstractOfficeOnlineService {
 
         long timeout = System.currentTimeMillis() - versionDate.getTimeInMillis();
         // Version accumulation for same user
-        if (versionable && config.getUserId().equals(versioningUser) && timeout < VERSION_TIMEOUT) {
+        if (versionAccumulation && versionable && config.getUserId().equals(versioningUser) && timeout < VERSION_TIMEOUT) {
           String versionName = node.getBaseVersion().getName();
           if (LOG.isDebugEnabled()) {
             LOG.debug("Version accumulation: removig version " + versionName + " from node " + node.getUUID());
@@ -834,11 +846,11 @@ public class WOPIService extends AbstractOfficeOnlineService {
    * @throws EditorLinkNotFoundException the editor link not found exception
    */
   public String getEditorLink(String fileId, String workspace, String baseUrl, String action) throws RepositoryException,
-                                                                                              FileNotFoundException, EditorLinkNotFoundException {
+                                                                                              FileNotFoundException,
+                                                                                              EditorLinkNotFoundException {
     Node node = nodeByUUID(fileId, workspace);
     return getEditorLink(node, baseUrl, action);
   }
-
 
   /**
    * Gets the editor link.
@@ -852,7 +864,8 @@ public class WOPIService extends AbstractOfficeOnlineService {
    * @throws RepositoryException the repository exception
    * @throws EditorLinkNotFoundException the editor link not found exception
    */
-  public String getEditorLink(Node node, String scheme, String host, int port, String action) throws RepositoryException, EditorLinkNotFoundException {
+  public String getEditorLink(Node node, String scheme, String host, int port, String action) throws RepositoryException,
+                                                                                              EditorLinkNotFoundException {
     String baseUrl = platformUrl(scheme, host, port).toString();
     return getEditorLink(node, baseUrl, action);
   }
@@ -1608,6 +1621,24 @@ public class WOPIService extends AbstractOfficeOnlineService {
     } else {
       LOG.error("The documentTypePlugin plugin is not an instance of " + pclass.getName());
     }
+  }
+
+  /**
+   * Checks if is version accumulation enabled.
+   *
+   * @return true, if is version accumulation enabled
+   */
+  public boolean isVersionAccumulationEnabled() {
+    return versionAccumulation;
+  }
+  
+  /**
+   * Sets the version accumulation.
+   *
+   * @param versionAccumulation the new version accumulation
+   */
+  public void setVersionAccumulation(boolean versionAccumulation) {
+    this.versionAccumulation = versionAccumulation;
   }
 
   /**
