@@ -52,6 +52,7 @@ import org.exoplatform.officeonline.exception.SizeMismatchException;
 import org.exoplatform.officeonline.exception.UpdateConflictException;
 import org.exoplatform.officeonline.exception.WopiDiscoveryNotFoundException;
 import org.exoplatform.portal.config.UserACL;
+import org.exoplatform.portal.config.UserPortalConfigService;
 import org.exoplatform.portal.webui.util.Util;
 import org.exoplatform.services.cache.CacheService;
 import org.exoplatform.services.cache.ExoCache;
@@ -307,6 +308,9 @@ public class WOPIService extends AbstractOfficeOnlineService {
   /** The documentTypePlugin. */
   protected DocumentTypePlugin                                documentTypePlugin;
 
+  /** The user portal config service. */
+  protected final UserPortalConfigService                     userPortalConfigService;
+
   /** The listeners. */
   protected final ConcurrentLinkedQueue<OfficeOnlineListener> listeners                           =
                                                                         new ConcurrentLinkedQueue<OfficeOnlineListener>();
@@ -325,6 +329,7 @@ public class WOPIService extends AbstractOfficeOnlineService {
    * @param hierarchyCreator the hierarchy creator
    * @param authenticator the authenticator
    * @param nodeFinder the node finder
+   * @param userPortalConfigService the user portal config service
    * @param initParams the init params
    */
   public WOPIService(SessionProviderService sessionProviders,
@@ -338,6 +343,7 @@ public class WOPIService extends AbstractOfficeOnlineService {
                      NodeHierarchyCreator hierarchyCreator,
                      Authenticator authenticator,
                      NodeFinder nodeFinder,
+                     UserPortalConfigService userPortalConfigService,
                      InitParams initParams) {
     super(sessionProviders,
           jcrService,
@@ -350,6 +356,7 @@ public class WOPIService extends AbstractOfficeOnlineService {
           nodeFinder);
 
     this.trashService = trashService;
+    this.userPortalConfigService = userPortalConfigService;
     PropertiesParam tokenParam = initParams.getPropertiesParam(TOKEN_CONFIGURATION_PROPERTIES);
     String secretKey = tokenParam.getProperty(SECRET_KEY);
     if (secretKey != null && !secretKey.trim().isEmpty()) {
@@ -881,9 +888,16 @@ public class WOPIService extends AbstractOfficeOnlineService {
    * @throws EditorLinkNotFoundException the editor link not found exception
    */
   public String getEditorLink(Node node, String baseUrl, String action) throws RepositoryException, EditorLinkNotFoundException {
+    String portalOwner;
+    try {
+      portalOwner = getCurrentPortalOwner();
+    } catch (Exception e) {
+      LOG.error("Cannot get current portal owner {}", e.getMessage());
+      throw new EditorLinkNotFoundException("Editor link not found - cannot get current portal owner");
+    }
     if (isDocumentSupported(node)) {
       StringBuilder link = new StringBuilder(baseUrl).append('/')
-                                                     .append(Util.getPortalRequestContext().getPortalOwner())
+                                                     .append(portalOwner)
                                                      .append("/mseditor?fileId=")
                                                      .append(node.getUUID());
 
@@ -899,6 +913,7 @@ public class WOPIService extends AbstractOfficeOnlineService {
       throw new EditorLinkNotFoundException("Editor link not found - document is not supported");
     }
   }
+
 
   /**
    * Checks if is document supported.
@@ -1631,7 +1646,7 @@ public class WOPIService extends AbstractOfficeOnlineService {
   public boolean isVersionAccumulationEnabled() {
     return versionAccumulation;
   }
-  
+
   /**
    * Sets the version accumulation.
    *
@@ -1681,6 +1696,33 @@ public class WOPIService extends AbstractOfficeOnlineService {
       position++;
     }
     return elems.get(position);
+  }
+  
+  /**
+   * Gets the current portal owner.
+   *
+   * @return the current portal owner
+   * @throws Exception the exception
+   */
+  protected String getCurrentPortalOwner() throws Exception {
+    // Try to get the portal owner from request context
+    try {
+      return Util.getPortalRequestContext().getPortalOwner();
+    } catch (Exception e) {
+      if (LOG.isDebugEnabled()) {
+        LOG.debug("Cannot get portal owner from portal request context");
+      }
+    }
+
+    String defaultPortal = userPortalConfigService.getDefaultPortal();
+    // Retrieve the list of accessible portals by current user (defined in ConservationState.getCurrent() )
+    List<String> allPortalNames = userPortalConfigService.getAllPortalNames();
+    // Check if current portal is accessbile
+    if (allPortalNames.contains(defaultPortal)) {
+      return defaultPortal;
+    } else {
+      return allPortalNames.get(0);
+    }
   }
 
   /**
