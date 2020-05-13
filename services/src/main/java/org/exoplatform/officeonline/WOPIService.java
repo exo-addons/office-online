@@ -30,7 +30,6 @@ import javax.jcr.Session;
 
 import org.apache.commons.lang.StringUtils;
 
-import org.exoplatform.commons.utils.CommonsUtils;
 import org.exoplatform.commons.utils.MimeTypeResolver;
 import org.exoplatform.container.PortalContainer;
 import org.exoplatform.container.component.ComponentPlugin;
@@ -53,6 +52,7 @@ import org.exoplatform.officeonline.exception.SizeMismatchException;
 import org.exoplatform.officeonline.exception.UpdateConflictException;
 import org.exoplatform.officeonline.exception.WopiDiscoveryNotFoundException;
 import org.exoplatform.portal.config.UserACL;
+import org.exoplatform.portal.webui.util.Util;
 import org.exoplatform.services.cache.CacheService;
 import org.exoplatform.services.cache.ExoCache;
 import org.exoplatform.services.cms.BasePath;
@@ -883,7 +883,7 @@ public class WOPIService extends AbstractOfficeOnlineService {
   public String getEditorLink(Node node, String baseUrl, String action) throws RepositoryException, EditorLinkNotFoundException {
     if (isDocumentSupported(node)) {
       StringBuilder link = new StringBuilder(baseUrl).append('/')
-                                                     .append(CommonsUtils.getCurrentPortalOwner())
+                                                     .append(Util.getPortalRequestContext().getPortalOwner())
                                                      .append("/mseditor?fileId=")
                                                      .append(node.getUUID());
 
