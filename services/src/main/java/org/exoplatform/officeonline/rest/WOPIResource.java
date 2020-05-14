@@ -869,7 +869,6 @@ public class WOPIResource implements ResourceContainer {
    * @param requestInfo the request info
    * @return the response
    */
-  @Produces("application/json; charset=UTF-8")
   private Response putRelativeFile(EditorConfig config,
                                    String target,
                                    boolean overwrite,
@@ -1055,17 +1054,7 @@ public class WOPIResource implements ResourceContainer {
                      .build();
     }
   }
-
-  /**
-   * Gets the share url.
-   *
-   * @return the share url
-   */
-  private Response getShareUrl() {
-    // TODO get share url
-    return null;
-  }
-
+  
   /**
    * Verify proof key.
    *

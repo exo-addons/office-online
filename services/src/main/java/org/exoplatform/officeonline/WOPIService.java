@@ -51,6 +51,7 @@ import org.exoplatform.officeonline.exception.PermissionDeniedException;
 import org.exoplatform.officeonline.exception.SizeMismatchException;
 import org.exoplatform.officeonline.exception.UpdateConflictException;
 import org.exoplatform.officeonline.exception.WopiDiscoveryNotFoundException;
+import org.exoplatform.portal.application.PortalRequestContext;
 import org.exoplatform.portal.config.UserACL;
 import org.exoplatform.portal.config.UserPortalConfigService;
 import org.exoplatform.portal.webui.util.Util;
@@ -1707,10 +1708,16 @@ public class WOPIService extends AbstractOfficeOnlineService {
   protected String getCurrentPortalOwner() throws Exception {
     // Try to get the portal owner from request context
     try {
-      return Util.getPortalRequestContext().getPortalOwner();
+      PortalRequestContext requestContext = Util.getPortalRequestContext();
+      if (requestContext != null) {
+        String portalOwner = requestContext.getPortalOwner();
+        if (portalOwner != null) {
+          return portalOwner;
+        }
+      }
     } catch (Exception e) {
       if (LOG.isDebugEnabled()) {
-        LOG.debug("Cannot get portal owner from portal request context");
+        LOG.debug("Cannot get portal owner from portal request context: {}", e.getMessage());
       }
     }
 
