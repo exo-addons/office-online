@@ -336,6 +336,8 @@
         frameholder.appendChild(office_frame);
         document.getElementById('office_form').submit();
         window.addEventListener('message', handlePostMessage, false);
+      }).fail(function() {
+        showError(message("ErrorTitle"), message("OfficeOnlineEditor.error.AnotherEditorIsOpen"));
       });
     };
 
