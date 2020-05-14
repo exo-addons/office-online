@@ -881,16 +881,16 @@ public class WOPIService extends AbstractOfficeOnlineService {
    * @throws EditorLinkNotFoundException the editor link not found exception
    */
   public String getEditorLink(Node node, String baseUrl, String action) throws RepositoryException, EditorLinkNotFoundException {
-    String portalOwner;
+    String portalName;
     try {
-      portalOwner = WCMCoreUtils.getCurrentPortalName();
+      portalName = WCMCoreUtils.getCurrentPortalName();
     } catch (Exception e) {
       LOG.error("Cannot get current portal owner {}", e.getMessage());
       throw new EditorLinkNotFoundException("Editor link not found - cannot get current portal owner");
     }
     if (isDocumentSupported(node)) {
       StringBuilder link = new StringBuilder(baseUrl).append('/')
-                                                     .append(portalOwner)
+                                                     .append(portalName)
                                                      .append("/mseditor?fileId=")
                                                      .append(node.getUUID());
 
