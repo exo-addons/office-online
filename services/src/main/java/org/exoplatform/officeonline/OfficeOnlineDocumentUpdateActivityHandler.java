@@ -8,10 +8,9 @@ import javax.jcr.Property;
 import org.apache.commons.chain.Context;
 
 import org.exoplatform.container.ExoContainerContext;
+import org.exoplatform.services.cms.documents.DocumentUpdateActivityHandler;
 import org.exoplatform.services.ext.action.InvocationContext;
 import org.exoplatform.services.listener.Event;
-import org.exoplatform.services.log.ExoLogger;
-import org.exoplatform.services.log.Log;
 import org.exoplatform.wcm.ext.component.activity.listener.FileUpdateActivityListener;
 
 /**
@@ -24,22 +23,16 @@ import org.exoplatform.wcm.ext.component.activity.listener.FileUpdateActivityLis
  * method is invoked.
  *
  */
-public class DocumentUpdateActivityListener extends FileUpdateActivityListener {
+public class OfficeOnlineDocumentUpdateActivityHandler extends FileUpdateActivityListener implements DocumentUpdateActivityHandler {
 
   protected final WOPIService wopiService;
 
-  public DocumentUpdateActivityListener() {
+  public OfficeOnlineDocumentUpdateActivityHandler() {
     wopiService = (WOPIService) ExoContainerContext.getCurrentContainer().getComponentInstanceOfType(WOPIService.class);
   }
 
-  /**
-   * Event handler.
-   *
-   * @param event the event
-   * @throws Exception the exception
-   */
   @Override
-  public void onEvent(Event<Context, String> event) throws Exception {
+  public boolean handleDocumentUpdateEvent(Event<Context, String> event) throws Exception {
     Context context = event.getSource();
     Property currentProperty = (Property) context.get(InvocationContext.CURRENT_ITEM);
     Node node = currentProperty.getParent().getParent();
@@ -54,8 +47,8 @@ public class DocumentUpdateActivityListener extends FileUpdateActivityListener {
       if (!modifier.equals(versioningUser) || timeout >= WOPIService.VERSION_TIMEOUT) {
         super.onEvent(event);
       }
-    } else {
-      super.onEvent(event);
+      return true;
     }
+    return false;
   }
 }

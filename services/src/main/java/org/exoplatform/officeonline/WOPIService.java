@@ -30,7 +30,6 @@ import javax.jcr.Session;
 
 import org.apache.commons.lang.StringUtils;
 
-import org.exoplatform.commons.utils.CommonsUtils;
 import org.exoplatform.commons.utils.MimeTypeResolver;
 import org.exoplatform.container.PortalContainer;
 import org.exoplatform.container.component.ComponentPlugin;
@@ -306,6 +305,7 @@ public class WOPIService extends AbstractOfficeOnlineService {
 
   /** The documentTypePlugin. */
   protected DocumentTypePlugin                                documentTypePlugin;
+
 
   /** The listeners. */
   protected final ConcurrentLinkedQueue<OfficeOnlineListener> listeners                           =
@@ -881,9 +881,16 @@ public class WOPIService extends AbstractOfficeOnlineService {
    * @throws EditorLinkNotFoundException the editor link not found exception
    */
   public String getEditorLink(Node node, String baseUrl, String action) throws RepositoryException, EditorLinkNotFoundException {
+    String portalName;
+    try {
+      portalName = WCMCoreUtils.getCurrentPortalName();
+    } catch (Exception e) {
+      LOG.error("Cannot get current portal owner {}", e.getMessage());
+      throw new EditorLinkNotFoundException("Editor link not found - cannot get current portal owner");
+    }
     if (isDocumentSupported(node)) {
       StringBuilder link = new StringBuilder(baseUrl).append('/')
-                                                     .append(CommonsUtils.getCurrentPortalOwner())
+                                                     .append(portalName)
                                                      .append("/mseditor?fileId=")
                                                      .append(node.getUUID());
 
@@ -899,6 +906,7 @@ public class WOPIService extends AbstractOfficeOnlineService {
       throw new EditorLinkNotFoundException("Editor link not found - document is not supported");
     }
   }
+
 
   /**
    * Checks if is document supported.
@@ -1631,7 +1639,7 @@ public class WOPIService extends AbstractOfficeOnlineService {
   public boolean isVersionAccumulationEnabled() {
     return versionAccumulation;
   }
-  
+
   /**
    * Sets the version accumulation.
    *

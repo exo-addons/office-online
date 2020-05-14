@@ -32,6 +32,7 @@ import javax.jcr.RepositoryException;
 import org.exoplatform.container.PortalContainer;
 import org.exoplatform.container.component.BaseComponentPlugin;
 import org.exoplatform.ecm.webui.component.explorer.UIJCRExplorer;
+import org.exoplatform.officeonline.OfficeOnlineDocumentUpdateActivityHandler;
 import org.exoplatform.officeonline.WOPIService;
 import org.exoplatform.officeonline.cometd.CometdConfig;
 import org.exoplatform.officeonline.cometd.CometdOfficeOnlineService;
@@ -41,6 +42,7 @@ import org.exoplatform.officeonline.exception.OfficeOnlineException;
 import org.exoplatform.portal.application.PortalRequestContext;
 import org.exoplatform.portal.webui.util.Util;
 import org.exoplatform.services.cms.documents.DocumentEditor;
+import org.exoplatform.services.cms.documents.DocumentUpdateActivityHandler;
 import org.exoplatform.services.cms.documents.NewDocumentTemplate;
 import org.exoplatform.services.log.ExoLogger;
 import org.exoplatform.services.log.Log;
@@ -54,47 +56,50 @@ import org.exoplatform.webui.application.WebuiRequestContext;
 public class OfficeOnlineDocumentEditorPlugin extends BaseComponentPlugin implements DocumentEditor {
 
   /** The Constant PROVIDER_NAME. */
-  protected static final String             PROVIDER_NAME                       = "officeonline";
+  protected static final String                 PROVIDER_NAME                       = "officeonline";
 
   /** The Constant PROVIDER_CONFIGURATION_PARAM. */
-  protected static final String             PROVIDER_CONFIGURATION_PARAM        = "provider-configuration";
+  protected static final String                 PROVIDER_CONFIGURATION_PARAM        = "provider-configuration";
 
   /** The Constant CLIENT_RESOURCE_PREFIX. */
-  protected static final String             CLIENT_RESOURCE_PREFIX              = "OfficeOnlineEditorClient.";
+  protected static final String                 CLIENT_RESOURCE_PREFIX              = "OfficeOnlineEditorClient.";
 
   /** The Constant EDITOR_LINK_NOT_FOUND_ERROR. */
-  protected static final String             EDITOR_LINK_NOT_FOUND_ERROR         = "EditorLinkNotFoundError";
+  protected static final String                 EDITOR_LINK_NOT_FOUND_ERROR         = "EditorLinkNotFoundError";
 
   /** The Constant EDITOR_LINK_NOT_FOUND_ERROR_MESSAGE. */
-  protected static final String             EDITOR_LINK_NOT_FOUND_ERROR_MESSAGE = "EditorLinkNotFoundErrorMessage";
+  protected static final String                 EDITOR_LINK_NOT_FOUND_ERROR_MESSAGE = "EditorLinkNotFoundErrorMessage";
 
   /** The Constant STORAGE_ERROR. */
-  protected static final String             STORAGE_ERROR                       = "StorageError";
+  protected static final String                 STORAGE_ERROR                       = "StorageError";
 
   /** The Constant STORAGE_ERROR_MESSAGE. */
-  protected static final String             STORAGE_ERROR_MESSAGE               = "StorageErrorMessage";
+  protected static final String                 STORAGE_ERROR_MESSAGE               = "StorageErrorMessage";
 
   /** The Constant INTERNAL_EDITOR_ERROR. */
-  protected static final String             INTERNAL_EDITOR_ERROR               = "InternalEditorError";
+  protected static final String                 INTERNAL_EDITOR_ERROR               = "InternalEditorError";
 
   /** The Constant INTERNAL_EDITOR_ERROR_MESSAGE. */
-  protected static final String             INTERNAL_EDITOR_ERROR_MESSAGE       = "InternalEditorErrorMessage";
+  protected static final String                 INTERNAL_EDITOR_ERROR_MESSAGE       = "InternalEditorErrorMessage";
 
   /** The Constant LOG. */
-  protected static final Log                LOG                                 =
-                                                ExoLogger.getLogger(OfficeOnlineDocumentEditorPlugin.class);
+  protected static final Log                    LOG                                 =
+                                                    ExoLogger.getLogger(OfficeOnlineDocumentEditorPlugin.class);
 
   /** The wopi service. */
-  protected final WOPIService               wopiService;
+  protected final WOPIService                   wopiService;
 
   /** The i 18 n service. */
-  protected final ResourceBundleService     i18nService;
+  protected final ResourceBundleService         i18nService;
 
   /** The cometd service. */
-  protected final CometdOfficeOnlineService cometdService;
+  protected final CometdOfficeOnlineService     cometdService;
 
   /** The editor links. */
-  protected final Map<Node, String>         editorLinks                         = new ConcurrentHashMap<>();
+  protected final Map<Node, String>             editorLinks                         = new ConcurrentHashMap<>();
+
+  /** The update handler. */
+  protected final DocumentUpdateActivityHandler updateHandler;
 
   /**
    * Instantiates a new office online document editor plugin.
@@ -109,6 +114,7 @@ public class OfficeOnlineDocumentEditorPlugin extends BaseComponentPlugin implem
     this.wopiService = wopiService;
     this.i18nService = i18nService;
     this.cometdService = cometdService;
+    this.updateHandler = new OfficeOnlineDocumentUpdateActivityHandler();
   }
 
   /**
@@ -298,6 +304,17 @@ public class OfficeOnlineDocumentEditorPlugin extends BaseComponentPlugin implem
       LOG.error("Cannot check if file is suported", e);
     }
     return false;
+  }
+
+  
+  /**
+   * Gets the document update handler.
+   *
+   * @return the document update handler
+   */
+  @Override
+  public DocumentUpdateActivityHandler getDocumentUpdateHandler() {
+    return updateHandler;
   }
 
   /**
@@ -505,4 +522,5 @@ public class OfficeOnlineDocumentEditorPlugin extends BaseComponentPlugin implem
     }
 
   }
+
 }
