@@ -51,10 +51,7 @@ import org.exoplatform.officeonline.exception.PermissionDeniedException;
 import org.exoplatform.officeonline.exception.SizeMismatchException;
 import org.exoplatform.officeonline.exception.UpdateConflictException;
 import org.exoplatform.officeonline.exception.WopiDiscoveryNotFoundException;
-import org.exoplatform.portal.application.PortalRequestContext;
 import org.exoplatform.portal.config.UserACL;
-import org.exoplatform.portal.config.UserPortalConfigService;
-import org.exoplatform.portal.webui.util.Util;
 import org.exoplatform.services.cache.CacheService;
 import org.exoplatform.services.cache.ExoCache;
 import org.exoplatform.services.cms.BasePath;
@@ -309,8 +306,6 @@ public class WOPIService extends AbstractOfficeOnlineService {
   /** The documentTypePlugin. */
   protected DocumentTypePlugin                                documentTypePlugin;
 
-  /** The user portal config service. */
-  protected final UserPortalConfigService                     userPortalConfigService;
 
   /** The listeners. */
   protected final ConcurrentLinkedQueue<OfficeOnlineListener> listeners                           =
@@ -330,7 +325,6 @@ public class WOPIService extends AbstractOfficeOnlineService {
    * @param hierarchyCreator the hierarchy creator
    * @param authenticator the authenticator
    * @param nodeFinder the node finder
-   * @param userPortalConfigService the user portal config service
    * @param initParams the init params
    */
   public WOPIService(SessionProviderService sessionProviders,
@@ -344,7 +338,6 @@ public class WOPIService extends AbstractOfficeOnlineService {
                      NodeHierarchyCreator hierarchyCreator,
                      Authenticator authenticator,
                      NodeFinder nodeFinder,
-                     UserPortalConfigService userPortalConfigService,
                      InitParams initParams) {
     super(sessionProviders,
           jcrService,
@@ -357,7 +350,6 @@ public class WOPIService extends AbstractOfficeOnlineService {
           nodeFinder);
 
     this.trashService = trashService;
-    this.userPortalConfigService = userPortalConfigService;
     PropertiesParam tokenParam = initParams.getPropertiesParam(TOKEN_CONFIGURATION_PROPERTIES);
     String secretKey = tokenParam.getProperty(SECRET_KEY);
     if (secretKey != null && !secretKey.trim().isEmpty()) {
@@ -891,7 +883,7 @@ public class WOPIService extends AbstractOfficeOnlineService {
   public String getEditorLink(Node node, String baseUrl, String action) throws RepositoryException, EditorLinkNotFoundException {
     String portalOwner;
     try {
-      portalOwner = getCurrentPortalOwner();
+      portalOwner = WCMCoreUtils.getCurrentPortalName();
     } catch (Exception e) {
       LOG.error("Cannot get current portal owner {}", e.getMessage());
       throw new EditorLinkNotFoundException("Editor link not found - cannot get current portal owner");
@@ -1697,39 +1689,6 @@ public class WOPIService extends AbstractOfficeOnlineService {
       position++;
     }
     return elems.get(position);
-  }
-  
-  /**
-   * Gets the current portal owner.
-   *
-   * @return the current portal owner
-   * @throws Exception the exception
-   */
-  protected String getCurrentPortalOwner() throws Exception {
-    // Try to get the portal owner from request context
-    try {
-      PortalRequestContext requestContext = Util.getPortalRequestContext();
-      if (requestContext != null) {
-        String portalOwner = requestContext.getPortalOwner();
-        if (portalOwner != null) {
-          return portalOwner;
-        }
-      }
-    } catch (Exception e) {
-      if (LOG.isDebugEnabled()) {
-        LOG.debug("Cannot get portal owner from portal request context: {}", e.getMessage());
-      }
-    }
-
-    String defaultPortal = userPortalConfigService.getDefaultPortal();
-    // Retrieve the list of accessible portals by current user (defined in ConservationState.getCurrent() )
-    List<String> allPortalNames = userPortalConfigService.getAllPortalNames();
-    // Check if current portal is accessbile
-    if (allPortalNames.contains(defaultPortal)) {
-      return defaultPortal;
-    } else {
-      return allPortalNames.get(0);
-    }
   }
 
   /**
