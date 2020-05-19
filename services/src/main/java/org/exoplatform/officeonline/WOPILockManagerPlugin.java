@@ -234,11 +234,13 @@ public class WOPILockManagerPlugin extends BaseComponentPlugin {
             Session session = getSystemSession();
             session.addLockToken(lock.getLockToken());
             Node node = session.getNodeByUUID(fileId);
-            node.unlock();
-            locks.remove(fileId);
-            if (LOG.isDebugEnabled()) {
-              LOG.debug("Node unlocked (lock expired). UUID: {}", fileId);
+            if(node.isLocked()) {
+              node.unlock();
+              if (LOG.isDebugEnabled()) {
+                LOG.debug("Node unlocked (lock expired). UUID: {}", fileId);
+              }
             }
+            locks.remove(fileId);
           } catch (RepositoryException e) {
             LOG.warn("Cannot unlock node. UUID {}, {}", fileId, e.getMessage());
           }
