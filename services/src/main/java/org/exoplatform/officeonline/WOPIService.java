@@ -1023,9 +1023,18 @@ public class WOPIService extends AbstractOfficeOnlineService {
     map.put(OWNER_ID, node.getProperty(EXO_OWNER).getString());
     map.put(SIZE, getSize(node));
     map.put(USER_ID, ConversationState.getCurrent().getIdentity().getUserId());
-    if (node.isNodeType(MIX_VERSIONABLE)) {
+    if (!node.isNodeType(MIX_VERSIONABLE)) {
+      // Use system session to add make the node versionable
+      Session systemSession = jcrService.getCurrentRepository().getSystemSession(node.getSession().getWorkspace().getName());
+      NodeImpl systemNode = (NodeImpl) systemSession.getNodeByUUID(node.getUUID());
+      systemNode.addMixin(MIX_VERSIONABLE);
+      systemNode.save();
+      map.put(VERSION, systemNode.getBaseVersion().getName());
+    } else {
       map.put(VERSION, node.getBaseVersion().getName());
     }
+    
+    
   }
 
   /**
