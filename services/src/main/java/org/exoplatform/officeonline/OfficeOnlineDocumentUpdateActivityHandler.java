@@ -11,6 +11,8 @@ import org.exoplatform.container.ExoContainerContext;
 import org.exoplatform.services.cms.documents.DocumentUpdateActivityHandler;
 import org.exoplatform.services.ext.action.InvocationContext;
 import org.exoplatform.services.listener.Event;
+import org.exoplatform.services.log.ExoLogger;
+import org.exoplatform.services.log.Log;
 import org.exoplatform.wcm.ext.component.activity.listener.FileUpdateActivityListener;
 
 /**
@@ -23,9 +25,13 @@ import org.exoplatform.wcm.ext.component.activity.listener.FileUpdateActivityLis
  * method is invoked.
  *
  */
-public class OfficeOnlineDocumentUpdateActivityHandler extends FileUpdateActivityListener implements DocumentUpdateActivityHandler {
+public class OfficeOnlineDocumentUpdateActivityHandler extends FileUpdateActivityListener
+    implements DocumentUpdateActivityHandler {
 
   protected final WOPIService wopiService;
+
+  /** The Constant LOG. */
+  protected static final Log  LOG = ExoLogger.getLogger(OfficeOnlineDocumentUpdateActivityHandler.class);
 
   public OfficeOnlineDocumentUpdateActivityHandler() {
     wopiService = (WOPIService) ExoContainerContext.getCurrentContainer().getComponentInstanceOfType(WOPIService.class);
@@ -40,9 +46,12 @@ public class OfficeOnlineDocumentUpdateActivityHandler extends FileUpdateActivit
     Node frozen = isVersionable ? wopiService.getFrozen(node) : node;
     if (wopiService.isEditorVersion(frozen)) {
       Calendar versionDate = frozen.getProperty(WOPIService.EXO_LAST_MODIFIED_DATE).getDate();
-      String modifier = frozen.getProperty(WOPIService.EXO_LAST_MODIFIER).getString();
+      String modifier = node.getProperty(WOPIService.EXO_LAST_MODIFIER).getString();
       long timeout = System.currentTimeMillis() - versionDate.getTimeInMillis();
       String versioningUser = wopiService.getVersioningUser(frozen);
+      if (LOG.isDebugEnabled()) {
+        LOG.debug("[Comments] Frozen modifier: {}, versioning user: {}", modifier, versioningUser);
+      }
       // Version accumulation for same user
       if (!modifier.equals(versioningUser) || timeout >= WOPIService.VERSION_TIMEOUT) {
         super.onEvent(event);
