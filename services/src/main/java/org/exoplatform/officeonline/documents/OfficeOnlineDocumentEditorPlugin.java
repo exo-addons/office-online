@@ -114,7 +114,7 @@ public class OfficeOnlineDocumentEditorPlugin extends BaseComponentPlugin implem
     this.wopiService = wopiService;
     this.i18nService = i18nService;
     this.cometdService = cometdService;
-    this.updateHandler = new OfficeOnlineDocumentUpdateActivityHandler();
+    this.updateHandler = new OfficeOnlineDocumentUpdateActivityHandler(wopiService);
   }
 
   /**
