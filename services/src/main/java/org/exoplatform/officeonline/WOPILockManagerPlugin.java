@@ -10,6 +10,7 @@ import javax.jcr.Session;
 import javax.jcr.lock.Lock;
 
 import org.exoplatform.container.component.BaseComponentPlugin;
+import org.exoplatform.ecm.utils.lock.LockUtil;
 import org.exoplatform.officeonline.exception.LockMismatchException;
 import org.exoplatform.services.cache.CacheService;
 import org.exoplatform.services.cache.CachedObjectSelector;
@@ -22,9 +23,8 @@ import org.exoplatform.services.jcr.ext.common.SessionProvider;
 import org.exoplatform.services.log.ExoLogger;
 import org.exoplatform.services.log.Log;
 
-
 /**
- * The Class WOPILockManagerPlugin.
+ * The Class WOPILockManagerPlugin is used to manage locks for WOPI.
  */
 public class WOPILockManagerPlugin extends BaseComponentPlugin {
 
@@ -78,7 +78,8 @@ public class WOPILockManagerPlugin extends BaseComponentPlugin {
   }
 
   /**
-   * Lock.
+   * Locks the node with provided lockId, stores the lock in the cache.
+   * Refreshes the lock if the node is locked and lockIds matches.
    *
    * @param node the node
    * @param lockId the lock id
@@ -92,10 +93,7 @@ public class WOPILockManagerPlugin extends BaseComponentPlugin {
     }
 
     if (!node.isLocked()) {
-      Lock lock = node.lock(true, false);
-      long expires = System.currentTimeMillis() + LOCK_EXPIRES;
-      FileLock fileLock = new FileLock(lockId, lock.getLockToken(), expires);
-      locks.put(node.getUUID(), fileLock);
+      lockNode(node, lockId);
       if (LOG.isDebugEnabled()) {
         LOG.debug("Node successfully locked. UUID: {}, lockId: {}", node.getUUID(), lockId);
       }
@@ -123,10 +121,10 @@ public class WOPILockManagerPlugin extends BaseComponentPlugin {
   }
 
   /**
-   * Gets the lock.
+   * Gets the lock from cache.
    *
    * @param node the node
-   * @return the lock
+   * @return the lock or null, if the node isn't locked
    * @throws RepositoryException the repository exception
    */
   public FileLock getLock(Node node) throws RepositoryException {
@@ -134,21 +132,20 @@ public class WOPILockManagerPlugin extends BaseComponentPlugin {
   }
 
   /**
-   * Unlock.
+   * Unlocks the node with provided lockId.
    *
    * @param node the node
    * @param lockId the lock id
    * @param workspace the workspace
    * @throws RepositoryException the repository exception
-   * @throws LockMismatchException the lock mismatch exception
+   * @throws LockMismatchException if the node isn't locked of provided lockId doesn't match the current one
    */
   public void unlock(Node node, String lockId, String workspace) throws RepositoryException, LockMismatchException {
     FileLock fileLock = locks.get(node.getUUID());
     if (fileLock != null) {
       if (lockId.equals(fileLock.getLockId())) {
         getUserSession(workspace).addLockToken(fileLock.getLockToken());
-        node.unlock();
-        locks.remove(node.getUUID());
+        unlockNode(node);
         if (LOG.isDebugEnabled()) {
           LOG.debug("Lock removed from node UUID: {}, lockId: {}", node.getUUID(), lockId);
         }
@@ -161,7 +158,7 @@ public class WOPILockManagerPlugin extends BaseComponentPlugin {
   }
 
   /**
-   * Refresh lock.
+   * Refreshes lock by prolonging the lock expires.
    *
    * @param node the node
    * @param lockId the lock id
@@ -212,7 +209,7 @@ public class WOPILockManagerPlugin extends BaseComponentPlugin {
   }
 
   /**
-   * Removes the expired.
+   * Removes the expired locks or locks with expiration time less than EXPIRES_DELAY
    * @throws Exception 
    */
   protected void removeExpired() {
@@ -234,13 +231,12 @@ public class WOPILockManagerPlugin extends BaseComponentPlugin {
             Session session = getSystemSession();
             session.addLockToken(lock.getLockToken());
             Node node = session.getNodeByUUID(fileId);
-            if(node.isLocked()) {
-              node.unlock();
+            if (node.isLocked()) {
+              unlockNode(node);
               if (LOG.isDebugEnabled()) {
                 LOG.debug("Node unlocked (lock expired). UUID: {}", fileId);
               }
             }
-            locks.remove(fileId);
           } catch (RepositoryException e) {
             LOG.warn("Cannot unlock node. UUID {}, {}", fileId, e.getMessage());
           }
@@ -250,4 +246,40 @@ public class WOPILockManagerPlugin extends BaseComponentPlugin {
       LOG.error("Cannot unlock expired nodes", e);
     }
   }
+
+  /**
+   * Lock node.
+   *
+   * @param node the node
+   * @param lockId the lock id
+   * @throws RepositoryException the repository exception
+   */
+  private void lockNode(Node node, String lockId) throws RepositoryException {
+    Lock lock = node.lock(true, false);
+    try {
+      LockUtil.keepLock(lock);
+    } catch (Exception e) {
+      LOG.warn("Cannot keep lock in lock service", e.getMessage());
+    }
+    long expires = System.currentTimeMillis() + LOCK_EXPIRES;
+    FileLock fileLock = new FileLock(lockId, lock.getLockToken(), expires);
+    locks.put(lock.getNode().getUUID(), fileLock);
+  }
+
+  /**
+   * Unlock node.
+   *
+   * @param node the node
+   * @throws RepositoryException the repository exception
+   */
+  private void unlockNode(Node node) throws RepositoryException {
+    node.unlock();
+    locks.remove(node.getUUID());
+    try {
+      LockUtil.removeLock(node);
+    } catch (Exception e) {
+      LOG.warn("Cannot remove lock in lock service", e.getMessage());
+    }
+  }
+
 }

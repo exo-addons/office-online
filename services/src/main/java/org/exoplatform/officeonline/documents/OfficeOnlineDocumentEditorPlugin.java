@@ -32,6 +32,7 @@ import javax.jcr.RepositoryException;
 import org.exoplatform.container.PortalContainer;
 import org.exoplatform.container.component.BaseComponentPlugin;
 import org.exoplatform.ecm.webui.component.explorer.UIJCRExplorer;
+import org.exoplatform.officeonline.FileLock;
 import org.exoplatform.officeonline.OfficeOnlineDocumentUpdateActivityHandler;
 import org.exoplatform.officeonline.WOPIService;
 import org.exoplatform.officeonline.cometd.CometdConfig;
@@ -81,6 +82,15 @@ public class OfficeOnlineDocumentEditorPlugin extends BaseComponentPlugin implem
 
   /** The Constant INTERNAL_EDITOR_ERROR_MESSAGE. */
   protected static final String                 INTERNAL_EDITOR_ERROR_MESSAGE       = "InternalEditorErrorMessage";
+
+  /** The Constant MSOFFICE_FILE. */
+  protected static final String                 MSOFFICE_FILE                       = "msoffice:file";
+
+  /** The Constant MSOFFICE_PREFERENCES. */
+  protected static final String                 MSOFFICE_PREFERENCES                = "msoffice:preferences";
+
+  /** The Constant MSOFFICE_LOCK_ID. */
+  protected static final String                 MSOFFICE_LOCK_ID                    = "msoffice:lockId";
 
   /** The Constant LOG. */
   protected static final Log                    LOG                                 =
@@ -306,7 +316,6 @@ public class OfficeOnlineDocumentEditorPlugin extends BaseComponentPlugin implem
     return false;
   }
 
-  
   /**
    * Gets the document update handler.
    *
@@ -315,6 +324,34 @@ public class OfficeOnlineDocumentEditorPlugin extends BaseComponentPlugin implem
   @Override
   public DocumentUpdateActivityHandler getDocumentUpdateHandler() {
     return updateHandler;
+  }
+
+  /**
+   * On last editor closed.
+   *
+   * @param fileId the file id
+   * @param workspace the workspace
+   */
+  @Override
+  public void onLastEditorClosed(String fileId, String workspace) {
+    try {
+      Node node = wopiService.nodeByUUID(fileId, workspace);
+      if (node.isLocked()) {
+        FileLock lock = wopiService.getLockManager().getLock(node);
+        wopiService.getLockManager().unlock(node, lock.getLockId(), workspace);
+
+        if (node.canAddMixin(MSOFFICE_FILE)) {
+          node.addMixin(MSOFFICE_FILE);
+        }
+        Node preferences = node.getNode(MSOFFICE_PREFERENCES);
+        preferences.setProperty(MSOFFICE_LOCK_ID, lock.getLockId());
+        node.save();
+      }
+    } catch (FileNotFoundException e) {
+      LOG.error("Cannot find node with fileId {} and workspace {} : {}", fileId, workspace, e.getMessage());
+    } catch (Exception e) {
+      LOG.error("Cannot execute last editor closed handler for fileId {} and workspace {} : {}", fileId, workspace, e.getMessage());
+    } 
   }
 
   /**
