@@ -50,7 +50,7 @@ public class FileLock {
    *
    * @return the lock id
    */
-  protected String getLockId() {
+  public String getLockId() {
     return lockId;
   }
 
