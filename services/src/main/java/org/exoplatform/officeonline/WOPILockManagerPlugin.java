@@ -32,19 +32,25 @@ public class WOPILockManagerPlugin extends BaseComponentPlugin {
   protected ExoCache<String, FileLock> locks;
 
   /** The Constant CACHE_NAME. */
-  protected static final String        CACHE_NAME      = "officeonline.locks.Cache".intern();
+  protected static final String        CACHE_NAME           = "officeonline.locks.Cache".intern();
 
   /** The Constant MIX_LOCKABLE. */
-  protected static final String        MIX_LOCKABLE    = "mix:lockable";
+  protected static final String        MIX_LOCKABLE         = "mix:lockable";
+
+  /** The Constant MSOFFICE_PREFERENCES. */
+  protected static final String        MSOFFICE_PREFERENCES = "msoffice:preferences";
+
+  /** The Constant MSOFFICE_LOCK_ID. */
+  protected static final String        MSOFFICE_LOCK_ID     = "msoffice:lockId";
 
   /** The Constant LOG. */
-  protected static final Log           LOG             = ExoLogger.getLogger(WOPILockManagerPlugin.class);
+  protected static final Log           LOG                  = ExoLogger.getLogger(WOPILockManagerPlugin.class);
 
   /** The Constant LOCK_EXPIRES. */
-  protected static final long          LOCK_EXPIRES    = 30 * 60000;
+  protected static final long          LOCK_EXPIRES         = 30 * 60000;
 
   /** The Constant EXPIRES_DELAY. */
-  protected static final long          EXPIRES_DELAY   = 5 * 60000;
+  protected static final long          EXPIRES_DELAY        = 5 * 60000;
 
   /** The session providers. */
   protected SessionProviderService     sessionProviders;
@@ -56,7 +62,7 @@ public class WOPILockManagerPlugin extends BaseComponentPlugin {
   protected LockService                lockService;
 
   /** The executor for removing expired locks. */
-  protected ScheduledExecutorService   expiresExecutor = Executors.newScheduledThreadPool(1);
+  protected ScheduledExecutorService   expiresExecutor      = Executors.newScheduledThreadPool(1);
 
   /**
    * Instantiates a new WOPI lock manager plugin.
@@ -236,6 +242,9 @@ public class WOPILockManagerPlugin extends BaseComponentPlugin {
               if (LOG.isDebugEnabled()) {
                 LOG.debug("Node unlocked (lock expired). UUID: {}", fileId);
               }
+              Node preferences = node.getNode(MSOFFICE_PREFERENCES);
+              preferences.setProperty(MSOFFICE_LOCK_ID, (String) null);
+              node.save();
             }
           } catch (RepositoryException e) {
             LOG.warn("Cannot unlock node. UUID {}, {}", fileId, e.getMessage());

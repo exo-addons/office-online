@@ -32,7 +32,7 @@ import javax.jcr.RepositoryException;
 import org.exoplatform.container.PortalContainer;
 import org.exoplatform.container.component.BaseComponentPlugin;
 import org.exoplatform.ecm.webui.component.explorer.UIJCRExplorer;
-import org.exoplatform.officeonline.FileLock;
+import org.exoplatform.officeonline.EditorConfig;
 import org.exoplatform.officeonline.OfficeOnlineDocumentUpdateActivityHandler;
 import org.exoplatform.officeonline.WOPIService;
 import org.exoplatform.officeonline.cometd.CometdConfig;
@@ -52,7 +52,7 @@ import org.exoplatform.services.security.ConversationState;
 import org.exoplatform.webui.application.WebuiRequestContext;
 
 /**
- * The Class OnlyOfficeNewDocumentEditorPlugin.
+ * The Class OfficeOnlineDocumentEditorPlugin.
  */
 public class OfficeOnlineDocumentEditorPlugin extends BaseComponentPlugin implements DocumentEditor {
 
@@ -337,15 +337,42 @@ public class OfficeOnlineDocumentEditorPlugin extends BaseComponentPlugin implem
     try {
       Node node = wopiService.nodeByUUID(fileId, workspace);
       if (node.isLocked()) {
-        FileLock lock = wopiService.getLockManager().getLock(node);
-        wopiService.getLockManager().unlock(node, lock.getLockId(), workspace);
-
+        EditorConfig config = new EditorConfig.Builder().fileId(fileId).workspace(workspace).build();
+        String lockId = wopiService.getLockId(config);
+        wopiService.unlock(config, lockId);
+        
         if (node.canAddMixin(MSOFFICE_FILE)) {
           node.addMixin(MSOFFICE_FILE);
         }
         Node preferences = node.getNode(MSOFFICE_PREFERENCES);
-        preferences.setProperty(MSOFFICE_LOCK_ID, lock.getLockId());
+        preferences.setProperty(MSOFFICE_LOCK_ID, lockId);
         node.save();
+      }
+    } catch (FileNotFoundException e) {
+      LOG.error("Cannot find node with fileId {} and workspace {} : {}", fileId, workspace, e.getMessage());
+    } catch (Exception e) {
+      LOG.error("Cannot execute last editor closed handler for fileId {} and workspace {} : {}", fileId, workspace, e.getMessage());
+    } 
+  }
+  
+  /**
+   * On last editor closed.
+   *
+   * @param fileId the file id
+   * @param workspace the workspace
+   */
+  @Override
+  public void onFirstEditorOpened(String fileId, String workspace) {
+    try {
+      Node node = wopiService.nodeByUUID(fileId, workspace);
+      String lockId = wopiService.getCurrentLockId(node);
+      if (!node.isLocked() && lockId != null) {
+        if (node.canAddMixin(MSOFFICE_FILE)) {
+          node.addMixin(MSOFFICE_FILE);
+        }
+        node.save();
+        EditorConfig config = new EditorConfig.Builder().fileId(fileId).workspace(workspace).build();
+        wopiService.lock(config, lockId);
       }
     } catch (FileNotFoundException e) {
       LOG.error("Cannot find node with fileId {} and workspace {} : {}", fileId, workspace, e.getMessage());
