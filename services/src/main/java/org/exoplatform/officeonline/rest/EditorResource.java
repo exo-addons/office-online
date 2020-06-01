@@ -3,6 +3,8 @@
  */
 package org.exoplatform.officeonline.rest;
 
+import java.net.URLDecoder;
+
 import javax.annotation.security.RolesAllowed;
 import javax.servlet.ServletContext;
 import javax.servlet.http.HttpServletRequest;
