@@ -26,7 +26,6 @@ import org.exoplatform.officeonline.exception.ActionNotFoundException;
 import org.exoplatform.officeonline.exception.FileExtensionNotFoundException;
 import org.exoplatform.officeonline.exception.FileNotFoundException;
 import org.exoplatform.officeonline.exception.OfficeOnlineException;
-import org.exoplatform.services.cms.documents.DocumentService;
 import org.exoplatform.services.log.ExoLogger;
 import org.exoplatform.services.log.Log;
 import org.exoplatform.services.resources.ResourceBundleService;
@@ -40,14 +39,16 @@ import org.exoplatform.ws.frameworks.json.impl.JsonGeneratorImpl;
 public class EditorPortlet extends GenericPortlet {
 
   /** The Constant LOG. */
-  private static final Log      LOG           = ExoLogger.getLogger(EditorPortlet.class);
+  private static final Log      LOG   = ExoLogger.getLogger(EditorPortlet.class);
+
+  /** The Constant UTF_8. */
+  private static final String   UTF_8 = "utf-8";
 
   /** The Officeonline. */
   private EditorService         editorService;
 
   /** The Officeonline. */
   private WOPIService           wopiService;
-
 
   /** The i 18 n service. */
   private ResourceBundleService i18nService;
@@ -102,7 +103,7 @@ public class EditorPortlet extends GenericPortlet {
 
         if (validAction(node, action)) {
           String actionURL = wopiService.getActionUrl(requestInfo, fileId, null, action);
-          String filename = node.getName();
+          String filename = wopiService.nodeTitle(node);
           String versionsUrl = wopiService.getExplorerURL(node, config.getBaseUrl()).append("&versions=true").toString();
           String workspace = node.getSession().getWorkspace().getName();
           InitConfig initConfig = new InitConfig(node.getUUID(), workspace, token, actionURL, versionsUrl, filename);
@@ -173,22 +174,22 @@ public class EditorPortlet extends GenericPortlet {
   public static class InitConfig {
 
     /** The file id. */
-    private final String fileId;
+    private final String      fileId;
 
     /** The workspace. */
-    private final String workspace;
+    private final String      workspace;
 
     /** The access token. */
     private final AccessToken accessToken;
 
     /** The action URL. */
-    private final String actionURL;
+    private final String      actionURL;
 
     /** The versions URL. */
-    private final String versionsURL;
+    private final String      versionsURL;
 
     /** The filename. */
-    private final String filename;
+    private final String      filename;
 
     /**
      * Instantiates a new inits the config.
