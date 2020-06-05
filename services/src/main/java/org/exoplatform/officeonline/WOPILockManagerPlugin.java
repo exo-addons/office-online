@@ -37,12 +37,6 @@ public class WOPILockManagerPlugin extends BaseComponentPlugin {
   /** The Constant MIX_LOCKABLE. */
   protected static final String        MIX_LOCKABLE         = "mix:lockable";
 
-  /** The Constant MSOFFICE_PREFERENCES. */
-  protected static final String        MSOFFICE_PREFERENCES = "msoffice:preferences";
-
-  /** The Constant MSOFFICE_LOCK_ID. */
-  protected static final String        MSOFFICE_LOCK_ID     = "msoffice:lockId";
-
   /** The Constant LOG. */
   protected static final Log           LOG                  = ExoLogger.getLogger(WOPILockManagerPlugin.class);
 
@@ -242,9 +236,6 @@ public class WOPILockManagerPlugin extends BaseComponentPlugin {
               if (LOG.isDebugEnabled()) {
                 LOG.debug("Node unlocked (lock expired). UUID: {}", fileId);
               }
-              Node preferences = node.getNode(MSOFFICE_PREFERENCES);
-              preferences.setProperty(MSOFFICE_LOCK_ID, (String) null);
-              node.save();
             }
           } catch (RepositoryException e) {
             LOG.warn("Cannot unlock node. UUID {}, {}", fileId, e.getMessage());
