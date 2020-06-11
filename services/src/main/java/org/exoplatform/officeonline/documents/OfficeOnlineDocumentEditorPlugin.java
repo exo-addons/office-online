@@ -18,7 +18,10 @@ package org.exoplatform.officeonline.documents;
 
 import static org.exoplatform.officeonline.webui.OfficeOnlineContext.callModule;
 
+import java.net.HttpURLConnection;
 import java.net.URI;
+import java.net.URL;
+import java.net.UnknownHostException;
 import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.Locale;
@@ -306,7 +309,6 @@ public class OfficeOnlineDocumentEditorPlugin extends BaseComponentPlugin implem
     return false;
   }
 
-  
   /**
    * Gets the document update handler.
    *
@@ -521,6 +523,12 @@ public class OfficeOnlineDocumentEditorPlugin extends BaseComponentPlugin implem
       return type;
     }
 
+  }
+
+  @Override
+  public void onLastEditorClosed(String fileId, String workspace) {
+    // TODO Auto-generated method stub
+    
   }
 
 }

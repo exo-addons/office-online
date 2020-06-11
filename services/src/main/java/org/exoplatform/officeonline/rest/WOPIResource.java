@@ -381,6 +381,20 @@ public class WOPIResource implements ResourceContainer {
   }
 
   /**
+   * Endpoint for checking if WOPI is available.
+   *
+   * @return the response
+   */
+  @GET
+  @Path("/available")
+  public Response available() {
+    if (LOG.isDebugEnabled()) {
+      LOG.debug("WOPI Availability check request handled");
+    }
+    return Response.ok().build();
+  }
+
+  /**
    * Files.
    *
    * @param uriInfo the uri info
@@ -1054,7 +1068,7 @@ public class WOPIResource implements ResourceContainer {
                      .build();
     }
   }
-  
+
   /**
    * Verify proof key.
    *
