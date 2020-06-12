@@ -99,9 +99,6 @@ public class WOPIService extends AbstractOfficeOnlineService {
   /** The Constant NT_FILE. */
   protected static final String                               NT_FILE                             = "nt:file";
 
-  /** The Constant MSOFFICE_FILE. */
-  protected static final String                               MSOFFICE_FILE                       = "msoffice:file";
-
   /** The Constant MSOFFICE_IS_EDITOR_VERSION. */
   protected static final String                               MSOFFICE_IS_EDITOR_VERSION          = "msoffice:isEditorVersion";
 
@@ -306,7 +303,6 @@ public class WOPIService extends AbstractOfficeOnlineService {
   /** The documentTypePlugin. */
   protected DocumentTypePlugin                                documentTypePlugin;
 
-
   /** The listeners. */
   protected final ConcurrentLinkedQueue<OfficeOnlineListener> listeners                           =
                                                                         new ConcurrentLinkedQueue<OfficeOnlineListener>();
@@ -385,6 +381,8 @@ public class WOPIService extends AbstractOfficeOnlineService {
     try {
       if (canEdit(node) && config.permissions.contains(Permissions.USER_CAN_WRITE)) {
         Node content = node.getNode(JCR_CONTENT);
+        // XXX: assuming that node is locked for WOPI if it has MSOFFICE_LOCK_ID property
+        // for fixing Word Online issue in Chrome v80+
         if (!node.isLocked()) {
           long size = content.getProperty(JCR_DATA).getLength();
           if (size != 0) {
@@ -392,10 +390,6 @@ public class WOPIService extends AbstractOfficeOnlineService {
           }
         } else {
           checkNodeLock(node, lockId);
-        }
-
-        if (node.canAddMixin(MSOFFICE_FILE)) {
-          node.addMixin(MSOFFICE_FILE);
         }
 
         boolean versionable = node.isNodeType(MIX_VERSIONABLE);
@@ -444,7 +438,6 @@ public class WOPIService extends AbstractOfficeOnlineService {
           }
           node.getVersionHistory().removeVersion(versionName);
         }
-
         node.setProperty(MSOFFICE_VERSION_OWNER, config.getUserId());
         node.setProperty(MSOFFICE_IS_EDITOR_VERSION, true);
 
@@ -458,6 +451,7 @@ public class WOPIService extends AbstractOfficeOnlineService {
         }
 
         onSaved(config);
+
         // Remove properties from node
         node.setProperty(MSOFFICE_VERSION_OWNER, "");
         node.setProperty(MSOFFICE_IS_EDITOR_VERSION, false);
@@ -749,8 +743,10 @@ public class WOPIService extends AbstractOfficeOnlineService {
     }
 
     /*
-      We cannot rename file uploaded from Activity Stream
+      TODO: We cannot rename file uploaded from Activity Stream
       PLF issue: https://jira.exoplatform.org/browse/PLF-8596
+      Need to resolve the issue on plf side, or use system session here.
+      
     if (!node.hasPermission(PermissionType.REMOVE)) {
       Session systemSession = jcrService.getCurrentRepository().getSystemSession(config.getWorkspace());
       NodeImpl systemNode = (NodeImpl) systemSession.getNodeByUUID(config.getFileId());
@@ -888,6 +884,7 @@ public class WOPIService extends AbstractOfficeOnlineService {
       LOG.error("Cannot get current portal owner {}", e.getMessage());
       throw new EditorLinkNotFoundException("Editor link not found - cannot get current portal owner");
     }
+    
     if (isDocumentSupported(node)) {
       StringBuilder link = new StringBuilder(baseUrl).append('/')
                                                      .append(portalName)
@@ -906,7 +903,6 @@ public class WOPIService extends AbstractOfficeOnlineService {
       throw new EditorLinkNotFoundException("Editor link not found - document is not supported");
     }
   }
-
 
   /**
    * Checks if is document supported.
@@ -1033,8 +1029,7 @@ public class WOPIService extends AbstractOfficeOnlineService {
     } else {
       map.put(VERSION, node.getBaseVersion().getName());
     }
-    
-    
+
   }
 
   /**
@@ -1263,6 +1258,7 @@ public class WOPIService extends AbstractOfficeOnlineService {
   public void lock(EditorConfig config, String lockId) throws LockMismatchException, RepositoryException, FileNotFoundException {
     Node node = nodeByUUID(config.getFileId(), config.getWorkspace());
     lockManager.lock(node, lockId);
+    node.save();
   }
 
   /**
@@ -1274,7 +1270,6 @@ public class WOPIService extends AbstractOfficeOnlineService {
    * @throws RepositoryException the repository exception
    */
   public String getLockId(EditorConfig config) throws FileNotFoundException, RepositoryException {
-
     Node node = nodeByUUID(config.getFileId(), config.getWorkspace());
     FileLock lock = lockManager.getLock(node);
     return lock != null ? lock.getLockId() : null;
@@ -1599,9 +1594,9 @@ public class WOPIService extends AbstractOfficeOnlineService {
   protected void checkNodeLock(Node node, String lockId) throws LockMismatchException, RepositoryException {
     if (node.isLocked()) {
       FileLock lock = lockManager.getLock(node);
-      // TODO: handle case when lock is null
-      if (!lockId.equals(lock.getLockId())) {
-        throw new LockMismatchException("Given lock is different from the file lock", lock.getLockId());
+      String currentLock = lock != null ? lock.getLockId() : "";
+      if (!lockId.equals(currentLock)) {
+        throw new LockMismatchException("Given lock is different from the file lock", currentLock);
       }
       node.getSession().addLockToken(lock.getLockToken());
     }
@@ -1616,7 +1611,7 @@ public class WOPIService extends AbstractOfficeOnlineService {
   public void putUserInfo(String userId, String userInfo) {
     userInfoCache.put(userId, userInfo);
   }
-
+  
   /**
    * {@inheritDoc}
    */
