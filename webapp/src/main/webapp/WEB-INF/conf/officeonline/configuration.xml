@@ -178,7 +178,7 @@
     </component-plugin>
   </external-component-plugins>
   
-    <!-- WOPILockManagerPlugin -->
+  <!-- WOPILockManagerPlugin -->
   <external-component-plugins>
     <target-component>org.exoplatform.officeonline.WOPIService</target-component>
     <component-plugin>
@@ -188,7 +188,6 @@
       <description>WOPILockManagerPlugin manages node locks for Office Online</description>
     </component-plugin>
   </external-component-plugins>
-  
   
   <!-- DocumentTypePlugin for OfficeOnlineEditorService -->
   <external-component-plugins>
@@ -371,10 +370,6 @@
       </init-params>
     </component-plugin>
   </external-component-plugins>
-  
-  
-  
-  
   
   <!-- Cache configuration -->
   <external-component-plugins>
