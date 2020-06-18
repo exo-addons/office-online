@@ -186,6 +186,9 @@ public class WOPIService extends AbstractOfficeOnlineService {
   /** The Constant FILE_VERSION_POST_MESSAGE. */
   protected static final String                               FILE_VERSION_POST_MESSAGE           = "FileVersionPostMessage";
 
+  /** The Constant EDIT_NOTIFICATION_POST_MESSAGE. */
+  protected static final String                               EDIT_NOTIFICATION_POST_MESSAGE      = "EditNotificationPostMessage";
+
   /** The Constant IS_ANONYMOUS_USER. */
   protected static final String                               IS_ANONYMOUS_USER                   = "IsAnonymousUser";
 
@@ -884,7 +887,7 @@ public class WOPIService extends AbstractOfficeOnlineService {
       LOG.error("Cannot get current portal owner {}", e.getMessage());
       throw new EditorLinkNotFoundException("Editor link not found - cannot get current portal owner");
     }
-    
+
     if (isDocumentSupported(node)) {
       StringBuilder link = new StringBuilder(baseUrl).append('/')
                                                      .append(portalName)
@@ -1201,6 +1204,7 @@ public class WOPIService extends AbstractOfficeOnlineService {
     map.put(BREADCRUMB_BRAND_URL, config.getBaseUrl());
     map.put(POST_MESSAGE_ORIGIN, config.getBaseUrl());
     map.put(FILE_VERSION_POST_MESSAGE, true);
+    map.put(EDIT_NOTIFICATION_POST_MESSAGE, true);
     try {
       Node parent = null;
       if (node.getPath().startsWith(usersPath)) {
@@ -1611,7 +1615,7 @@ public class WOPIService extends AbstractOfficeOnlineService {
   public void putUserInfo(String userId, String userInfo) {
     userInfoCache.put(userId, userInfo);
   }
-  
+
   /**
    * {@inheritDoc}
    */

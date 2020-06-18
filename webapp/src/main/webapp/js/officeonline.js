@@ -185,6 +185,7 @@
     const DOCUMENT_SAVED = "DOCUMENT_SAVED";
     const FILE_RENAME = "File_Rename";
     const FILE_VERSIONS = "UI_FileVersions";
+    const EDIT_NOTIFICATION = "Edit_Notification";
     const OFFICEONLINE = "officeonline";
 
     // Editor Window
@@ -298,6 +299,8 @@
         updateWindowTitle(msg.Values.NewName);
       } else if (msg.MessageId == FILE_VERSIONS) {
         window.open(versionsLink);
+      } else if (msg.MessageId == EDIT_NOTIFICATION) {
+        editorsupport.notifyActive();
       }
     };
 
