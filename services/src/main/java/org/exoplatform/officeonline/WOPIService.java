@@ -282,7 +282,7 @@ public class WOPIService extends AbstractOfficeOnlineService {
   /** The brand name. */
   protected String                                            brandName;
 
-  /** The wopi files url. */
+  /** The wopi url. */
   protected String                                            wopiUrl;
 
   /** The version accumulation. */
