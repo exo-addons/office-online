@@ -24,6 +24,7 @@ import javax.crypto.KeyGenerator;
 import javax.crypto.SecretKey;
 import javax.crypto.spec.SecretKeySpec;
 import javax.jcr.AccessDeniedException;
+import javax.jcr.ItemExistsException;
 import javax.jcr.Node;
 import javax.jcr.RepositoryException;
 import javax.jcr.Session;
@@ -35,6 +36,7 @@ import org.exoplatform.container.PortalContainer;
 import org.exoplatform.container.component.ComponentPlugin;
 import org.exoplatform.container.xml.InitParams;
 import org.exoplatform.container.xml.PropertiesParam;
+import org.exoplatform.ecm.connector.fckeditor.FCKUtils;
 import org.exoplatform.ecm.utils.text.Text;
 import org.exoplatform.ecm.webui.utils.PermissionUtil;
 import org.exoplatform.ecm.webui.utils.Utils;
@@ -1473,8 +1475,18 @@ public class WOPIService extends AbstractOfficeOnlineService {
    */
   protected String createFile(Node parent, String filename, InputStream data) throws RepositoryException,
                                                                               FileExtensionNotFoundException {
-    // Add node
-    Node addedNode = parent.addNode(filename, Utils.NT_FILE);
+    String nodeName = filename;
+    boolean fileCreated = false;
+    Node addedNode = null;
+    int count = 0;
+    do {
+      try {
+        addedNode = parent.addNode(nodeName, FCKUtils.NT_FILE);
+        fileCreated = true;
+      } catch (ItemExistsException e) {//sameNameSibling is not allowed
+        nodeName = increaseName(filename, ++count);
+      }
+    } while (!fileCreated);
 
     // Set title
     if (!addedNode.hasProperty(Utils.EXO_TITLE)) {
@@ -1693,6 +1705,20 @@ public class WOPIService extends AbstractOfficeOnlineService {
       position++;
     }
     return elems.get(position);
+  }
+  
+
+  /**
+   * Increase name.
+   *
+   * @param origin the origin
+   * @param count the count
+   * @return the string
+   */
+  protected String increaseName(String origin, int count) {
+    int index = origin.indexOf('.');
+    if (index == -1) return origin + count;
+    return origin.substring(0, index) + count + origin.substring(index);
   }
 
   /**
