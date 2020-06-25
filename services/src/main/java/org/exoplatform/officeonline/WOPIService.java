@@ -1481,7 +1481,7 @@ public class WOPIService extends AbstractOfficeOnlineService {
     int count = 0;
     do {
       try {
-        addedNode = parent.addNode(nodeName, FCKUtils.NT_FILE);
+        addedNode = parent.addNode(nodeName, NodetypeConstant.NT_FILE);
         fileCreated = true;
       } catch (ItemExistsException e) {//sameNameSibling is not allowed
         nodeName = increaseName(filename, ++count);
