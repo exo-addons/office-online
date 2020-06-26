@@ -23,10 +23,10 @@ public class WOPIAvailabilityCheckerPlugin extends BaseComponentPlugin {
   protected static final Log         LOG             = ExoLogger.getLogger(WOPIAvailabilityCheckerPlugin.class);
 
   /** The discovery url. */
-  protected String                   wopiUrl;
+  protected String                   wopiCheckUrl;
 
   /** The Constant WOPI_HOST_URL_PARAM. */
-  protected static final String      WOPI_URL_PARAM  = "wopi-url";
+  protected static final String      WOPI_CHECK_URL_PARAM  = "check-url";
 
   /** The WOPI available status. */
   protected boolean                  available       = false;
@@ -40,12 +40,12 @@ public class WOPIAvailabilityCheckerPlugin extends BaseComponentPlugin {
    * @param params the params
    */
   public WOPIAvailabilityCheckerPlugin(InitParams params) {
-    ValueParam wopiHostURL = params.getValueParam(WOPI_URL_PARAM);
-    String val = wopiHostURL != null ? wopiHostURL.getValue() : null;
+    ValueParam wopiCheckUrlParam = params.getValueParam(WOPI_CHECK_URL_PARAM);
+    String val = wopiCheckUrlParam != null ? wopiCheckUrlParam.getValue() : null;
     if (val == null || (val = val.trim()).isEmpty()) {
-      throw new RuntimeException(WOPI_URL_PARAM + " parameter is required.");
+      throw new RuntimeException(WOPI_CHECK_URL_PARAM + " parameter is required.");
     } else {
-      this.wopiUrl = val;
+      this.wopiCheckUrl = val;
     }
   }
 
@@ -82,7 +82,7 @@ public class WOPIAvailabilityCheckerPlugin extends BaseComponentPlugin {
    */
   protected boolean checkWOPIAvailability() {
     try {
-      URL url = new URL(wopiUrl);
+      URL url = new URL(wopiCheckUrl);
       HttpURLConnection connection = (HttpURLConnection) url.openConnection();
       connection.setRequestMethod("GET");
       connection.connect();
