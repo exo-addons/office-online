@@ -570,10 +570,4 @@ public class OfficeOnlineDocumentEditorPlugin extends BaseComponentPlugin implem
 
   }
 
-  @Override
-  public void onLastEditorClosed(String fileId, String workspace) {
-    // TODO Auto-generated method stub
-    
-  }
-
 }
