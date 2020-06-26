@@ -52,7 +52,7 @@
       <properties-param>
         <name>wopi-configuration</name>
         <property name="wopi-url"
-          value="${officeonline.wopi.url:http://wopi-dev01.exoplatform.org/portal/rest/wopi}" />
+          value="${officeonline.wopi.url:http://wopi-dev01.exoplatform.org/wopi/tribe}" />
       </properties-param>
       <properties-param>
         <name>version-accumulation-configuration</name>
@@ -161,7 +161,24 @@
     </component-plugin>
   </external-component-plugins>
   
-    <!-- WOPILockManagerPlugin -->
+   <!-- WOPIAvailabilityCheckerPlugin -->
+  <external-component-plugins>
+    <target-component>org.exoplatform.officeonline.WOPIService</target-component>
+    <component-plugin>
+      <name>set.wopidiscovery</name>
+      <set-method>setWOPIAvailabilityCheckerPlugin</set-method>
+      <type>org.exoplatform.officeonline.WOPIAvailabilityCheckerPlugin</type>
+      <description>WOPIAvailabilityCheckerPlugin checks if WOPI host is available</description>
+      <init-params>
+        <value-param>
+          <name>check-url</name>
+          <value>${officeonline.wopi.check.url:http://wopi-dev01.exoplatform.org/wopi/tribe/available}</value>
+        </value-param>
+      </init-params>
+    </component-plugin>
+  </external-component-plugins>
+  
+  <!-- WOPILockManagerPlugin -->
   <external-component-plugins>
     <target-component>org.exoplatform.officeonline.WOPIService</target-component>
     <component-plugin>
@@ -171,7 +188,6 @@
       <description>WOPILockManagerPlugin manages node locks for Office Online</description>
     </component-plugin>
   </external-component-plugins>
-  
   
   <!-- DocumentTypePlugin for OfficeOnlineEditorService -->
   <external-component-plugins>
@@ -354,10 +370,6 @@
       </init-params>
     </component-plugin>
   </external-component-plugins>
-  
-  
-  
-  
   
   <!-- Cache configuration -->
   <external-component-plugins>

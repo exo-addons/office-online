@@ -281,6 +281,9 @@ public class WOPIService extends AbstractOfficeOnlineService {
   /** The discovery plugin. */
   protected WOPIDiscoveryPlugin                               discoveryPlugin;
 
+  /** The wopi availability checker. */
+  protected WOPIAvailabilityCheckerPlugin                     wopiAvailabilityChecker;
+
   /** The lock manager. */
   protected WOPILockManagerPlugin                             lockManager;
 
@@ -649,6 +652,21 @@ public class WOPIService extends AbstractOfficeOnlineService {
   }
 
   /**
+   * Sets the WOPIAvailabilityCheckerPlugin.
+   *
+   * @param plugin the plugin
+   */
+  public void setWOPIAvailabilityCheckerPlugin(ComponentPlugin plugin) {
+    Class<WOPIAvailabilityCheckerPlugin> pclass = WOPIAvailabilityCheckerPlugin.class;
+    if (pclass.isAssignableFrom(plugin.getClass())) {
+      wopiAvailabilityChecker = pclass.cast(plugin);
+      LOG.info("Set WOPIAvailabilityCheckerPlugin instance of " + plugin.getClass().getName());
+    } else {
+      throw new IllegalArgumentException("WOPIAvailabilityCheckerPlugin is not an instance of " + pclass.getName());
+    }
+  }
+
+  /**
    * Sets the plugin.
    *
    * @param plugin the plugin
@@ -889,6 +907,9 @@ public class WOPIService extends AbstractOfficeOnlineService {
       LOG.error("Cannot get current portal owner {}", e.getMessage());
       throw new EditorLinkNotFoundException("Editor link not found - cannot get current portal owner");
     }
+    if (wopiAvailabilityChecker != null && !wopiAvailabilityChecker.isWOPIAvailable()) {
+      throw new EditorLinkNotFoundException("Editor link not found - WOPI is not available");
+    }
 
     if (isDocumentSupported(node)) {
       StringBuilder link = new StringBuilder(baseUrl).append('/')
@@ -953,6 +974,9 @@ public class WOPIService extends AbstractOfficeOnlineService {
     }
     discoveryPlugin.start();
 
+    if (wopiAvailabilityChecker != null) {
+      wopiAvailabilityChecker.start();
+    }
     LOG.info("WOPI Service started");
 
     // Only for testing purposes
@@ -1004,6 +1028,9 @@ public class WOPIService extends AbstractOfficeOnlineService {
   @Override
   public void stop() {
     discoveryPlugin.stop();
+    if (wopiAvailabilityChecker != null) {
+      wopiAvailabilityChecker.stop();
+    }
   }
 
   /**

@@ -18,7 +18,10 @@ package org.exoplatform.officeonline.documents;
 
 import static org.exoplatform.officeonline.webui.OfficeOnlineContext.callModule;
 
+import java.net.HttpURLConnection;
 import java.net.URI;
+import java.net.URL;
+import java.net.UnknownHostException;
 import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.Locale;
