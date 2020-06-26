@@ -172,7 +172,7 @@
       <init-params>
         <value-param>
           <name>check-url</name>
-          <value>${officeonline.wopi.check.url:http://wopi-dev01.exoplatform.org/tribe/wopi/available}</value>
+          <value>${officeonline.wopi.check.url:http://wopi-dev01.exoplatform.org/wopi/tribe/available}</value>
         </value-param>
       </init-params>
     </component-plugin>
