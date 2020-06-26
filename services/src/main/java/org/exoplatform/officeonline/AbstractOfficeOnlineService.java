@@ -1,6 +1,7 @@
 package org.exoplatform.officeonline;
 
 import java.io.InputStream;
+import java.io.UnsupportedEncodingException;
 import java.net.URI;
 import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
@@ -14,8 +15,10 @@ import javax.crypto.Cipher;
 import javax.jcr.Item;
 import javax.jcr.ItemNotFoundException;
 import javax.jcr.Node;
+import javax.jcr.Property;
 import javax.jcr.RepositoryException;
 import javax.jcr.Session;
+import javax.jcr.Value;
 
 import org.apache.commons.io.input.AutoCloseInputStream;
 import org.picocontainer.Startable;
@@ -52,6 +55,9 @@ public abstract class AbstractOfficeOnlineService implements Startable {
 
   /** The Constant LOG. */
   protected static final Log             LOG                       = ExoLogger.getLogger(AbstractOfficeOnlineService.class);
+
+  /** The Constant UTF_8. */
+  protected static final String          UTF_8                     = "utf-8";
 
   /** The Constant KEY_CACHE_NAME. */
   public static final String             KEY_CACHE_NAME            = "officeonline.key.Cache".intern();
@@ -245,15 +251,15 @@ public abstract class AbstractOfficeOnlineService implements Startable {
       final String mimeType = content.getProperty(JCR_MIME_TYPE).getString();
       // data stream will be closed when EoF will be reached
       final InputStream data = new AutoCloseInputStream(content.getProperty(JCR_DATA).getStream());
-      final String filename = node.getName();
-      
+      final String filename = nodeTitle(node);
+
       return new DocumentContent() {
-        
+
         @Override
         public String getFilename() {
           return filename;
         }
-        
+
         @Override
         public String getType() {
           return mimeType;
@@ -624,6 +630,42 @@ public abstract class AbstractOfficeOnlineService implements Startable {
   }
   
   /**
+   * Node title.
+   *
+   * @param node the node
+   * @return the string
+   * @throws RepositoryException the repository exception
+   */
+  public String nodeTitle(Node node) throws RepositoryException {
+    String title = null;
+    if (node.hasProperty("exo:title")) {
+      title = node.getProperty("exo:title").getString();
+    } else if (node.hasProperty("jcr:content/dc:title")) {
+      Property dcTitle = node.getProperty("jcr:content/dc:title");
+      if (dcTitle.getDefinition().isMultiple()) {
+        Value[] dctValues = dcTitle.getValues();
+        if (dctValues.length > 0) {
+          title = dctValues[0].getString();
+        }
+      } else {
+        title = dcTitle.getString();
+      }
+    } else if (node.hasProperty("exo:name")) {
+      // FYI exo:name seems the same as node name
+      title = node.getProperty("exo:name").getString();
+    }
+    if (title == null) {
+      title = node.getName();
+    }
+    try {
+      title = URLDecoder.decode(title, UTF_8);
+    } catch (UnsupportedEncodingException e) {
+      LOG.warn("Cannot decode node name using URLDecoder. {}", e.getMessage());
+    }
+    return title;
+  }
+
+  /**
    * Adds the mixin.
    *
    * @param node the node
@@ -637,7 +679,6 @@ public abstract class AbstractOfficeOnlineService implements Startable {
     systemNode.save();
   }
 
-  
   /**
    * Adds the write permissions.
    *
@@ -672,4 +713,5 @@ public abstract class AbstractOfficeOnlineService implements Startable {
     }
     return null;
   }
+ 
 }

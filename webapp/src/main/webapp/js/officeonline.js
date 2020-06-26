@@ -309,7 +309,7 @@
         iconClass = "uiIconView";
       }
       return $("<li class='hidden-tabletL'><a href='" + editorLink + "' target='_blank'>"
-          + "<i class='uiIconEcmsOfficeOnlineOpen uiIconEcmsLightGray " + iconClass + "'></i>" + label + "</a></li>");
+          + "<i class='uiIconEcmsOfficeOnlineOpen uiIconEcmsLightGray " + iconClass + "'></i><span class='editorLabel'>" + label + "</span></a></li>");
     };
     
     this.initEditor = function(config) {

@@ -35,12 +35,14 @@ import javax.jcr.RepositoryException;
 import org.exoplatform.container.PortalContainer;
 import org.exoplatform.container.component.BaseComponentPlugin;
 import org.exoplatform.ecm.webui.component.explorer.UIJCRExplorer;
+import org.exoplatform.officeonline.EditorConfig;
 import org.exoplatform.officeonline.OfficeOnlineDocumentUpdateActivityHandler;
 import org.exoplatform.officeonline.WOPIService;
 import org.exoplatform.officeonline.cometd.CometdConfig;
 import org.exoplatform.officeonline.cometd.CometdOfficeOnlineService;
 import org.exoplatform.officeonline.exception.EditorLinkNotFoundException;
 import org.exoplatform.officeonline.exception.FileNotFoundException;
+import org.exoplatform.officeonline.exception.LockMismatchException;
 import org.exoplatform.officeonline.exception.OfficeOnlineException;
 import org.exoplatform.portal.application.PortalRequestContext;
 import org.exoplatform.portal.webui.util.Util;
@@ -54,12 +56,19 @@ import org.exoplatform.services.security.ConversationState;
 import org.exoplatform.webui.application.WebuiRequestContext;
 
 /**
- * The Class OnlyOfficeNewDocumentEditorPlugin.
+ * The Class OfficeOnlineDocumentEditorPlugin.
  */
 public class OfficeOnlineDocumentEditorPlugin extends BaseComponentPlugin implements DocumentEditor {
 
+  /** The Constant LOG. */
+  protected static final Log                    LOG                                 =
+                                                    ExoLogger.getLogger(OfficeOnlineDocumentEditorPlugin.class);
+
   /** The Constant PROVIDER_NAME. */
   protected static final String                 PROVIDER_NAME                       = "officeonline";
+
+  /** The Constant EDITING_FINISHED_DELAY. */
+  protected static final long                   EDITING_FINISHED_DELAY              = 60000L;
 
   /** The Constant PROVIDER_CONFIGURATION_PARAM. */
   protected static final String                 PROVIDER_CONFIGURATION_PARAM        = "provider-configuration";
@@ -85,9 +94,8 @@ public class OfficeOnlineDocumentEditorPlugin extends BaseComponentPlugin implem
   /** The Constant INTERNAL_EDITOR_ERROR_MESSAGE. */
   protected static final String                 INTERNAL_EDITOR_ERROR_MESSAGE       = "InternalEditorErrorMessage";
 
-  /** The Constant LOG. */
-  protected static final Log                    LOG                                 =
-                                                    ExoLogger.getLogger(OfficeOnlineDocumentEditorPlugin.class);
+  /** The Constant EXO_SYMLINK. */
+  protected static final String                 EXO_SYMLINK                         = "exo:symlink";
 
   /** The wopi service. */
   protected final WOPIService                   wopiService;
@@ -195,7 +203,7 @@ public class OfficeOnlineDocumentEditorPlugin extends BaseComponentPlugin implem
       Node node = wopiService.getNode(symlink.getSession().getWorkspace().getName(), symlink.getPath());
       if (node != null && wopiService.isDocumentSupported(node)) {
         String userId = ConversationState.getCurrent().getIdentity().getUserId();
-        if (symlink.isNodeType("exo:symlink")) {
+        if (symlink.isNodeType(EXO_SYMLINK)) {
           wopiService.addFilePreferences(node, userId, symlink.getPath());
         }
 
@@ -252,7 +260,7 @@ public class OfficeOnlineDocumentEditorPlugin extends BaseComponentPlugin implem
         UIJCRExplorer uiExplorer = context.getUIApplication().findFirstComponentOfType(UIJCRExplorer.class);
         if (uiExplorer != null) {
           Node symlink = (Node) uiExplorer.getSession().getItem(uiExplorer.getCurrentPath());
-          if (symlink.isNodeType("exo:symlink")) {
+          if (symlink.isNodeType(EXO_SYMLINK)) {
             wopiService.addFilePreferences(node, WebuiRequestContext.getCurrentInstance().getRemoteUser(), symlink.getPath());
           }
         } else {
@@ -317,6 +325,43 @@ public class OfficeOnlineDocumentEditorPlugin extends BaseComponentPlugin implem
   @Override
   public DocumentUpdateActivityHandler getDocumentUpdateHandler() {
     return updateHandler;
+  }
+
+  /**
+   * On last editor closed handler unlocks node if still locked.
+   *
+   * @param fileId the file id
+   * @param workspace the workspace
+   */
+  @Override
+  public void onLastEditorClosed(String fileId, String workspace) {
+    try {
+      Node node = wopiService.nodeByUUID(fileId, workspace);
+      if (node.isLocked()) {
+        EditorConfig config = new EditorConfig.Builder().fileId(fileId).workspace(workspace).build();
+        String lockId = wopiService.getLockId(config);
+        wopiService.unlock(config, lockId);
+      }
+    } catch (FileNotFoundException e) {
+      LOG.error("Cannot find node with fileId {} and workspace {} : {}", fileId, workspace, e.getMessage());
+    } catch (LockMismatchException e) {
+      LOG.error("Cannot unlock node with fileId {} and workspace {} : {}", fileId, workspace, e.getMessage());
+    } catch (Exception e) {
+      LOG.error("Cannot execute last editor closed handler for fileId {} and workspace {} : {}",
+                fileId,
+                workspace,
+                e.getMessage());
+    }
+  }
+
+  /**
+   * Gets the editing finished delay.
+   *
+   * @return the editing finished delay
+   */
+  @Override
+  public long getEditingFinishedDelay() {
+    return EDITING_FINISHED_DELAY;
   }
 
   /**
