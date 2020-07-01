@@ -20,19 +20,22 @@ import org.exoplatform.services.log.Log;
 public class WOPIAvailabilityCheckerPlugin extends BaseComponentPlugin {
 
   /** The Constant LOG. */
-  protected static final Log         LOG             = ExoLogger.getLogger(WOPIAvailabilityCheckerPlugin.class);
+  protected static final Log         LOG                  = ExoLogger.getLogger(WOPIAvailabilityCheckerPlugin.class);
+
+  /** The Constant HTTP_GET. */
+  private static final String        HTTP_GET             = "GET";
 
   /** The discovery url. */
   protected String                   wopiCheckUrl;
 
   /** The Constant WOPI_HOST_URL_PARAM. */
-  protected static final String      WOPI_CHECK_URL_PARAM  = "check-url";
+  protected static final String      WOPI_CHECK_URL_PARAM = "check-url";
 
   /** The WOPI available status. */
-  protected boolean                  available       = false;
+  protected boolean                  available            = false;
 
   /** The executor for refreshing. */
-  protected ScheduledExecutorService refreshExecutor = Executors.newScheduledThreadPool(1);
+  protected ScheduledExecutorService refreshExecutor      = Executors.newScheduledThreadPool(1);
 
   /**
    * Instantiates a new WOPI Availability Checker Plugin
@@ -56,7 +59,7 @@ public class WOPIAvailabilityCheckerPlugin extends BaseComponentPlugin {
     // Refresh availability status every 10 minutes
     refreshExecutor.scheduleAtFixedRate(() -> {
       available = checkWOPIAvailability();
-    }, 0, 10, TimeUnit.MINUTES);
+    }, 1, 10, TimeUnit.MINUTES);
   }
 
   /**
@@ -84,7 +87,7 @@ public class WOPIAvailabilityCheckerPlugin extends BaseComponentPlugin {
     try {
       URL url = new URL(wopiCheckUrl);
       HttpURLConnection connection = (HttpURLConnection) url.openConnection();
-      connection.setRequestMethod("GET");
+      connection.setRequestMethod(HTTP_GET);
       connection.connect();
       if (connection.getResponseCode() == 200) {
         return true;

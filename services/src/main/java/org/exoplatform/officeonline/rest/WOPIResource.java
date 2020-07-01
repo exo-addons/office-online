@@ -69,19 +69,10 @@ import org.exoplatform.services.log.Log;
 import org.exoplatform.services.rest.resource.ResourceContainer;
 
 /**
- * The Class WOPIService.
+ * The Class WOPIResource is responsible for handling WOPI requests.
  */
 @Path("/wopi")
 public class WOPIResource implements ResourceContainer {
-
-  /** The Constant ACCESS_TOKEN. */
-  public static final String ACCESS_TOKEN            = "access_token";
-
-  /** The Constant WRONG_TOKEN. */
-  public static final String WRONG_TOKEN_ATTRIBUTE   = "wrong_token";
-
-  /** The Constant ACCESS_TOKEN. */
-  public static final String EDITOR_CONFIG_ATTRIBUTE = "editorConfig";
 
   /**
    * The Enum Operation.
@@ -109,6 +100,18 @@ public class WOPIResource implements ResourceContainer {
     /** The put user info */
     PUT_USER_INFO
   }
+
+  /** The Constant WOPI_ENDPOINT. */
+  private static final String   WOPI_ENDPOINT             = "wopi/";
+
+  /** The Constant ACCESS_TOKEN. */
+  public static final String    ACCESS_TOKEN              = "access_token";
+
+  /** The Constant WRONG_TOKEN. */
+  public static final String    WRONG_TOKEN_ATTRIBUTE     = "wrong_token";
+
+  /** The Constant ACCESS_TOKEN. */
+  public static final String    EDITOR_CONFIG_ATTRIBUTE   = "editorConfig";
 
   /** The Constant FILE_CONVERSION. */
   protected static final String FILE_CONVERSION           = "X-WOPI-FileConversion";
@@ -1080,8 +1083,9 @@ public class WOPIResource implements ResourceContainer {
     String oldProofKeyHeader = request.getHeader(PROOF_OLD);
     String timestampHeader = request.getHeader(TIMESTAMP);
     String accessToken = request.getParameter(ACCESS_TOKEN);
-    String url = request.getRequestURL().append('?').append(request.getQueryString()).toString().toUpperCase();
-    if (!wopiService.verifyProofKey(proofKeyHeader, oldProofKeyHeader, url, accessToken, timestampHeader)) {
+    String currentUrl = request.getRequestURL().append('?').append(request.getQueryString()).toString();
+    String contextPath = currentUrl.substring(currentUrl.indexOf(WOPI_ENDPOINT) + 4);
+    if (!wopiService.verifyProofKey(proofKeyHeader, oldProofKeyHeader, contextPath, accessToken, timestampHeader)) {
       throw new ProofKeyValidationException("Proof key verification failed");
     }
   }
