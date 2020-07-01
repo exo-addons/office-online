@@ -32,6 +32,9 @@ public class EditorService extends AbstractOfficeOnlineService {
    * @param documentService the document service
    * @param cacheService the cache service
    * @param userACL the user ACL
+   * @param identityRegistry the identity registry
+   * @param authenticator the authenticator
+   * @param nodeFinder the node finder
    */
   public EditorService(SessionProviderService sessionProviders,
                        RepositoryService jcrService,

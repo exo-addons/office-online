@@ -209,8 +209,7 @@ public class WOPILockManagerPlugin extends BaseComponentPlugin {
   }
 
   /**
-   * Removes the expired locks or locks with expiration time less than EXPIRES_DELAY
-   * @throws Exception 
+   * Removes the expired locks or locks with expiration time less than EXPIRES_DELAY.
    */
   protected void removeExpired() {
     try {

@@ -74,7 +74,7 @@ public class CometdOfficeOnlineService implements Startable {
    * Instantiates the CometdOnlyofficeService.
    *
    * @param exoBayeux the exoBayeux
-   * @param onlyofficeEditorService the onlyoffice editor service
+   * @param wopiService the wopi service
    */
   public CometdOfficeOnlineService(EXoContinuationBayeux exoBayeux, WOPIService wopiService) {
     this.exoBayeux = exoBayeux;
@@ -181,9 +181,8 @@ public class CometdOfficeOnlineService implements Startable {
     /**
      * Publish saved event.
      *
-     * @param docId the doc id
+     * @param fileId the file id
      * @param userId the user id
-     * @param comment the comment
      */
     protected void publishSavedEvent(String fileId, String userId) {
       ServerChannel channel = bayeux.getChannel(CHANNEL_NAME + fileId);

@@ -36,7 +36,6 @@ public class EditorConfig {
    * @param baseUrl the platform url
    * @param permissions the permissions
    * @param accessToken the access token
-   * @param tokenExpires the token ttl
    */
   public EditorConfig(String userId,
                       String fileId,

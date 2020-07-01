@@ -35,7 +35,7 @@ import org.exoplatform.web.filter.Filter;
 public abstract class AbstractOfficeOnlineWebFilter implements Filter {
 
   /**
-   * 
+   * Instantiates a new abstract office online web filter.
    */
   protected AbstractOfficeOnlineWebFilter() {
   }
@@ -45,6 +45,7 @@ public abstract class AbstractOfficeOnlineWebFilter implements Filter {
    * method is not blocking and thread safe, but as result of working over a
    * {@link List} of lifecycles, weakly consistent regarding its answer.
    *
+   * @param <C> the generic type
    * @param lifecycles the lifecycles list
    * @param lifecycleClass the lifecycle class to add
    * @return <code>true</code>, if can add, <code>false</code> otherwise

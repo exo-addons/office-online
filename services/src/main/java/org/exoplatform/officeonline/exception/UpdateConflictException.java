@@ -13,7 +13,7 @@ public class UpdateConflictException extends Exception {
   /** The lock id. */
   private String            lockId;
 
-  /** The filename */
+  /**  The filename. */
   private String            filename;
 
   /**
@@ -32,6 +32,7 @@ public class UpdateConflictException extends Exception {
    *
    * @param message the message
    * @param lockId the lock id
+   * @param filename the filename
    */
   public UpdateConflictException(String message, String lockId, String filename) {
     super(message);

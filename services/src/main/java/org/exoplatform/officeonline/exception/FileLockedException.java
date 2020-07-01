@@ -24,6 +24,7 @@ public class FileLockedException extends LockMismatchException {
    *
    * @param message the message
    * @param lockId the lock id
+   * @param filename the filename
    */
   public FileLockedException(String message, String lockId, String filename) {
     super(message, lockId, filename);
