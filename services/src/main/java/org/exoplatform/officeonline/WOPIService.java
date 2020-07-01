@@ -597,14 +597,14 @@ public class WOPIService extends AbstractOfficeOnlineService {
    *
    * @param proofKeyHeader the proof key header
    * @param oldProofKeyHeader the old proof key header
-   * @param url the url
+   * @param contextPath the contextPath
    * @param accessToken the access token
    * @param timestampHeader the timestamp header
    * @return true, if successful
    */
   public boolean verifyProofKey(String proofKeyHeader,
                                 String oldProofKeyHeader,
-                                String url,
+                                String contextPath,
                                 String accessToken,
                                 String timestampHeader) {
     if (StringUtils.isBlank(proofKeyHeader)) {
@@ -616,6 +616,7 @@ public class WOPIService extends AbstractOfficeOnlineService {
       return false;
     }
 
+    String url = wopiUrl + contextPath;
     byte[] expectedProofBytes = ProofKeyHelper.getExpectedProofBytes(url, accessToken, timestamp);
     // follow flow from https://wopi.readthedocs.io/en/latest/scenarios/proofkeys.html#verifying-the-proof-keys
     boolean res = ProofKeyHelper.verifyProofKey(discoveryPlugin.getProofKey(), proofKeyHeader, expectedProofBytes);
