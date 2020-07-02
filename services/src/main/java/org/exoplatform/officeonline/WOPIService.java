@@ -37,6 +37,7 @@ import org.exoplatform.container.component.ComponentPlugin;
 import org.exoplatform.container.xml.InitParams;
 import org.exoplatform.container.xml.PropertiesParam;
 import org.exoplatform.ecm.connector.fckeditor.FCKUtils;
+import org.exoplatform.ecm.utils.lock.LockUtil;
 import org.exoplatform.ecm.utils.text.Text;
 import org.exoplatform.ecm.webui.utils.PermissionUtil;
 import org.exoplatform.ecm.webui.utils.Utils;
@@ -794,13 +795,18 @@ public class WOPIService extends AbstractOfficeOnlineService {
     if (extension != null) {
       name = new StringBuilder(newTitle).append(".").append(extension).toString();
     }
-
     parentNode.getSession().move(node.getPath(), parentNode.getPath() + "/" + name);
     node.setProperty(EXO_LAST_MODIFIER, config.getUserId());
     node.setProperty(EXO_NAME, name);
     node.setProperty(EXO_TITLE, name);
     node.refresh(true);
     parentNode.getSession().save();
+    // Keep lock for new node path to be able to unlock the node after rename.
+    try {
+      LockUtil.keepLock(node.getLock());
+    } catch (Exception e) {
+      LOG.warn("Cannot keep lock for renamed node {}. {}", node.getPath(), e.getMessage());
+    }
     // Return title without file extension
     return newTitle;
   }
