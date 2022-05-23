@@ -25,7 +25,7 @@
   <parent>
     <artifactId>addons-parent-pom</artifactId>
     <groupId>org.exoplatform.addons</groupId>
-    <version>14-M15</version>
+    <version>15-RC01</version>
   </parent>
 
   <artifactId>exo-officeonline-editor-parent</artifactId>
@@ -47,9 +47,9 @@
     <maven.compiler.optimize>true</maven.compiler.optimize>
 
     <!-- eXo Modules -->
-    <org.exoplatform.social.version>6.2.x-SNAPSHOT</org.exoplatform.social.version>
-    <org.exoplatform.ecms.version>6.2.x-SNAPSHOT</org.exoplatform.ecms.version>
-    <org.exoplatform.services.version>6.2.x-SNAPSHOT</org.exoplatform.services.version>
+    <org.exoplatform.social.version>6.3.x-SNAPSHOT</org.exoplatform.social.version>
+    <org.exoplatform.ecms.version>6.3.x-SNAPSHOT</org.exoplatform.ecms.version>
+    <org.exoplatform.services.version>6.3.x-SNAPSHOT</org.exoplatform.services.version>
     <!-- for tests -->
     <junit.version>4.12</junit.version>
 
